@@ -1,12 +1,12 @@
 export interface ProductDto {
-  id: string; 
+  id: string;
   name: string;
   description?: string | null;
   price: number;
   isAvailable: boolean;
-  images: string[]; 
-  leadTimeDisplay: string; 
-  categoryId: string; 
+  images: string[];
+  leadTimeDisplay: string;
+  categoryId: string;
   categoryName: string;
 }
 
@@ -14,9 +14,9 @@ export interface CreateProductDto {
   name: string;
   description?: string | null;
   price: number;
-  images?: string[] | null; 
-  leadTimeInput?: string | null; 
-  categoryId: string; 
+  images?: string[] | null;
+  leadTimeInput?: string | null;
+  categoryId: string;
 }
 
 export interface UpdateProductDto {
@@ -26,7 +26,7 @@ export interface UpdateProductDto {
   isAvailable: boolean;
   images?: string[] | null;
   leadTimeInput?: string | null;
-  categoryId: string; 
+  categoryId: string;
 }
 
 export interface AdminRegisterDto {
@@ -38,21 +38,23 @@ export interface AdminRegisterDto {
   businessName: string;
   subdomain: string;
 }
+
 export interface LoginDto {
   email: string;
   password: string;
   rememberMe?: boolean;
+  subdomainContext?: string | null;
 }
 
 export interface AuthResponseDto {
-  userId: string; 
+  userId: string;
   email: string;
   name: string;
   roles: string[];
-  administeredTenantId?: string | null; 
-  administeredTenantSubdomain?: string | null; 
+  administeredTenantId?: string | null;
+  administeredTenantSubdomain?: string | null;
+  tenantMemberships?: string[] | null;
 }
-
 
 export interface AuthUser {
   userId: string;
@@ -60,18 +62,19 @@ export interface AuthUser {
   name: string;
   roles: string[];
   administeredTenantId?: string | null;
-  administeredTenantSubdomain?: string | null; 
+  administeredTenantSubdomain?: string | null;
+  tenantMemberships?: string[] | null;
 }
 
 export interface CategoryDto {
-  id: string; 
+  id: string;
   name: string;
 }
-
 
 export interface ValidationErrors {
   [key: string]: string[];
 }
+
 export interface ApiErrorResponse {
   title?: string;
   errors?: ValidationErrors;
@@ -82,4 +85,12 @@ export interface ApiErrorResponse {
 export interface TenantPublicInfoDto {
   name: string;
   subdomain: string;
+}
+
+export interface CustomerRegisterDto {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phoneNumber: string;
 }

@@ -1,17 +1,17 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
-import axios from 'axios';
-
-export interface AuthUser {
-  userId: string;
-  email: string;
-  name: string;
-  roles: string[];
-  administeredTenantId?: string | null; 
-  administeredTenantSubdomain?: string | null;}
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+  useCallback,
+} from "react";
+import axios, { AxiosError } from "axios";
+import { AuthUser } from "./types";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: AuthUser | null; 
+  user: AuthUser | null;
   isLoading: boolean;
   login: (userData: AuthUser) => void;
   logout: () => Promise<void>;
@@ -19,54 +19,84 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = 'bakery_auth_user';
-const apiUrl = 'http://localhost:5176/api';
+const apiUrl = "/api";
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedUser) {
-        const parsedUser: AuthUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-        console.log("AuthProvider: Restored user session", parsedUser);
-      }
-    } catch (error) {
-       console.error("AuthProvider: Failed to parse stored user", error);
-       localStorage.removeItem(AUTH_STORAGE_KEY);
-    } finally {
-       setIsLoading(false);
-    }
-  }, []);
-
-  const login = (userData: AuthUser) => { 
-    console.log("AuthProvider: Logging in user", userData);
+  const login = useCallback((userData: AuthUser) => {
     setUser(userData);
     setIsAuthenticated(true);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
-  };
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkUserSession = async () => {
+      try {
+        const response = await axios.get<AuthUser>(`${apiUrl}/accounts/me`, {
+          withCredentials: true,
+        });
+
+        if (isMounted) {
+          const userData = response.data;
+          login(userData);
+        }
+      } catch (err) {
+        if (isMounted) {
+          const axiosError = err as AxiosError;
+          if (axiosError.response?.status !== 401) {
+            console.error(
+              "API Error:",
+              axiosError.response?.status,
+              axiosError.message
+            );
+          }
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkUserSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [login]);
 
   const logout = useCallback(async () => {
-    console.log("AuthProvider: Logging out user");
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+
     try {
-      await axios.post(`${apiUrl}/accounts/logout`);
-      console.log("AuthProvider: Backend logout successful.");
+      await axios.post(
+        `${apiUrl}/accounts/logout`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
     } catch (error) {
-      console.error("AuthProvider: Backend logout failed.", error);
+      console.error("Backend logout failed.", error);
+    } finally {
+      window.location.href = "/";
     }
-     window.location.href = '/'; 
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, user, isLoading, login, logout }}
+    >
       {isLoading ? <div>Loading Session...</div> : children}
     </AuthContext.Provider>
   );
@@ -75,7 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

@@ -1,11 +1,11 @@
-import React from 'react';
-import AdminRegistrationForm from '../components/AdminRegistrationForm/AdminRegistrationForm';
-import { Link } from 'react-router-dom';
+import React from "react";
+import AdminRegistrationForm from "../components/AdminRegistrationForm/AdminRegistrationForm";
+import { Link } from "react-router-dom";
 
 const AdminRegistrationPage: React.FC = () => {
   return (
-    <div style={{ padding: '20px' }}>
-      <Link to="/">{'< Back to Home'}</Link>
+    <div style={{ padding: "20px" }}>
+      <Link to="/">{"< Back to Home"}</Link>
       <AdminRegistrationForm />
     </div>
   );
