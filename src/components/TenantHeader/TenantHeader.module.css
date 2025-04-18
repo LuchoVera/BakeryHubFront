@@ -1,0 +1,45 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+}
+
+.tenantName {
+  margin: 0;
+  font-size: 1.8em;
+  color: #333;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.button {
+  padding: 8px 15px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 0.9em;
+}
+
+.button:hover {
+  background-color: #e9e9e9;
+}
+
+.userName {
+  margin-right: 15px;
+  font-weight: 500;
+  color: #555;
+}
+
+.actions a.button {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+}
