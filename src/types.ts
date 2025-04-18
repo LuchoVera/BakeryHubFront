@@ -78,3 +78,8 @@ export interface ApiErrorResponse {
   detail?: string;
   message?: string;
 }
+
+export interface TenantPublicInfoDto {
+  name: string;
+  subdomain: string;
+}
