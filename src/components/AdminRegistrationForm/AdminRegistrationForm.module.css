@@ -13,7 +13,7 @@
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 5px; 
+  gap: 5px;
 }
 
 .formGroup label {
@@ -63,29 +63,29 @@
 }
 
 .success {
-    color: #28a745;
-    font-size: 0.9em;
-    margin-top: 10px;
-    border: 1px solid #28a745;
-    padding: 10px;
-    background-color: #e9f7ef;
-    border-radius: 4px;
+  color: #28a745;
+  font-size: 0.9em;
+  margin-top: 10px;
+  border: 1px solid #28a745;
+  padding: 10px;
+  background-color: #e9f7ef;
+  border-radius: 4px;
 }
 
 .validationError {
-    color: #dc3545;
-    font-size: 0.8em;
-    margin-top: 2px;
+  color: #dc3545;
+  font-size: 0.8em;
+  margin-top: 2px;
 }
 
 .validationError {
-color: red;
-font-size: 0.8em;
-margin-top: 4px;
-display: block;
+  color: red;
+  font-size: 0.8em;
+  margin-top: 4px;
+  display: block;
 }
 
-input[aria-invalid='true'] {
-    border-color: red;
-    box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+input[aria-invalid="true"] {
+  border-color: red;
+  box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
 }
