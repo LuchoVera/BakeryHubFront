@@ -39,9 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
     const checkUserSession = async () => {
       try {
-        const response = await axios.get<AuthUser>(`${apiUrl}/accounts/me`, {
-          withCredentials: true,
-        });
+        const response = await axios.get<AuthUser>(`${apiUrl}/accounts/me`);
 
         if (isMounted) {
           const userData = response.data;
@@ -79,13 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setIsAuthenticated(false);
 
     try {
-      await axios.post(
-        `${apiUrl}/accounts/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      await axios.post(`${apiUrl}/accounts/logout`, {});
     } catch (error) {
       console.error("Backend logout failed.", error);
     } finally {

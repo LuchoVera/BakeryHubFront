@@ -53,7 +53,6 @@ export interface AuthResponseDto {
   roles: string[];
   administeredTenantId?: string | null;
   administeredTenantSubdomain?: string | null;
-  tenantMemberships?: string[] | null;
 }
 
 export interface AuthUser {
@@ -63,7 +62,6 @@ export interface AuthUser {
   roles: string[];
   administeredTenantId?: string | null;
   administeredTenantSubdomain?: string | null;
-  tenantMemberships?: string[] | null;
 }
 
 export interface CategoryDto {
@@ -93,4 +91,26 @@ export interface CustomerRegisterDto {
   password: string;
   confirmPassword: string;
   phoneNumber: string;
+}
+
+export interface EmailCheckResultDto {
+  exists: boolean;
+  isAdmin?: boolean;
+  isCustomer?: boolean;
+  name?: string | null;
+}
+
+export enum RegistrationOutcome {
+  Failed = "Failed",
+  UserCreated = "UserCreated",
+  MembershipCreated = "MembershipCreated",
+  AlreadyMember = "AlreadyMember",
+  AdminConflict = "AdminConflict",
+  TenantNotFound = "TenantNotFound",
+  RoleAssignmentFailed = "RoleAssignmentFailed",
+  UnknownError = "UnknownError",
+}
+
+export interface LinkCustomerDto {
+  email: string;
 }
