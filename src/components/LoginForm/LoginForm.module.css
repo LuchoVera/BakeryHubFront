@@ -1,11 +1,67 @@
+.form {
+  gap: var(--space-md);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.formGroup label {
+  font-weight: 600;
+  font-size: 0.9em;
+  color: var(--color-text-primary);
+}
+
+.submitButton {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary);
+  align-self: flex-start;
+  margin-top: var(--space-sm);
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.error {
+  color: var(--color-error);
+  background-color: rgba(217, 83, 79, 0.1);
+  border: 1px solid var(--color-error);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9em;
+  margin-top: var(--space-md);
+  white-space: pre-wrap;
+}
+
+.success {
+  color: var(--color-success);
+  background-color: rgba(92, 184, 92, 0.1);
+  border: 1px solid var(--color-success);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9em;
+  margin-top: var(--space-md);
+}
+
 .validationError {
-  color: red;
+  color: var(--color-error);
   font-size: 0.8em;
-  margin-top: 4px;
+  margin-top: var(--space-xs);
   display: block;
 }
 
 input[aria-invalid="true"] {
-  border-color: red;
-  box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+}
+
+input[aria-invalid="true"]:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
 }
