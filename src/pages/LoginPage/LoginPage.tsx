@@ -1,7 +1,7 @@
 import React from "react";
-import LoginForm from "../components/LoginForm/LoginForm";
+import LoginForm from "../../components/LoginForm/LoginForm";
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../../AuthContext";
 
 const LoginPage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();

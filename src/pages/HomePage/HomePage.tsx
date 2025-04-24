@@ -1,29 +1,21 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../AuthContext";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../AuthContext";
 
 const HomePage: React.FC = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logout();
-  };
-
-  if (isAuthenticated) {
-    return (
-      <div style={{ padding: "20px" }}>
-        <h1>Welcome Back, {user?.name}!</h1>
-        <p>You are logged in.</p>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.roles?.includes("Admin")) {
+      navigate("/admin", { replace: true });
+    }
+  }, [isAuthenticated, user, isLoading, navigate]);
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Welcome to BakeryHub!</h1>
       <p>Manage your bakery online or sign up to get started.</p>
-
       <div style={{ marginBottom: "20px", display: "flex", gap: "15px" }}>
         <Link to="/login">
           <button>Login</button>

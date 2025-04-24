@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
-import LoginForm from "../components/LoginForm/LoginForm";
-import { useAuth } from "../AuthContext";
+import LoginForm from "../../components/LoginForm/LoginForm";
+import { useAuth } from "../../AuthContext";
 
 interface TenantCustomerLoginPageProps {
   subdomain: string;

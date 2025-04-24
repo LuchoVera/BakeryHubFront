@@ -6,20 +6,20 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/LoginPage";
-import AdminRegistrationPage from "./pages/AdminRegistrationPage";
+import HomePage from "./pages/HomePage/HomePage";
+import LoginPage from "./pages/LoginPage/LoginPage";
+import AdminRegistrationPage from "./pages/AdminRegistrationPage/AdminRegistrationPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import CategoryListPage from "./pages/admin/CategoryListPage";
 import ProductListPage from "./pages/admin/ProductListPage";
 import AddProductPage from "./pages/admin/AddProductPage";
 import EditProductPage from "./pages/admin/EditProductPage";
-import TenantViewPage from "./pages/TenantViewPage";
+import TenantViewPage from "./pages/TenantViewPage/TenantViewPage";
 import { useAuth } from "./AuthContext";
 import "./App.css";
-import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage";
-import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage";
+import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCustomerLoginPage";
+import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
