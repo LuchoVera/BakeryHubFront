@@ -1,7 +1,7 @@
 import React from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../../AuthContext";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import TenantCustomerSignUpForm from "../components/TenantCustomerSignUpForm/TenantCustomerSignUpForm";
+import TenantCustomerSignUpForm from "../../components/TenantCustomerSignUpForm/TenantCustomerSignUpForm";
 
 interface TenantCustomerSignUpPageProps {
   subdomain: string;
@@ -30,9 +30,6 @@ const TenantCustomerSignUpPage: React.FC<TenantCustomerSignUpPageProps> = ({
         subdomain={subdomain}
         onSuccess={handleSuccess}
       />
-      <p style={{ textAlign: "center", marginTop: "15px" }}>
-        Already have an account? <Link to="/login">Log In</Link>
-      </p>
     </div>
   );
 };

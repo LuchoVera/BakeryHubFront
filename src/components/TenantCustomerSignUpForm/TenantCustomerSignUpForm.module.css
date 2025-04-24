@@ -1,105 +1,67 @@
 .form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  gap: var(--space-md);
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-xs);
 }
 
 .formGroup label {
-  font-weight: bold;
+  font-weight: 600;
   font-size: 0.9em;
-  color: #333;
-}
-
-.formGroup input {
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1em;
-}
-
-.formGroup input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  color: var(--color-text-primary);
 }
 
 .submitButton {
-  padding: 10px 15px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary);
+  align-self: flex-start;
+  margin-top: var(--space-sm);
 }
 
-.submitButton:hover {
-  background-color: #0056b3;
-}
-
-.submitButton:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-sm);
 }
 
 .error {
-  color: #dc3545;
+  color: var(--color-error);
+  background-color: rgba(217, 83, 79, 0.1);
+  border: 1px solid var(--color-error);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-sm);
   font-size: 0.9em;
-  margin-top: 10px;
+  margin-top: var(--space-md);
   white-space: pre-wrap;
 }
 
 .success {
-  color: #28a745;
+  color: var(--color-success);
+  background-color: rgba(92, 184, 92, 0.1);
+  border: 1px solid var(--color-success);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-sm);
   font-size: 0.9em;
-  margin-top: 10px;
-  border: 1px solid #28a745;
-  padding: 10px;
-  background-color: #e9f7ef;
-  border-radius: 4px;
+  margin-top: var(--space-md);
 }
 
 .validationError {
-  color: #dc3545;
+  color: var(--color-error);
   font-size: 0.8em;
-  margin-top: 2px;
-}
-
-.validationError {
-  color: red;
-  font-size: 0.8em;
-  margin-top: 4px;
+  margin-top: var(--space-xs);
   display: block;
 }
 
 input[aria-invalid="true"] {
-  border-color: red;
-  box-shadow: 0 0 3px rgba(255, 0, 0, 0.5);
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
 }
 
-.inlineButton {
-  margin-left: 10px;
-  padding: 3px 8px;
-  font-size: 0.9em;
-  cursor: pointer;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 3px;
-}
-.inlineButton:hover {
-  background-color: #0056b3;
+input[aria-invalid="true"]:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
 }

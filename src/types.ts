@@ -114,3 +114,7 @@ export enum RegistrationOutcome {
 export interface LinkCustomerDto {
   email: string;
 }
+
+export interface UpdateCategoryDto {
+  name: string;
+}

@@ -568,7 +568,8 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
 
       {!successMessage && (
         <p style={{ textAlign: "center", marginTop: "15px" }}>
-          ¿Ya tienes una cuenta para esta panadería?{" "}
+          ¿Ya tienes una cuenta para esta reposteria?
+          <br/>
           <Link to="/login">Iniciar Sesión</Link>
         </p>
       )}
