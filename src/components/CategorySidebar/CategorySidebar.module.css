@@ -1,0 +1,47 @@
+.categorySidebar {
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 70px;
+  align-self: flex-start;
+  height: calc(100vh - 80px);
+  max-height: calc(100vh - 80px);
+  z-index: 900;
+  background-color: var(--color-surface);
+  padding: var(--space-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow-y: auto;
+}
+
+.sidebarTitle {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--color-text-primary);
+  margin-top: 0;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.categoryList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.categoryLink {
+  display: block;
+  padding: var(--space-sm) var(--space-xs);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  border-radius: var(--border-radius-sm);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.categoryLink:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-primary-dark);
+}

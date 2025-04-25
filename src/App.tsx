@@ -8,13 +8,13 @@ import {
 } from "react-router-dom";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
-import AdminRegistrationPage from "./pages/AdminRegistrationPage/AdminRegistrationPage";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
-import CategoryListPage from "./pages/admin/CategoryListPage";
-import ProductListPage from "./pages/admin/ProductListPage";
-import AddProductPage from "./pages/admin/AddProductPage";
-import EditProductPage from "./pages/admin/EditProductPage";
+import AdminRegistrationPage from "./pages/admin/AdminRegistrationPage/AdminRegistrationPage";
+import AdminLayout from "./pages/admin/AdminLayout/AdminLayout";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage/AdminDashboardPage";
+import CategoryListPage from "./pages/admin/CategoryListPage/CategoryListPage";
+import ProductListPage from "./pages/admin/ProductListPage/ProductListPage";
+import AddProductPage from "./pages/admin/AddProductPage/AddProductPage";
+import EditProductPage from "./pages/admin/EditProductPage/EditProductPage";
 import TenantViewPage from "./pages/TenantViewPage/TenantViewPage";
 import { useAuth } from "./AuthContext";
 import "./App.css";
@@ -26,13 +26,12 @@ const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div>Loading Session...</div>;
+    return <div>Cargando la Sesión...</div>;
   }
 
   const isAdmin = isAuthenticated && (user?.roles?.includes("Admin") ?? false);
 
   if (!isAdmin) {
-    console.warn("[ProtectedAdminRoute] Access denied. Redirecting to login.");
     return (
       <Navigate
         to="/login"
@@ -55,7 +54,7 @@ function App() {
   const subdomain = isLikelySubdomain ? parts[0] : null;
 
   if (isLoading) {
-    return <div>Loading Application...</div>;
+    return <div>Cargando Aplicación...</div>;
   }
 
   return (
@@ -76,7 +75,7 @@ function App() {
                 <Route path="products/edit/:id" element={<EditProductPage />} />
               </Route>
             </Route>
-            <Route path="*" element={<div>404 - Main Page Not Found</div>} />
+            <Route path="*" element={<div>404 - No Encontrado</div>} />
           </>
         )}
 
@@ -100,7 +99,7 @@ function App() {
             />
             <Route
               path="*"
-              element={<div>404 - Page Not Found in {subdomain}'s Bakery</div>}
+              element={<div>404 - Página no Encontrada en {subdomain}</div>}
             />
           </>
         )}
@@ -110,7 +109,7 @@ function App() {
 }
 
 const RedirectingPage: React.FC = () => {
-  return <div>Redirecting...</div>;
+  return <div>Redirigiendo...</div>;
 };
 
 export default App;

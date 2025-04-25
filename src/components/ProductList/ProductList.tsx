@@ -10,7 +10,9 @@ interface ProductListProps {
 const ProductList: React.FC<ProductListProps> = ({ products }) => {
   if (!products || products.length === 0) {
     return (
-      <p className={styles.noProducts}>No products available at the moment.</p>
+      <p className={styles.noProducts}>
+        No hay productos disponibles actualmente.
+      </p>
     );
   }
 

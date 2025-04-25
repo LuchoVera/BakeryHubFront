@@ -1,4 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent, FocusEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { AdminRegisterDto, ApiErrorResponse } from "../../types";
 import {
@@ -11,10 +12,12 @@ import {
   validateExactLength,
 } from "../../utils/validationUtils";
 import styles from "./AdminRegistrationForm.module.css";
+import { LuCircleHelp } from "react-icons/lu";
 
 const apiUrl = "/api";
 
 const AdminRegistrationForm: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<AdminRegisterDto>({
     adminName: "",
     email: "",
@@ -33,55 +36,96 @@ const AdminRegistrationForm: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const validateField = (name: string, value: string): string => {
+    let error = "";
+    const cleanedValue =
+      name === "subdomain"
+        ? value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+        : value;
     switch (name) {
       case "adminName":
-        return (
+        error =
           validateRequired(value) ||
           validateMinLength(value, 2) ||
-          validateMaxLength(value, 150)
-        );
+          validateMaxLength(value, 150);
+        if (error.includes("required")) return "Tu nombre es requerido.";
+        if (error.includes("at least 2"))
+          return "Tu nombre debe tener al menos 2 caracteres.";
+        if (error.includes("no more than 150"))
+          return "Tu nombre no debe exceder los 150 caracteres.";
+        return error;
       case "email":
-        return validateRequired(value) || validateEmail(value);
+        error = validateRequired(value) || validateEmail(value);
+        if (error.includes("required")) return "Tu email es requerido.";
+        if (error.includes("Invalid email"))
+          return "Formato de email inválido.";
+        return error;
       case "password":
-        return (
-          validateRequired(value) ||
-          validateMinLength(value, 8) ||
-          validateMaxLength(value, 100)
-        );
+        const errors: string[] = [];
+        if (validateRequired(value)) return "La contraseña es requerida.";
+        if (validateMinLength(value, 8))
+          errors.push("Debe tener al menos 8 caracteres.");
+        if (validateMaxLength(value, 100))
+          errors.push("No debe exceder los 100 caracteres.");
+        if (validatePattern(value, /[a-z]/, "x"))
+          errors.push("Debe contener al menos una minúscula.");
+        if (validatePattern(value, /[A-Z]/, "x"))
+          errors.push("Debe contener al menos una mayúscula.");
+        if (validatePattern(value, /\d/, "x"))
+          errors.push("Debe contener al menos un dígito.");
+        return errors.join("\n");
       case "confirmPassword":
-        return (
+        error =
           validateRequired(value) ||
           validateComparison(
             value,
             formData.password,
-            "Passwords do not match."
-          )
-        );
+            "Las contraseñas no coinciden."
+          );
+        if (error.includes("required"))
+          return "Confirmar contraseña es requerido.";
+        return error;
       case "phoneNumber":
-        return (
+        error =
           validateRequired(value) ||
           validateExactLength(value, 8) ||
-          validatePattern(value, /^\d{8}$/, "Must contain exactly 8 digits.")
-        );
+          validatePattern(
+            value,
+            /^\d{8}$/,
+            "Debe contener exactamente 8 dígitos."
+          );
+        if (error.includes("required")) return "El teléfono es requerido.";
+        if (error.includes("exactly 8 characters"))
+          return "Debe contener exactamente 8 dígitos.";
+        return error;
       case "businessName":
-        return (
+        error =
           validateRequired(value) ||
           validateMinLength(value, 3) ||
-          validateMaxLength(value, 200)
-        );
+          validateMaxLength(value, 40);
+        if (error.includes("required"))
+          return "El nombre del negocio es requerido.";
+        if (error.includes("at least 3"))
+          return "El nombre del negocio debe tener al menos 3 caracteres.";
+        if (error.includes("no more than 40"))
+          return "El nombre del negocio no debe exceder los 40 caracteres.";
+        return error;
       case "subdomain":
         const subdomainRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-        const cleanedValue = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
-        return (
+        error =
           validateRequired(cleanedValue) ||
           validateMinLength(cleanedValue, 3) ||
-          validateMaxLength(cleanedValue, 100) ||
+          validateMaxLength(cleanedValue, 10) ||
           validatePattern(
             cleanedValue,
             subdomainRegex,
-            "Lowercase letters, numbers, and hyphens only."
-          )
-        );
+            "Solo letras minúsculas, números y guiones."
+          );
+        if (error.includes("required")) return "La dirección es requerida.";
+        if (error.includes("at least 3"))
+          return "La dirección debe tener al menos 3 caracteres.";
+        if (error.includes("no more than 10"))
+          return "La dirección no debe exceder los 10 caracteres.";
+        return error;
       default:
         return "";
     }
@@ -90,26 +134,13 @@ const AdminRegistrationForm: React.FC = () => {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     let isValid = true;
-
     (Object.keys(formData) as Array<keyof AdminRegisterDto>).forEach((key) => {
-      const error = validateField(key, formData[key]);
+      const error = validateField(key, formData[key] ?? "");
       if (error) {
         errors[key] = error;
         isValid = false;
       }
     });
-
-    if (!errors.confirmPassword) {
-      const confirmPasswordError = validateField(
-        "confirmPassword",
-        formData.confirmPassword
-      );
-      if (confirmPasswordError) {
-        errors.confirmPassword = confirmPasswordError;
-        isValid = false;
-      }
-    }
-
     setClientErrors(errors);
     return isValid;
   };
@@ -117,13 +148,12 @@ const AdminRegistrationForm: React.FC = () => {
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let finalValue = value;
-
-    if (name === "subdomain") {
+    if (name === "phoneNumber") {
+      finalValue = value.replace(/[^0-9]/g, "");
+    } else if (name === "subdomain") {
       finalValue = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
     }
-
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
-
     if (clientErrors[name]) {
       setClientErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -140,15 +170,9 @@ const AdminRegistrationForm: React.FC = () => {
 
   const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const valueToValidate =
-      name === "subdomain"
-        ? value.toLowerCase().replace(/[^a-z0-9-]/g, "")
-        : value;
-
-    const error = validateField(name, valueToValidate);
+    const error = validateField(name, value);
     setClientErrors((prev) => ({ ...prev, [name]: error }));
-
-    if (name === "password") {
+    if (name === "password" && formData.confirmPassword) {
       const confirmError = validateField(
         "confirmPassword",
         formData.confirmPassword
@@ -164,22 +188,17 @@ const AdminRegistrationForm: React.FC = () => {
     setSuccessMessage(null);
 
     if (!validateForm()) {
-      console.log("Frontend validation failed.");
       return;
     }
 
     setLoading(true);
-
     const registrationData: AdminRegisterDto = { ...formData };
 
     try {
-      console.log("REACT: Sending registration data:", registrationData);
-      const response = await axios.post(
-        `${apiUrl}/accounts/register-admin`,
-        registrationData
+      await axios.post(`${apiUrl}/accounts/register-admin`, registrationData);
+      setSuccessMessage(
+        "¡Registro Exitoso! Redirigiendo al panel de administración..."
       );
-      console.log("REACT: Registration successful:", response.data);
-      setSuccessMessage(response.data?.message || "Registration successful!");
       setFormData({
         adminName: "",
         email: "",
@@ -192,36 +211,46 @@ const AdminRegistrationForm: React.FC = () => {
       setClientErrors({});
       setValidationErrors({});
 
-      const registeredSubdomain = registrationData.subdomain;
-      if (registeredSubdomain) {
-        setTimeout(() => {
-          const rootTenantUrl = `http://${registeredSubdomain}.localhost:5173/`;
-          console.log(`REACT: Redirecting to ${rootTenantUrl}`);
-          window.location.href = rootTenantUrl;
-        }, 1500);
-      }
+      setTimeout(() => {
+        navigate("/admin", { replace: true });
+      }, 1500);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        "REACT: Registration failed:",
-        axiosError.response?.data || axiosError.message
-      );
+      const response = axiosError.response;
+      const responseData = response?.data;
+      console.error("Fallo de Registro:", responseData || axiosError.message);
 
-      if (
-        axiosError.response?.status === 400 &&
-        axiosError.response.data?.errors
-      ) {
-        setValidationErrors(axiosError.response.data.errors);
-        setServerError("Please correct the errors below.");
-      } else {
-        setServerError(
-          axiosError.response?.data?.detail ||
-            axiosError.response?.data?.title ||
-            axiosError.response?.data?.message ||
-            axiosError.message ||
-            "An unknown error occurred during registration."
-        );
+      let errorMessage = "Ocurrió un error desconocido durante el registro.";
+
+      if (response) {
+        if (response.status === 400) {
+          errorMessage = "Error: El subdominio elegido ya está en uso.";
+
+          if (typeof responseData === "object" && responseData?.errors) {
+            const backendErrors: Record<string, string[]> = responseData.errors;
+            const frontendValidationErrors: Record<string, string[]> = {};
+            let specificSubdomainMsgFound = false;
+            for (const key in backendErrors) {
+              const frontendKey = key.charAt(0).toLowerCase() + key.slice(1);
+              frontendValidationErrors[frontendKey] = backendErrors[key];
+
+              if (frontendKey === "subdomain" && backendErrors[key]?.[0]) {
+                errorMessage = backendErrors[key][0];
+                specificSubdomainMsgFound = true;
+              }
+            }
+            setValidationErrors(frontendValidationErrors);
+
+            if (!specificSubdomainMsgFound) {
+              errorMessage =
+                "Error: El subdominio elegido ya está en uso o es inválido.";
+            }
+          }
+        }
+      } else if (axiosError.message) {
+        errorMessage = `Error de red: ${axiosError.message}`;
       }
+      setServerError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -233,19 +262,24 @@ const AdminRegistrationForm: React.FC = () => {
     if (clientErrors[fieldName]) {
       return clientErrors[fieldName];
     }
+    const backendErrorList = validationErrors[fieldName];
+    if (backendErrorList && backendErrorList.length > 0) {
+      return backendErrorList.join(" ");
+    }
     const pascalCaseName =
       fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-    return (
-      validationErrors[fieldName]?.[0] || validationErrors[pascalCaseName]?.[0]
-    );
+    const backendPascalErrorList = validationErrors[pascalCaseName];
+    if (backendPascalErrorList && backendPascalErrorList.length > 0) {
+      return backendPascalErrorList.join(" ");
+    }
+    return undefined;
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.form} noValidate>
-      <h2>Register Your Business</h2>
-
+      <h2>Registra tu Negocio</h2>
       <div className={styles.formGroup}>
-        <label htmlFor="adminName">Your Name</label>
+        <label htmlFor="adminName">Tu Nombre</label>
         <input
           type="text"
           id="adminName"
@@ -255,16 +289,18 @@ const AdminRegistrationForm: React.FC = () => {
           onBlur={handleBlur}
           required
           aria-invalid={!!getFieldError("adminName")}
+          aria-describedby={
+            getFieldError("adminName") ? "adminName-error" : undefined
+          }
         />
         {getFieldError("adminName") && (
-          <span className={styles.validationError}>
+          <span id="adminName-error" className={styles.validationError}>
             {getFieldError("adminName")}
           </span>
         )}
       </div>
-
       <div className={styles.formGroup}>
-        <label htmlFor="email">Your Email</label>
+        <label htmlFor="email">Tu Email</label>
         <input
           type="email"
           id="email"
@@ -274,16 +310,16 @@ const AdminRegistrationForm: React.FC = () => {
           onBlur={handleBlur}
           required
           aria-invalid={!!getFieldError("email")}
+          aria-describedby={getFieldError("email") ? "email-error" : undefined}
         />
         {getFieldError("email") && (
-          <span className={styles.validationError}>
+          <span id="email-error" className={styles.validationError}>
             {getFieldError("email")}
           </span>
         )}
       </div>
-
       <div className={styles.formGroup}>
-        <label htmlFor="password">Password</label>
+        <label htmlFor="password">Contraseña</label>
         <input
           type="password"
           id="password"
@@ -292,19 +328,19 @@ const AdminRegistrationForm: React.FC = () => {
           onChange={handleInputChange}
           onBlur={handleBlur}
           required
-          minLength={8}
-          maxLength={100}
           aria-invalid={!!getFieldError("password")}
+          aria-describedby={
+            getFieldError("password") ? "password-error" : undefined
+          }
         />
         {getFieldError("password") && (
-          <span className={styles.validationError}>
+          <span id="password-error" className={styles.validationError}>
             {getFieldError("password")}
           </span>
         )}
       </div>
-
       <div className={styles.formGroup}>
-        <label htmlFor="confirmPassword">Confirm Password</label>
+        <label htmlFor="confirmPassword">Confirmar Contraseña</label>
         <input
           type="password"
           id="confirmPassword"
@@ -314,18 +350,23 @@ const AdminRegistrationForm: React.FC = () => {
           onBlur={handleBlur}
           required
           aria-invalid={!!getFieldError("confirmPassword")}
+          aria-describedby={
+            getFieldError("confirmPassword")
+              ? "confirmPassword-error"
+              : undefined
+          }
         />
         {getFieldError("confirmPassword") && (
-          <span className={styles.validationError}>
+          <span id="confirmPassword-error" className={styles.validationError}>
             {getFieldError("confirmPassword")}
           </span>
         )}
       </div>
-
       <div className={styles.formGroup}>
-        <label htmlFor="phoneNumber">Phone Number (8 digits)</label>
+        <label htmlFor="phoneNumber">Teléfono (8 dígitos)</label>
         <input
-          type="tel"
+          type="text"
+          inputMode="numeric"
           id="phoneNumber"
           name="phoneNumber"
           value={formData.phoneNumber}
@@ -333,19 +374,27 @@ const AdminRegistrationForm: React.FC = () => {
           onBlur={handleBlur}
           required
           maxLength={8}
-          pattern="\d{8}"
-          title="Must be exactly 8 digits"
+          title="Debe contener exactamente 8 dígitos"
           aria-invalid={!!getFieldError("phoneNumber")}
+          aria-describedby={
+            getFieldError("phoneNumber") ? "phoneNumber-error" : undefined
+          }
         />
         {getFieldError("phoneNumber") && (
-          <span className={styles.validationError}>
+          <span id="phoneNumber-error" className={styles.validationError}>
             {getFieldError("phoneNumber")}
           </span>
         )}
       </div>
-
       <div className={styles.formGroup}>
-        <label htmlFor="businessName">Business Name</label>
+        <label htmlFor="businessName" className={styles.labelWithTooltip}>
+          <span>Nombre del Negocio</span>
+          <LuCircleHelp
+            className={styles.tooltipTrigger}
+            title="Este es el nombre público que verán tus clientes en tu tienda."
+            aria-label="Información sobre nombre del negocio"
+          />
+        </label>
         <input
           type="text"
           id="businessName"
@@ -355,52 +404,60 @@ const AdminRegistrationForm: React.FC = () => {
           onBlur={handleBlur}
           required
           minLength={3}
-          maxLength={200}
+          maxLength={40}
           aria-invalid={!!getFieldError("businessName")}
+          aria-describedby={
+            getFieldError("businessName") ? "businessName-error" : undefined
+          }
         />
         {getFieldError("businessName") && (
-          <span className={styles.validationError}>
+          <span id="businessName-error" className={styles.validationError}>
             {getFieldError("businessName")}
           </span>
         )}
       </div>
-
       <div className={styles.formGroup}>
-        <label htmlFor="subdomain">
-          Choose Your Site Address (.localhost:5173)
+        <label htmlFor="subdomain" className={styles.labelWithTooltip}>
+          <span>Elige la Dirección de tu Sitio (.localhost)</span>
+          <LuCircleHelp
+            className={styles.tooltipTrigger}
+            title="Será la dirección web única de tu tienda (ej: mi-pasteleria.localhost). Solo minúsculas, números y guiones."
+            aria-label="Información sobre dirección del sitio"
+          />
         </label>
         <input
           type="text"
           id="subdomain"
           name="subdomain"
-          placeholder="e.g., mybakery"
+          placeholder="ej: mi-pasteleria"
           value={formData.subdomain}
           onChange={handleInputChange}
           onBlur={handleBlur}
           required
           minLength={3}
-          maxLength={100}
+          maxLength={10}
           pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          title="Lowercase letters, numbers, and hyphens only."
+          title="Solo minúsculas, números y guiones."
           aria-invalid={!!getFieldError("subdomain")}
+          aria-describedby={
+            getFieldError("subdomain") ? "subdomain-error" : undefined
+          }
         />
-        <span>
-          Preview: http://{formData.subdomain || "your-choice"}.localhost:5173
+        <span className={styles.previewText}>
+          Vista previa: http://{formData.subdomain || "tu-eleccion"}.localhost
         </span>
         {getFieldError("subdomain") && (
-          <span className={styles.validationError}>
+          <span id="subdomain-error" className={styles.validationError}>
             {getFieldError("subdomain")}
           </span>
         )}
       </div>
-
       {serverError && !successMessage && (
         <p className={styles.error}>{serverError}</p>
       )}
       {successMessage && <p className={styles.success}>{successMessage}</p>}
-
       <button type="submit" className={styles.submitButton} disabled={loading}>
-        {loading ? "Registering..." : "Register Business"}
+        {loading ? "Registrando..." : "Registrar Negocio"}
       </button>
     </form>
   );

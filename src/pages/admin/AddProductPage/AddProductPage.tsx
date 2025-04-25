@@ -1,5 +1,5 @@
 import React from "react";
-import ProductForm from "../../components/ProductForm/ProductForm";
+import ProductForm from "../../../components/ProductForm/ProductForm";
 import { useNavigate, Link } from "react-router-dom";
 
 const AddProductPage: React.FC = () => {

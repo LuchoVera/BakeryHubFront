@@ -1,35 +1,31 @@
 import React from "react";
 import { useAuth } from "../../AuthContext";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import TenantCustomerSignUpForm from "../../components/TenantCustomerSignUpForm/TenantCustomerSignUpForm";
+import styles from "./TenantCustomerSignUpPage.module.css";
 
 interface TenantCustomerSignUpPageProps {
   subdomain: string;
+
+  tenantName?: string;
 }
 
 const TenantCustomerSignUpPage: React.FC<TenantCustomerSignUpPageProps> = ({
   subdomain,
+  tenantName,
 }) => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   if (isAuthenticated) {
-    console.log("User already authenticated, redirecting from sign up page.");
     return <Navigate to="/" replace />;
   }
 
-  const handleSuccess = (userId: string) => {
-    console.log(`Sign up successful for user ${userId}, navigating to login.`);
-    navigate("/login");
-  };
-
   return (
-    <div style={{ padding: "20px", maxWidth: "500px", margin: "auto" }}>
-      <Link to="/">{"< Back to Bakery"}</Link>
-      <TenantCustomerSignUpForm
-        subdomain={subdomain}
-        onSuccess={handleSuccess}
-      />
+    <div className={styles.pageContainer}>
+      <Link to="/" className={styles.backLink}>
+        {"< Volver a la Tienda"}
+      </Link>
+      <TenantCustomerSignUpForm subdomain={subdomain} tenantName={tenantName} />
     </div>
   );
 };

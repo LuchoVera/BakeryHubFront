@@ -1,19 +1,17 @@
 .card {
-  border: var(--border-width) solid var(--color-border);
+  border: none;
   border-radius: var(--border-radius-md);
-  overflow: hidden;
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  height: 100%;
   transition: box-shadow var(--transition-speed) var(--transition-ease),
     transform var(--transition-speed) var(--transition-ease);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-4px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.09);
+  transform: translateY(-3px);
 }
 
 .image {
@@ -21,71 +19,70 @@
   height: 200px;
   object-fit: cover;
   background-color: var(--color-secondary);
+  border-top-left-radius: var(--border-radius-md);
+  border-top-right-radius: var(--border-radius-md);
 }
 .imagePlaceholder {
-  display: flex; /* Para centrar el texto/icono interno */
+  display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(
-    --color-secondary
-  ); /* Usa un color de fondo suave de tu tema */
-  color: var(--color-text-secondary); /* Color para el texto interno */
+  background-color: var(--color-secondary);
+  color: var(--color-text-subtle);
   font-size: 0.9em;
   text-align: center;
-  /* Asegúrate que tenga la misma altura que .image para consistencia */
   height: 200px;
   width: 100%;
-  /* Quita object-fit ya que no es una imagen */
+  border-top-left-radius: var(--border-radius-md);
+  border-top-right-radius: var(--border-radius-md);
 }
 
-/* Estilo opcional para el texto dentro del placeholder */
 .imagePlaceholder span {
   padding: var(--space-sm);
-  /* border: 1px dashed var(--color-text-secondary); */ /* Borde opcional */
-  /* border-radius: var(--border-radius-sm); */
 }
 
 .content {
-  padding: var(--space-md);
-  flex-grow: 1;
+  padding: var(--space-md) var(--space-xl);
+
   display: flex;
   flex-direction: column;
+
+  min-height: 150px;
 }
 
 .name {
-  margin-top: 0;
-  margin-bottom: var(--space-sm);
-  font-size: 1.3em;
+  margin-bottom: var(--space-xs);
+  font-size: 1.2em;
   color: var(--color-text-primary);
   font-weight: 600;
   font-family: var(--font-primary);
   line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  text-align: center;
 }
 
-/* En ProductCard.module.css */
-
 .description {
-  /* ... otros estilos ... */
   font-size: 0.9em;
   color: var(--color-text-secondary);
   margin-bottom: var(--space-md);
   line-height: 1.5;
-  flex-grow: 1;
 
-  /* --- Propiedades para truncar (incluir ambas) --- */
-  display: -webkit-box;         /* Necesario para -webkit-line-clamp */
-  -webkit-box-orient: vertical; /* Necesario para -webkit-line-clamp */
-  -webkit-line-clamp: 3;        /* Límite para navegadores basados en WebKit */
-  line-clamp: 3;                /* Estándar (para futura compatibilidad/linter) */
-  overflow: hidden;             /* Oculta el texto que sobrepasa */
-  text-overflow: ellipsis;      /* Muestra '...' (aunque a veces redundante con line-clamp) */
+  min-height: calc(1.5em * 3 * 0.9);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow-wrap: break-word;
 }
 .category,
 .leadTime {
   font-size: 0.8em;
-  color: var(--color-text-secondary);
+  color: var(--color-text-subtle);
   margin-bottom: var(--space-xs);
-  font-style: italic;
+  text-align: center;
 }
 
 .footer {
@@ -93,31 +90,47 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: var(--space-sm);
-  border-top: var(--border-width) solid var(--color-border);
+  padding-top: var(--space-md);
 }
 
 .price {
-  font-weight: bold;
+  font-weight: 600;
   font-size: 1.2em;
   color: var(--color-primary-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+
+  padding-right: var(--space-sm);
 }
 
 .addButton {
-  background-color: var(--color-success);
+  background-color: var(--color-primary);
   color: var(--color-surface);
   padding: var(--space-xs) var(--space-sm);
   font-size: 0.9em;
+  font-weight: 500;
   border-radius: var(--border-radius-sm);
+  border: none;
+  transition: background-color var(--transition-speed) var(--transition-ease),
+    box-shadow var(--transition-speed) var(--transition-ease),
+    transform var(--transition-speed) var(--transition-ease);
+  flex-shrink: 0;
 }
 
 .addButton:hover:not(:disabled) {
-  background-color: #4cae4c;
+  background-color: var(--color-primary-dark);
   box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .addButton:disabled {
-  background-color: #ccc;
+  background-color: #e0e0e0;
+  color: var(--color-text-secondary);
   cursor: not-allowed;
   opacity: 0.7;
+  box-shadow: none;
+  transform: none;
 }

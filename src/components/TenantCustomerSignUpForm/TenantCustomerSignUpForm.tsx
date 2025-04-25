@@ -4,6 +4,7 @@ import React, {
   FormEvent,
   useCallback,
   useEffect,
+  FocusEvent,
 } from "react";
 import axios, { AxiosError } from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,7 +14,6 @@ import {
   ApiErrorResponse,
   LinkCustomerDto,
 } from "../../types";
-
 import {
   validateRequired,
   validateMinLength,
@@ -21,20 +21,19 @@ import {
   validateEmail,
   validatePattern,
   validateComparison,
+  validateExactLength,
 } from "../../utils/validationUtils";
 import styles from "./TenantCustomerSignUpForm.module.css";
 
 interface TenantCustomerSignUpFormProps {
   subdomain: string;
   tenantName?: string;
-  onSuccess: (userId: string) => void;
 }
 
 type EmailCheckState = "idle" | "checking" | "checked";
 
 const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
   subdomain,
-  tenantName,
 }) => {
   const [email, setEmail] = useState("");
   const [emailCheckState, setEmailCheckState] =
@@ -66,39 +65,59 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
+    if (clientErrors.email) {
+      setClientErrors((prev) => ({ ...prev, email: "" }));
+    }
   };
 
   const validateField = (name: string, value: string): string => {
     let error = "";
     switch (name) {
       case "name":
-        error = validateRequired(value);
-        if (!error) error = validateMinLength(value, 2);
-        if (!error) error = validateMaxLength(value, 150);
+        error =
+          validateRequired(value) ||
+          validateMinLength(value, 2) ||
+          validateMaxLength(value, 150);
+        if (error.includes("required")) return "Tu nombre es requerido.";
+        if (error.includes("at least 2"))
+          return "Tu nombre debe tener al menos 2 caracteres.";
+        if (error.includes("no more than 150"))
+          return "Tu nombre no debe exceder los 150 caracteres.";
         return error;
       case "password":
-        error = validateRequired(value);
-        if (!error) error = validateMinLength(value, 8);
-        if (!error) error = validateMaxLength(value, 100);
-        return error;
+        const errors: string[] = [];
+        if (validateRequired(value)) return "La contraseña es requerida.";
+        if (validateMinLength(value, 8))
+          errors.push("Debe tener al menos 8 caracteres.");
+        if (validateMaxLength(value, 100))
+          errors.push("No debe exceder los 100 caracteres.");
+
+        if (validatePattern(value, /[a-z]/, "x"))
+          errors.push("Debe contener al menos una minúscula.");
+        if (validatePattern(value, /[A-Z]/, "x"))
+          errors.push("Debe contener al menos una mayúscula.");
+        if (validatePattern(value, /\d/, "x"))
+          errors.push("Debe contener al menos un dígito.");
+        return errors.join("\n");
       case "confirmPassword":
-        error = validateRequired(value);
-        if (!error)
-          error = validateComparison(
+        error =
+          validateRequired(value) ||
+          validateComparison(
             value,
             formData.password,
             "Las contraseñas no coinciden."
           );
+        if (error.includes("required"))
+          return "Confirmar contraseña es requerido.";
         return error;
       case "phoneNumber":
-        error = validateRequired(value);
-
-        if (!error)
-          error = validatePattern(
-            value,
-            /^\d{8}$/,
-            "Debe contener exactamente 8 dígitos."
-          );
+        error =
+          validateRequired(value) ||
+          validateExactLength(value, 8) ||
+          validatePattern(value, /^\d{8}$/, "Debe contener solo 8 dígitos.");
+        if (error.includes("required")) return "El teléfono es requerido.";
+        if (error.includes("exactly 8 characters"))
+          return "Debe contener exactamente 8 dígitos.";
         return error;
       default:
         return "";
@@ -106,17 +125,17 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
   };
 
   const checkEmailExists = useCallback(async () => {
-    const emailValidationError = validateEmail(email || "");
-    if (!email || emailValidationError) {
-      setClientErrors({
-        email:
-          emailValidationError ||
-          validateRequired(email) ||
-          "Por favor, introduce un email válido.",
-      });
+    let emailValidationError = validateRequired(email) || validateEmail(email);
+    if (emailValidationError) {
+      if (emailValidationError.includes("required"))
+        emailValidationError = "El correo es requerido.";
+      if (emailValidationError.includes("Invalid email"))
+        emailValidationError = "Formato de correo inválido.";
+      setClientErrors({ email: emailValidationError });
       setEmailCheckState("idle");
       return;
     }
+
     setClientErrors((prev) => ({ ...prev, email: "" }));
     setError(null);
     setSuccessMessage(null);
@@ -134,7 +153,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
         );
       } else if (response.data.exists && !response.data.isCustomer) {
         setError(
-          "Ya existe una cuenta con este email, pero no puede vincularse como cliente."
+          "Ya existe una cuenta con este email, pero no está marcada como cliente."
         );
       }
     } catch (err) {
@@ -149,22 +168,48 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     }
   }, [email]);
 
-  const handleEmailBlur = () => {
+  const handleEmailBlur = (_e: FocusEvent<HTMLInputElement>) => {
     if (isFormDisabled || emailCheckState !== "idle" || !email) {
       return;
     }
-
     checkEmailExists();
   };
 
   const handleDetailInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let finalValue = value;
+
+    if (name === "phoneNumber") {
+      finalValue = value.replace(/[^0-9]/g, "");
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
     if (clientErrors[name]) {
       setClientErrors((prev) => ({ ...prev, [name]: "" }));
     }
+
+    if (name === "password" && clientErrors.confirmPassword) {
+      setClientErrors((prev) => ({ ...prev, confirmPassword: "" }));
+    }
     if (error) {
       setError(null);
+    }
+  };
+
+  const handleDetailBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    if (name !== "email") {
+      const fieldError = validateField(name, value);
+      setClientErrors((prev) => ({ ...prev, [name]: fieldError }));
+    }
+
+    if (name === "password" && formData.confirmPassword) {
+      const confirmError = validateField(
+        "confirmPassword",
+        formData.confirmPassword
+      );
+      setClientErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
     }
   };
 
@@ -172,14 +217,17 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     const errors: Record<string, string> = {};
     let isValid = true;
 
-    const emailValidationError =
-      validateRequired(email) || validateEmail(email);
+    let emailValidationError = validateRequired(email) || validateEmail(email);
     if (emailValidationError) {
+      if (emailValidationError.includes("required"))
+        emailValidationError = "El correo es requerido.";
+      if (emailValidationError.includes("Invalid email"))
+        emailValidationError = "Formato de correo inválido.";
       errors.email = emailValidationError;
       isValid = false;
     }
 
-    if (!emailCheckResult || !emailCheckResult.exists) {
+    if (!emailCheckResult?.exists) {
       (Object.keys(formData) as Array<keyof typeof formData>).forEach((key) => {
         const fieldError = validateField(key, formData[key]);
         if (fieldError) {
@@ -199,24 +247,31 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     setSuccessMessage(null);
 
     if (!validateDetailsForm()) {
-      setError("Por favor, corrige los errores en el formulario.");
       return;
     }
 
     if (emailCheckResult?.exists && emailCheckResult?.isCustomer) {
       setError(
-        "Este email ya está registrado. Utiliza la opción de vincular cuenta."
+        "Este email ya está registrado como cliente aquí. ¿Quieres iniciar sesión o vincular la cuenta?"
       );
       return;
     }
     if (emailCheckResult?.exists && emailCheckResult?.isAdmin) {
-      setError("Este email pertenece a un administrador.");
+      setError(
+        "Este email pertenece a un administrador y no puede registrarse como cliente."
+      );
       return;
     }
 
     setRegistering(true);
     setLoading(true);
-    const registrationData: CustomerRegisterDto = { email, ...formData };
+    const registrationData: CustomerRegisterDto = {
+      email,
+      name: formData.name,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      phoneNumber: formData.phoneNumber,
+    };
 
     try {
       const apiUrl = `/api/public/tenants/${subdomain}/register-customer`;
@@ -225,12 +280,10 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
         status: string;
         userId?: string;
       }>(apiUrl, registrationData);
-
       const status = response.data?.status;
       const message = response.data?.message || "Operación exitosa.";
 
-      if (status === "UserCreated") {
-        console.log("Nuevo usuario creado, redirigiendo al login...");
+      if (status === "UserCreated" || status === "MembershipCreated") {
         setSuccessMessage(message + " Redirigiendo al login...");
         setEmail("");
         setFormData({
@@ -252,20 +305,21 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const responseData = axiosError.response?.data;
       const statusCode = axiosError.response?.status;
-      let errorMessage = "Ocurrió un error desconocido.";
+      let errorMessage = "Ocurrió un error desconocido durante el registro.";
 
       if (statusCode === 409) {
+        const conflictTitle = responseData?.title || "";
         if (
-          responseData?.errors?.["AlreadyMember"] ||
-          responseData?.title?.includes("Already Registered")
+          conflictTitle.includes("Already Member") ||
+          conflictTitle.includes("Already Registered")
         ) {
           errorMessage =
             responseData?.errors?.["AlreadyMember"]?.[0] ||
-            "Ya estás registrado en esta panadería.";
+            "Ya estás registrado en esta tienda.";
           if (!emailCheckResult?.exists) checkEmailExists();
         } else if (
-          responseData?.errors?.["AdminConflict"] ||
-          responseData?.title?.includes("Forbidden")
+          conflictTitle.includes("AdminConflict") ||
+          conflictTitle.includes("Forbidden")
         ) {
           errorMessage =
             responseData?.errors?.["AdminConflict"]?.[0] ||
@@ -276,22 +330,32 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
             responseData?.detail ||
             "Conflicto de registro.";
         }
-      } else if (statusCode === 400 && responseData?.errors) {
-        errorMessage =
-          "Ocurrieron errores de validación desde el servidor. Por favor revisa el formulario.";
+      } else if (statusCode === 400) {
+        if (responseData?.errors) {
+          const firstKey = Object.keys(responseData.errors)[0];
+          const firstMessage = responseData.errors[firstKey]?.[0];
+          errorMessage =
+            firstMessage ||
+            responseData.title ||
+            "Error de validación del servidor. Revisa los datos.";
+        } else {
+          errorMessage =
+            responseData?.title ||
+            responseData?.detail ||
+            "Error de validación del servidor.";
+        }
       } else if (statusCode === 404) {
         errorMessage =
           responseData?.detail ||
           responseData?.message ||
-          `Panadería '${subdomain}' no encontrada.`;
+          `Tienda '${subdomain}' no encontrada.`;
       } else {
         errorMessage =
           responseData?.detail ||
           responseData?.message ||
-          "Ocurrió un error desconocido durante el registro.";
+          `Ocurrió un error (${statusCode || "desconocido"}).`;
       }
       setError(errorMessage);
-      console.error("Registration error:", err);
     } finally {
       setRegistering(false);
       setLoading(false);
@@ -301,26 +365,21 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
   const handleLinkAccount = async () => {
     if (
       !email ||
-      !emailCheckResult ||
-      !emailCheckResult.exists ||
+      !emailCheckResult?.exists ||
       !emailCheckResult.isCustomer ||
       emailCheckResult.isAdmin ||
       linkingAccount ||
       loading
     ) {
-      console.warn("Link account called under invalid conditions.");
       return;
     }
-
     setLinkingAccount(true);
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
     const linkData: Pick<LinkCustomerDto, "email"> = { email };
-
     try {
       const apiUrl = `/api/public/tenants/${subdomain}/link-customer`;
-
       const response = await axios.post<{
         message: string;
         status: string;
@@ -329,10 +388,8 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       const status = response.data?.status;
       const message = response.data?.message || "Operación exitosa.";
 
-      if (status === "Linked") {
-        console.log("Cuenta vinculada exitosamente, redirigiendo al login...");
+      if (status === "Linked" || status === "AlreadyMember") {
         setSuccessMessage(message + " Redirigiendo al login...");
-
         setEmail("");
         setFormData({
           name: "",
@@ -354,42 +411,85 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       }
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      const responseData = axiosError.response?.data;
-      const statusCode = axiosError.response?.status;
+      const response = axiosError.response;
+      const responseData = response?.data;
+      const statusCode = response?.status;
+      console.error("Linking error:", responseData || axiosError.message);
+
       let errorMessage = "Ocurrió un error desconocido durante la vinculación.";
 
-      if (statusCode === 409) {
-        const conflictTitle = responseData?.title || "";
-        if (conflictTitle.includes("Already Linked")) {
+      if (response) {
+        const errors =
+          typeof responseData === "object" && responseData !== null
+            ? responseData.errors
+            : undefined;
+        const title =
+          typeof responseData === "object" && responseData !== null
+            ? responseData.title
+            : undefined;
+        const detail =
+          typeof responseData === "object" && responseData !== null
+            ? responseData.detail
+            : undefined;
+        const message =
+          typeof responseData === "object" && responseData !== null
+            ? responseData.message
+            : undefined;
+
+        const responseText =
+          typeof responseData === "string" ? responseData : "";
+
+        const alreadyLinked =
+          (typeof title === "string" &&
+            title.toLowerCase().includes("already linked")) ||
+          (typeof detail === "string" &&
+            detail.toLowerCase().includes("already linked")) ||
+          (typeof responseText === "string" &&
+            responseText.toLowerCase().includes("already linked")) ||
+          (typeof message === "string" &&
+            message.toLowerCase().includes("already linked")) ||
+          errors?.["AlreadyMember"]?.[0];
+
+        if (statusCode === 409 && alreadyLinked) {
+          errorMessage = "Ya estás vinculado a esta tienda.";
+        } else if (
+          statusCode === 409 &&
+          ((typeof title === "string" &&
+            title.toLowerCase().includes("linking forbidden")) ||
+            errors?.["AdminConflict"]?.[0])
+        ) {
           errorMessage =
-            responseData?.errors?.["AlreadyMember"]?.[0] ??
-            responseData?.detail ??
-            "Ya estás vinculado a esta panadería.";
-        } else if (conflictTitle.includes("Linking Forbidden")) {
-          errorMessage =
-            responseData?.errors?.["AdminConflict"]?.[0] ??
-            responseData?.detail ??
+            errors?.["AdminConflict"]?.[0] ??
             "Los administradores no pueden vincularse como clientes.";
-        } else {
+        } else if (statusCode === 400) {
           errorMessage =
-            responseData?.detail ?? "Conflicto al intentar vincular.";
+            errors?.["UserNotCustomer"]?.[0] ??
+            errors?.["LinkingFailed"]?.[0] ??
+            (typeof title === "string" ? title : undefined) ??
+            (typeof detail === "string" ? detail : undefined) ??
+            "No se pudo completar la vinculación (Error 400).";
+        } else if (statusCode === 404) {
+          errorMessage =
+            (typeof message === "string" ? message : undefined) ??
+            "Email o tienda no encontrada.";
+        } else if (typeof detail === "string") {
+          errorMessage = detail;
+        } else if (typeof message === "string") {
+          errorMessage = message;
+        } else if (typeof title === "string") {
+          errorMessage = title;
+        } else if (typeof responseText === "string" && responseText) {
+          errorMessage = responseText;
+        } else if (statusCode === 409) {
+          errorMessage = "Conflicto al intentar vincular.";
+        } else if (statusCode) {
+          errorMessage = `Ocurrió un error inesperado (${statusCode}).`;
         }
-      } else if (statusCode === 404) {
-        errorMessage =
-          responseData?.message ?? "Email o panadería no encontrada.";
-      } else if (statusCode === 400) {
-        errorMessage =
-          responseData?.errors?.["UserNotCustomer"]?.[0] ??
-          responseData?.errors?.["LinkingFailed"]?.[0] ??
-          responseData?.title ??
-          responseData?.detail ??
-          "No se pudo completar la vinculación.";
-      } else {
-        errorMessage =
-          responseData?.detail ?? "Ocurrió un error inesperado en el servidor.";
+      } else if (axiosError.message) {
+        errorMessage = `Error de red: ${axiosError.message}`;
       }
+
       setError(errorMessage);
-      console.error("Linking error:", err);
     } finally {
       setLinkingAccount(false);
       setLoading(false);
@@ -409,12 +509,18 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     checkingEmail || linkingAccount || registering || !!successMessage;
   const isFormDisabled = loading || !!successMessage;
 
+  const getClientError = (
+    fieldName: keyof CustomerRegisterDto | "email"
+  ): string | undefined => {
+    return clientErrors[fieldName];
+  };
+
   return (
     <form onSubmit={handleRegisterSubmit} className={styles.form} noValidate>
-      <h2>Regístrate en {tenantName || subdomain}</h2>
+      <h2>Regístrate</h2>
 
       <div className={styles.formGroup}>
-        <label htmlFor="signup-email">Dirección de Email</label>
+        <label htmlFor="signup-email">Dirección de Correo</label>
         <input
           type="email"
           id="signup-email"
@@ -425,17 +531,17 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           required
           disabled={isEmailInputDisabled}
           aria-invalid={
-            !!clientErrors.email || (!!error && !showLinkingSection)
+            !!getClientError("email") ||
+            (!!error && !showLinkingSection && !showDetailsForm)
           }
-          aria-describedby={clientErrors.email ? "email-error" : undefined}
+          aria-describedby={getClientError("email") ? "email-error" : undefined}
         />
         {checkingEmail && (
-          <span className={styles.info}>Verificando email...</span>
+          <span className={styles.info}>Verificando correo...</span>
         )}
-
-        {clientErrors.email && (
+        {getClientError("email") && (
           <span id="email-error" className={styles.validationError}>
-            {clientErrors.email}
+            {getClientError("email")}
           </span>
         )}
       </div>
@@ -443,8 +549,8 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       {showLinkingSection && (
         <div className={styles.linkAccountSection}>
           <p>
-            Ya tienes una cuenta registrada en BakeryHub con el email '{email}'.
-            Se va a sincronizar tu información.
+            Ya tienes una cuenta registrada con el correo '{email}'. Puedes
+            vincular tu cuenta existente a esta tienda.
           </p>
           <button
             type="button"
@@ -452,7 +558,19 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
             disabled={linkingAccount || isFormDisabled}
             className={styles.submitButton}
           >
-            {linkingAccount ? "Vinculando..." : `Vincular y Continuar`}
+            {linkingAccount ? "Vinculando..." : `Vincular Cuenta`}
+          </button>
+          <p className={styles.orSeparator}>O</p>
+          <button
+            type="button"
+            onClick={() => {
+              setEmailCheckResult(null);
+              setEmailCheckState("idle");
+              setError(null);
+            }}
+            className={styles.secondaryButton}
+          >
+            Registrar un correo diferente
           </button>
         </div>
       )}
@@ -460,46 +578,48 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       {showDetailsForm && (
         <>
           <div className={styles.formGroup}>
-            <label htmlFor="name">Tu Nombre</label>
+            <label htmlFor="name">Tu Nombre Completo</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleDetailInputChange}
+              onBlur={handleDetailBlur}
               required
               disabled={isFormDisabled}
-              aria-invalid={!!clientErrors.name}
-              aria-describedby={clientErrors.name ? "name-error" : undefined}
+              aria-invalid={!!getClientError("name")}
+              aria-describedby={
+                getClientError("name") ? "name-error" : undefined
+              }
             />
-
-            {clientErrors.name && (
+            {getClientError("name") && (
               <span id="name-error" className={styles.validationError}>
-                {clientErrors.name}
+                {getClientError("name")}
               </span>
             )}
           </div>
           <div className={styles.formGroup}>
             <label htmlFor="phoneNumber">Teléfono (8 dígitos)</label>
             <input
-              type="tel"
+              type="text"
+              inputMode="numeric"
               id="phoneNumber"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleDetailInputChange}
+              onBlur={handleDetailBlur}
               required
               maxLength={8}
-              pattern="\d{8}"
               disabled={isFormDisabled}
-              aria-invalid={!!clientErrors.phoneNumber}
+              aria-invalid={!!getClientError("phoneNumber")}
               aria-describedby={
-                clientErrors.phoneNumber ? "phone-error" : undefined
+                getClientError("phoneNumber") ? "phone-error" : undefined
               }
             />
-
-            {clientErrors.phoneNumber && (
+            {getClientError("phoneNumber") && (
               <span id="phone-error" className={styles.validationError}>
-                {clientErrors.phoneNumber}
+                {getClientError("phoneNumber")}
               </span>
             )}
           </div>
@@ -511,18 +631,17 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
               name="password"
               value={formData.password}
               onChange={handleDetailInputChange}
+              onBlur={handleDetailBlur}
               required
-              minLength={8}
               disabled={isFormDisabled}
-              aria-invalid={!!clientErrors.password}
+              aria-invalid={!!getClientError("password")}
               aria-describedby={
-                clientErrors.password ? "password-error" : undefined
+                getClientError("password") ? "password-error" : undefined
               }
             />
-
-            {clientErrors.password && (
+            {getClientError("password") && (
               <span id="password-error" className={styles.validationError}>
-                {clientErrors.password}
+                {getClientError("password")}
               </span>
             )}
           </div>
@@ -534,22 +653,22 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleDetailInputChange}
+              onBlur={handleDetailBlur}
               required
               disabled={isFormDisabled}
-              aria-invalid={!!clientErrors.confirmPassword}
+              aria-invalid={!!getClientError("confirmPassword")}
               aria-describedby={
-                clientErrors.confirmPassword
+                getClientError("confirmPassword")
                   ? "confirm-password-error"
                   : undefined
               }
             />
-
-            {clientErrors.confirmPassword && (
+            {getClientError("confirmPassword") && (
               <span
                 id="confirm-password-error"
                 className={styles.validationError}
               >
-                {clientErrors.confirmPassword}
+                {getClientError("confirmPassword")}
               </span>
             )}
           </div>
@@ -566,10 +685,10 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       {error && !successMessage && <p className={styles.error}>{error}</p>}
       {successMessage && <p className={styles.success}>{successMessage}</p>}
 
-      {!successMessage && (
+      {!successMessage && !showLinkingSection && (
         <p style={{ textAlign: "center", marginTop: "15px" }}>
-          ¿Ya tienes una cuenta para esta reposteria?
-          <br/>
+          ¿Ya tienes una cuenta para esta tienda?
+          <br />
           <Link to="/login">Iniciar Sesión</Link>
         </p>
       )}

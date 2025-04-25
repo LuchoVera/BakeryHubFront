@@ -1,0 +1,33 @@
+.pageContainer {
+  padding: var(--space-lg);
+}
+
+.addProductButton {
+  margin-bottom: var(--space-xl);
+  padding: var(--space-sm) var(--space-md);
+
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+.addProductButton:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.loadingText {
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.errorText {
+  color: var(--color-error);
+  text-align: center;
+  padding: var(--space-xl);
+  font-weight: 500;
+}

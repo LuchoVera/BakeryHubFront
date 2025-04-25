@@ -2,11 +2,6 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-sm) var(--space-lg);
   background-color: var(--color-surface);
   border-bottom: var(--border-width) solid var(--color-border);
   box-shadow: var(--shadow-sm);
@@ -14,40 +9,98 @@
   box-sizing: border-box;
 }
 
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-sm) var(--space-lg);
+  height: 60px;
+  box-sizing: border-box;
+}
+
+.tenantInfo {
+  flex-shrink: 0;
+}
+
+.tenantLink {
+  text-decoration: none;
+}
+
 .tenantName {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-family: var(--font-headings);
   color: var(--color-primary-dark);
+  white-space: nowrap;
+}
+
+.searchContainer {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 var(--space-lg);
+  position: relative;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-md);
+  font-size: 0.9em;
+  color: var(--color-text-secondary);
+  height: 36px;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-sm);
+}
+
+.searchInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.3);
+  background-color: var(--color-surface);
+  border-color: var(--color-primary);
 }
 
 .actions {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-}
-
-.button {
-  padding: 8px 15px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: white;
-  font-size: 0.9em;
-}
-
-.button:hover {
-  background-color: #e9e9e9;
+  flex-shrink: 0;
 }
 
 .userName {
-  margin-right: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
   font-weight: 500;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
-.actions a.button {
+.actionButton,
+.actionLink {
+  padding: var(--space-xs) var(--space-md);
   text-decoration: none;
-  color: inherit;
-  display: inline-block;
+  color: var(--color-primary);
+  font-weight: 500;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+  background: none;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.actionButton:hover,
+.actionLink:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-secondary);
+  text-decoration: none;
 }

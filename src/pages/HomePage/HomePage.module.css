@@ -1,0 +1,116 @@
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: var(--space-xl) var(--space-lg);
+
+  background-color: var(--color-secondary);
+
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.heroContent {
+  max-width: 700px;
+}
+
+.heroTitle {
+  font-family: var(--font-headings);
+  color: var(--color-primary-dark);
+  font-size: 3.5rem;
+  margin-bottom: var(--space-md);
+  line-height: 1.2;
+}
+
+.heroSubtitle {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.button {
+  padding: var(--space-md) var(--space-xl);
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  border: var(--border-width) solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.buttonPrimary {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary);
+}
+.buttonPrimary:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.buttonSecondary {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.buttonSecondary:hover {
+  background-color: var(--color-surface);
+  color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.featuresSection {
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  background-color: var(--color-surface);
+}
+
+.featuresSection h2 {
+  margin-bottom: var(--space-xl);
+  font-size: 2rem;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-xl);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  padding: var(--space-lg);
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.featureCard h3 {
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-sm);
+  color: var(--color-primary-dark);
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.featureCard p {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}

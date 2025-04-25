@@ -60,7 +60,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           setFormData((prev) => ({ ...prev, categoryId: response.data[0].id }));
         }
       } catch (err) {
-        setError("Could not load categories.");
+        setError("No se pudieron cargar las categorías.");
       }
     };
     fetchCategories();
@@ -87,7 +87,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           setImagePreviews(existingUrls);
         } catch (err) {
           console.error(`Failed to fetch product ${productId}`, err);
-          setError("Could not load product data.");
+          setError("No se pudieron cargar los datos del producto.");
         } finally {
           setLoadingData(false);
         }
@@ -124,9 +124,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     const newPreviews = imagePreviews.filter(
       (_, index) => index !== indexToRemove
     );
-    const newFiles = imageFiles.filter(
-      (file) => URL.createObjectURL(file) !== previewToRemove
-    );
+
+    const newFiles = imageFiles.filter((_, index) => index !== indexToRemove);
+
     const currentImages = formData.images ?? [];
     const remainingExistingUrls = currentImages.filter(
       (url) => url !== previewToRemove
@@ -142,7 +142,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const uploadSingleFile = async (file: File): Promise<string | null> => {
     if (!cloudName || !uploadPreset) {
       console.error("Cloudinary config missing");
-      setUploadError("Image upload configuration is missing.");
+      setUploadError("Falta configuración para subir imágenes.");
       return null;
     }
     const formDataCloudinary = new FormData();
@@ -164,7 +164,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setUploadError(
         (prev) =>
           prev ||
-          `Upload failed for ${file.name}: ${
+          `Fallo al subir ${file.name}: ${
             errorData?.error?.message || axiosError.message
           }`
       );
@@ -196,12 +196,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     setValidationErrors({});
     const priceValue = parseFloat(String(formData.price));
     if (isNaN(priceValue) || priceValue <= 0) {
-      setError("Price must be > 0.");
+      setError("El precio debe ser mayor a 0.");
       setLoading(false);
       return;
     }
     if (!formData.categoryId) {
-      setError("Please select a category.");
+      setError("Por favor selecciona una categoría.");
       setLoading(false);
       return;
     }
@@ -214,7 +214,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setIsUploading(false);
       uploadedUrls = results.filter((url): url is string => url !== null);
       if (uploadedUrls.length !== imageFiles.length) {
-        setError("Some images failed to upload.");
+        setError("Algunas imágenes no se pudieron subir.");
         setLoading(false);
         return;
       }
@@ -242,7 +242,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       console.error(
-        "REACT: Product form submission failed:",
+        "REACT: Fallo envío formulario producto:",
         axiosError.response?.data || axiosError.message
       );
       if (
@@ -250,12 +250,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         axiosError.response.data?.errors
       ) {
         setValidationErrors(axiosError.response.data.errors);
-        setError("Please correct validation errors.");
+        setError("Por favor corrige los errores de validación.");
       } else {
         setError(
           axiosError.response?.data?.detail ||
-            axiosError.message ||
-            "An unknown error occurred."
+            axiosError.response?.data?.message ||
+            "Ocurrió un error desconocido."
         );
       }
     } finally {
@@ -271,14 +271,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     return validationErrors[key]?.[0] || validationErrors[pascalCaseName]?.[0];
   };
 
-  if (loadingData) return <p>Loading product data...</p>;
+  if (loadingData) return <p>Cargando datos del producto...</p>;
 
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
-      <h2>{isEditing ? "Edit Product" : "Create New Product"}</h2>
+      <h2>{isEditing ? "Editar Producto" : "Crear Nuevo Producto"}</h2>
 
       <div className={styles.formGroup}>
-        <label htmlFor="name">Name</label>
+        <label htmlFor="name">Nombre</label>
         <input
           type="text"
           id="name"
@@ -286,33 +286,38 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           value={formData.name}
           onChange={handleInputChange}
           required
+          aria-invalid={!!getFieldError("name")}
+          aria-describedby={getFieldError("name") ? "name-error" : undefined}
         />
         {getFieldError("name") && (
-          <span className={styles.validationError}>
+          <span id="name-error" className={styles.validationError}>
             {getFieldError("name")}
           </span>
         )}
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="description">Description</label>
+        <label htmlFor="description">Descripción</label>
         <textarea
           id="description"
           name="description"
           value={formData.description ?? ""}
           onChange={handleInputChange}
           rows={4}
+          aria-invalid={!!getFieldError("description")}
+          aria-describedby={
+            getFieldError("description") ? "description-error" : undefined
+          }
         />
-
         {getFieldError("description") && (
-          <span className={styles.validationError}>
+          <span id="description-error" className={styles.validationError}>
             {getFieldError("description")}
           </span>
         )}
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="price">Price</label>
+        <label htmlFor="price">Precio</label>
         <input
           type="number"
           step="0.01"
@@ -322,25 +327,31 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           value={formData.price}
           onChange={handleInputChange}
           required
+          aria-invalid={!!getFieldError("price")}
+          aria-describedby={getFieldError("price") ? "price-error" : undefined}
         />
         {getFieldError("price") && (
-          <span className={styles.validationError}>
+          <span id="price-error" className={styles.validationError}>
             {getFieldError("price")}
           </span>
         )}
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="categoryId">Category</label>
+        <label htmlFor="categoryId">Categoría</label>
         <select
           id="categoryId"
           name="categoryId"
           value={formData.categoryId}
           onChange={handleInputChange}
           required
+          aria-invalid={!!getFieldError("categoryId")}
+          aria-describedby={
+            getFieldError("categoryId") ? "categoryId-error" : undefined
+          }
         >
           <option value="" disabled>
-            -- Select Category --
+            -- Selecciona Categoría --
           </option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
@@ -349,23 +360,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           ))}
         </select>
         {getFieldError("categoryId") && (
-          <span className={styles.validationError}>
+          <span id="categoryId-error" className={styles.validationError}>
             {getFieldError("categoryId")}
           </span>
         )}
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="leadTime">Preparation Time (Days)</label>
-        <select id="leadTime" name="leadTimeInput" onChange={handleInputChange}>
-          <option value="">None</option>{" "}
+        <label htmlFor="leadTime">Tiempo de Preparación (Días)</label>
+        <select
+          id="leadTime"
+          name="leadTimeInput"
+          onChange={handleInputChange}
+          value={formData.leadTimeInput ?? ""}
+        >
+          <option value="">Ninguno</option>{" "}
           {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
             <option key={day} value={String(day)}>
-              {day} day{day > 1 ? "s" : ""}
+              {day} día{day > 1 ? "s" : ""}
             </option>
           ))}
         </select>
-
         {getFieldError("leadTimeInput") && (
           <span className={styles.validationError}>
             {getFieldError("leadTimeInput")}
@@ -374,7 +389,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="product-images">Product Images (First is cover)</label>
+        <label htmlFor="product-images">
+          Imágenes del Producto (Primera es portada)
+        </label>
         <input
           type="file"
           id="product-images"
@@ -385,17 +402,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           disabled={isUploading || loading}
           style={{ marginBottom: "10px" }}
         />
-        {isUploading && <p>Uploading {imageFiles.length} image(s)...</p>}
+        {isUploading && <p>Subiendo {imageFiles.length} imagen(es)...</p>}
         {uploadError && <p className={styles.error}>{uploadError}</p>}
         <div className={styles.imagePreviewContainer}>
           {imagePreviews.length === 0 && !isUploading && (
-            <p>No images selected.</p>
+            <p>No hay imágenes seleccionadas.</p>
           )}
           {imagePreviews.map((previewUrl, index) => (
             <div key={index} className={styles.imagePreviewItem}>
               <img
                 src={previewUrl}
-                alt={`Product image ${index + 1}`}
+                alt={`Imagen de producto ${index + 1}`}
                 className={styles.imagePreview}
               />
               <button
@@ -403,13 +420,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
                 onClick={() => handleRemoveImage(index)}
                 className={styles.removeImageButton}
                 disabled={isUploading || loading}
-                title="Remove image"
+                title="Quitar imagen"
               >
                 {" "}
                 &times;{" "}
               </button>
               {index === 0 && (
-                <span className={styles.coverLabel}>(Cover)</span>
+                <span className={styles.coverLabel}>(Portada)</span>
               )}
             </div>
           ))}
@@ -425,11 +442,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         >
           {loading
             ? isEditing
-              ? "Saving..."
-              : "Creating..."
+              ? "Guardando..."
+              : "Creando..."
             : isEditing
-            ? "Save Changes"
-            : "Create Product"}
+            ? "Guardar Cambios"
+            : "Crear Producto"}
         </button>
         <button
           type="button"
@@ -437,7 +454,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           onClick={() => navigate("/admin/products")}
           disabled={loading || isUploading}
         >
-          Cancel
+          Cancelar
         </button>
       </div>
     </form>
