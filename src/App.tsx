@@ -20,6 +20,7 @@ import { useAuth } from "./AuthContext";
 import "./App.css";
 import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCustomerLoginPage";
 import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
+import ProductDetailPage from "./pages/ProductDetailPage/ProductDetailPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -84,6 +85,10 @@ function App() {
             <Route
               path="/"
               element={<TenantViewPage subdomain={subdomain} />}
+            />
+            <Route
+              path="/products/:productId"
+              element={<ProductDetailPage subdomain={subdomain} />}
             />
             <Route
               path="/login"

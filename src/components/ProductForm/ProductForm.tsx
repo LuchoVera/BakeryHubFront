@@ -81,7 +81,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
             description: product.description ?? "",
             price: product.price,
             images: existingUrls,
-            leadTimeInput: product.leadTimeDisplay,
+            leadTimeInput: product.leadTimeDisplay ?? "",
             categoryId: product.categoryId,
           });
           setImagePreviews(existingUrls);
@@ -121,23 +121,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
 
   const handleRemoveImage = (indexToRemove: number) => {
     const previewToRemove = imagePreviews[indexToRemove];
-
     const newPreviews = imagePreviews.filter(
       (_, index) => index !== indexToRemove
     );
     const newFiles = imageFiles.filter(
       (file) => URL.createObjectURL(file) !== previewToRemove
     );
-
     const currentImages = formData.images ?? [];
     const remainingExistingUrls = currentImages.filter(
       (url) => url !== previewToRemove
     );
-
     setImagePreviews(newPreviews);
     setImageFiles(newFiles);
     setFormData((prev) => ({ ...prev, images: remainingExistingUrls }));
-
     if (previewToRemove.startsWith("blob:")) {
       URL.revokeObjectURL(previewToRemove);
     }
@@ -198,7 +194,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     setError(null);
     setUploadError(null);
     setValidationErrors({});
-
     const priceValue = parseFloat(String(formData.price));
     if (isNaN(priceValue) || priceValue <= 0) {
       setError("Price must be > 0.");
@@ -219,15 +214,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setIsUploading(false);
       uploadedUrls = results.filter((url): url is string => url !== null);
       if (uploadedUrls.length !== imageFiles.length) {
-        setError(
-          "Some images failed to upload. Please check errors and try again."
-        );
+        setError("Some images failed to upload.");
         setLoading(false);
         return;
       }
       setImageFiles([]);
     }
-
     const existingUrls = formData.images ?? [];
     const finalImageUrls = [...existingUrls, ...uploadedUrls];
 
@@ -284,6 +276,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <h2>{isEditing ? "Edit Product" : "Create New Product"}</h2>
+
       <div className={styles.formGroup}>
         <label htmlFor="name">Name</label>
         <input
@@ -297,6 +290,42 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         {getFieldError("name") && (
           <span className={styles.validationError}>
             {getFieldError("name")}
+          </span>
+        )}
+      </div>
+
+      <div className={styles.formGroup}>
+        <label htmlFor="description">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          value={formData.description ?? ""}
+          onChange={handleInputChange}
+          rows={4}
+        />
+
+        {getFieldError("description") && (
+          <span className={styles.validationError}>
+            {getFieldError("description")}
+          </span>
+        )}
+      </div>
+
+      <div className={styles.formGroup}>
+        <label htmlFor="price">Price</label>
+        <input
+          type="number"
+          step="0.01"
+          min="0.01"
+          id="price"
+          name="price"
+          value={formData.price}
+          onChange={handleInputChange}
+          required
+        />
+        {getFieldError("price") && (
+          <span className={styles.validationError}>
+            {getFieldError("price")}
           </span>
         )}
       </div>
@@ -327,17 +356,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="leadTimeInput">
-          Lead Time (e.g., "2 days", "4 hours")
-        </label>
-        <input
-          type="text"
-          id="leadTimeInput"
-          name="leadTimeInput"
-          value={formData.leadTimeInput ?? ""}
-          onChange={handleInputChange}
-          placeholder='Ej: "2 days", "3 hours"'
-        />
+        <label htmlFor="leadTime">Preparation Time (Days)</label>
+        <select id="leadTime" name="leadTimeInput" onChange={handleInputChange}>
+          <option value="">None</option>{" "}
+          {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
+            <option key={day} value={String(day)}>
+              {day} day{day > 1 ? "s" : ""}
+            </option>
+          ))}
+        </select>
+
         {getFieldError("leadTimeInput") && (
           <span className={styles.validationError}>
             {getFieldError("leadTimeInput")}
@@ -387,6 +415,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           ))}
         </div>
       </div>
+
       {error && <p className={styles.error}>{error}</p>}
       <div className={styles.buttonContainer}>
         <button
