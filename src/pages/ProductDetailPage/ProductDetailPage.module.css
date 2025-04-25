@@ -108,22 +108,22 @@
 
 .productName {
   margin-top: 0;
-  margin-bottom: var(--space-xs);
+
+  margin-bottom: var(--space-lg);
 }
 
 .productCategory {
   font-size: 0.9em;
   color: var(--color-text-secondary);
-  margin-bottom: var(--space-lg);
-}
-.productCategory a:hover {
-  text-decoration: underline;
+
+  margin-bottom: var(--space-sm);
 }
 
 .productPrice {
   font-size: 1.8em;
   font-weight: 600;
   color: var(--color-primary-dark);
+
   margin-bottom: var(--space-md);
 }
 
@@ -131,11 +131,13 @@
   font-size: 0.9em;
   font-style: italic;
   color: #555;
+
   margin-bottom: var(--space-md);
 }
 
 .productDescription {
-  margin-top: var(--space-lg);
+  margin-top: 0;
+
   margin-bottom: var(--space-xl);
 }
 .productDescription h3 {
@@ -156,6 +158,22 @@
   font-size: 1.1em;
   width: 100%;
   max-width: 300px;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: var(--border-width) solid var(--color-primary);
+}
+
+.addToCartButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.addToCartButton:disabled {
+  background-color: #e9ecef;
+  border-color: #e9ecef;
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .backButtonContainer {
