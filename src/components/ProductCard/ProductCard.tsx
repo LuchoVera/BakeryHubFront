@@ -11,6 +11,14 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
   const imageUrl =
     product.images && product.images.length > 0 ? product.images[0] : null;
 
+  const fullPriceString = `Bs. ${product.price.toFixed(2)}`;
+
+  const leadTimeNumber = Number(product.leadTimeDisplay);
+  const leadTimeText =
+    product.leadTimeDisplay && leadTimeNumber > 0
+      ? `${leadTimeNumber} día${leadTimeNumber > 1 ? "s" : ""}`
+      : null;
+
   return (
     <div className={styles.card}>
       <Link to={`/products/${product.id}`} className={styles.linkWrapper}>
@@ -23,7 +31,7 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
           />
         ) : (
           <div className={`${styles.image} ${styles.imagePlaceholder}`}>
-            <span>No Image</span>
+            <span>Sin Imagen</span>
           </div>
         )}
         <div className={styles.contentHeader}>
@@ -32,21 +40,20 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
       </Link>
       <div className={styles.content}>
         <p className={styles.category}>
-          Category: {product.categoryName || "N/A"}
+          Categoría: {product.categoryName || "N/D"}
         </p>
         {product.description && (
           <p className={styles.description}>{product.description}</p>
         )}
-        {product.leadTimeDisplay && Number(product.leadTimeDisplay) > 0 && (
-          <p className={styles.leadTimeDisplay}>
-            Preparation: {product.leadTimeDisplay} day
-            {Number(product.leadTimeDisplay) > 1 ? "s" : ""}
-          </p>
+        {leadTimeText && (
+          <p className={styles.leadTimeDisplay}> Antelación: {leadTimeText}</p>
         )}
         <div className={styles.footer}>
-          <span className={styles.price}>${product.price.toFixed(2)}</span>
+          <span className={styles.price} title={fullPriceString}>
+            {fullPriceString}
+          </span>
           <button className={styles.addButton} disabled={!product.isAvailable}>
-            {product.isAvailable ? "Add to Cart" : "Unavailable"}
+            {product.isAvailable ? "Añadir al Carrito" : "No Disponible"}
           </button>
         </div>
       </div>
