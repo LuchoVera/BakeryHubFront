@@ -65,3 +65,36 @@ input[aria-invalid="true"]:focus {
   border-color: var(--color-error);
   box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
 }
+
+.rememberMeGroup {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-md);
+
+  justify-content: center;
+}
+
+.rememberMeCheckbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.rememberMeCheckbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-dark);
+}
+
+.rememberMeLabel {
+  font-weight: normal;
+  margin-bottom: 0;
+  font-size: 0.9em;
+  color: var(--color-text-primary);
+  cursor: pointer;
+
+  line-height: 1;
+}
