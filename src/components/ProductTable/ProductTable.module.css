@@ -1,0 +1,138 @@
+.tableContainer {
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+.productTable {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  border-collapse: collapse;
+  margin-top: var(--space-lg);
+  table-layout: fixed;
+}
+
+.tableHeaderRow {
+  border-bottom: 2px solid #ccc;
+  text-align: left;
+}
+
+.tableHeaderCell {
+  padding: var(--space-md) var(--space-sm);
+  text-align: left;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tableHeaderCell:nth-child(1) {
+  width: 30%;
+}
+.tableHeaderCell:nth-child(2) {
+  width: 20%;
+}
+.tableHeaderCell:nth-child(3) {
+  width: 15%;
+}
+.tableHeaderCell:nth-child(4) {
+  width: 10%;
+}
+.tableHeaderCell:nth-child(5) {
+  width: 25%;
+}
+
+.tableHeaderCell:last-child {
+  text-align: right;
+  padding-right: var(--space-md);
+}
+
+.tableRow {
+  border-bottom: 1px solid #ddd;
+}
+
+.tableRowLoading {
+  opacity: 0.5;
+}
+
+.tableCell {
+  padding: var(--space-md) var(--space-sm);
+  text-align: left;
+  vertical-align: middle;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.actionsCell {
+  padding: var(--space-md) var(--space-sm);
+  text-align: right;
+  vertical-align: middle;
+  white-space: nowrap;
+  box-sizing: border-box;
+  padding-right: var(--space-md);
+}
+
+.actionButtons {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.actionButton {
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9em;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    opacity 0.2s ease;
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  height: 28px;
+  box-sizing: border-box;
+}
+.actionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.editButton {
+  color: var(--color-primary);
+  border-color: var(--color-border);
+}
+.editButton:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+}
+
+.toggleButton {
+  color: var(--color-surface);
+  border: none;
+}
+.toggleButtonActivate {
+  background-color: var(--color-success);
+}
+.toggleButtonActivate:hover:not(:disabled) {
+  background-color: #4cae4c;
+}
+.toggleButtonDeactivate {
+  background-color: var(--color-warning);
+}
+.toggleButtonDeactivate:hover:not(:disabled) {
+  background-color: #eea236;
+}
+
+.deleteButton {
+  background-color: var(--color-error);
+  color: var(--color-surface);
+  border: none;
+}
+.deleteButton:hover:not(:disabled) {
+  background-color: #c9302c;
+}
