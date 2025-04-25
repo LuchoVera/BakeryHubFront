@@ -1,22 +1,30 @@
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 30px;
-  background-color: #f8f8f8;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 20px;
+  padding: var(--space-sm) var(--space-lg);
+  background-color: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .tenantName {
   margin: 0;
-  font-size: 1.8em;
-  color: #333;
+  font-size: 1.5rem;
+  font-family: var(--font-headings);
+  color: var(--color-primary-dark);
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: var(--space-md);
 }
 
 .button {

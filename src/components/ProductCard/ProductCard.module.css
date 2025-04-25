@@ -22,6 +22,28 @@
   object-fit: cover;
   background-color: var(--color-secondary);
 }
+.imagePlaceholder {
+  display: flex; /* Para centrar el texto/icono interno */
+  justify-content: center;
+  align-items: center;
+  background-color: var(
+    --color-secondary
+  ); /* Usa un color de fondo suave de tu tema */
+  color: var(--color-text-secondary); /* Color para el texto interno */
+  font-size: 0.9em;
+  text-align: center;
+  /* Asegúrate que tenga la misma altura que .image para consistencia */
+  height: 200px;
+  width: 100%;
+  /* Quita object-fit ya que no es una imagen */
+}
+
+/* Estilo opcional para el texto dentro del placeholder */
+.imagePlaceholder span {
+  padding: var(--space-sm);
+  /* border: 1px dashed var(--color-text-secondary); */ /* Borde opcional */
+  /* border-radius: var(--border-radius-sm); */
+}
 
 .content {
   padding: var(--space-md);
@@ -40,12 +62,23 @@
   line-height: 1.3;
 }
 
+/* En ProductCard.module.css */
+
 .description {
+  /* ... otros estilos ... */
   font-size: 0.9em;
   color: var(--color-text-secondary);
   margin-bottom: var(--space-md);
   line-height: 1.5;
   flex-grow: 1;
+
+  /* --- Propiedades para truncar (incluir ambas) --- */
+  display: -webkit-box;         /* Necesario para -webkit-line-clamp */
+  -webkit-box-orient: vertical; /* Necesario para -webkit-line-clamp */
+  -webkit-line-clamp: 3;        /* Límite para navegadores basados en WebKit */
+  line-clamp: 3;                /* Estándar (para futura compatibilidad/linter) */
+  overflow: hidden;             /* Oculta el texto que sobrepasa */
+  text-overflow: ellipsis;      /* Muestra '...' (aunque a veces redundante con line-clamp) */
 }
 .category,
 .leadTime {
