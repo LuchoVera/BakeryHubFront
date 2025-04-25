@@ -6,12 +6,44 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+  margin-bottom: var(--space-md);
 }
 
 .formGroup label {
   font-weight: 600;
   font-size: 0.9em;
   color: var(--color-text-primary);
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+
+.labelWithTooltip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.labelWithTooltip span:first-child {
+  text-align: initial;
+}
+
+.tooltipTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+  cursor: help;
+  line-height: 1;
+  margin-left: var(--space-xs);
+  transition: color 0.2s ease;
+}
+
+.tooltipTrigger:hover {
+  color: var(--color-primary);
 }
 
 .submitButton {
@@ -52,6 +84,14 @@
 .validationError {
   color: var(--color-error);
   font-size: 0.8em;
+  margin-top: var(--space-xs);
+  display: block;
+  white-space: pre-wrap;
+}
+
+.previewText {
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
   margin-top: var(--space-xs);
   display: block;
 }
