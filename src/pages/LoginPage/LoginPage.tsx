@@ -2,6 +2,7 @@ import React from "react";
 import LoginForm from "../../components/LoginForm/LoginForm";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
+import styles from "./LoginPage.module.css";
 
 const LoginPage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -17,22 +18,18 @@ const LoginPage: React.FC = () => {
         ? from
         : "/admin"
       : "/";
-
-    console.log(
-      "User already authenticated, redirecting from main login page to:",
-      redirectTo
-    );
     return <Navigate to={redirectTo} replace />;
   }
 
   return (
-    <div style={{ padding: "20px", maxWidth: "400px", margin: "auto" }}>
-      <h1>Login to BakeryHub</h1>
-      <p>Use this page to manage your registered business.</p>
+    <div className={styles.pageContainer}>
+      <Link to="/">{"< Regresar"}</Link>
+
+      <h1 className={styles.pageTitle}>Inicia Sesión en BakeryHub</h1>
       <LoginForm />
-      <p style={{ textAlign: "center", marginTop: "15px" }}>
-        Want to list your business?{" "}
-        <Link to="/register-admin">Register Here</Link>
+      <p className={styles.registerLink}>
+        ¿Quieres registrar tu negocio?{" "}
+        <Link to="/register-admin">Regístrate Aquí</Link>
       </p>
     </div>
   );

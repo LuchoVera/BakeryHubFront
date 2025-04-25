@@ -1,0 +1,16 @@
+.pageContainer {
+  padding: var(--space-lg);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.registerLink {
+  text-align: center;
+  margin-top: var(--space-md);
+}
+
+.pageSubtitle {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-lg);
+}
