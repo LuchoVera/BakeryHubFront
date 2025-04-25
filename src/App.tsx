@@ -8,8 +8,8 @@ import {
 } from "react-router-dom";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
-import AdminRegistrationPage from "./pages/AdminRegistrationPage/AdminRegistrationPage";
-import AdminLayout from "./pages/admin/AdminLayout.module/AdminLayout";
+import AdminRegistrationPage from "./pages/admin/AdminRegistrationPage/AdminRegistrationPage";
+import AdminLayout from "./pages/admin/AdminLayout/AdminLayout";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage/AdminDashboardPage";
 import CategoryListPage from "./pages/admin/CategoryListPage/CategoryListPage";
 import ProductListPage from "./pages/admin/ProductListPage/ProductListPage";
