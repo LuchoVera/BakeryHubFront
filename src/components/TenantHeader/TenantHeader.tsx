@@ -5,14 +5,10 @@ import { useAuth } from "../../AuthContext";
 
 interface TenantHeaderProps {
   tenantName: string;
-  subdomain: string;
 }
 
-const TenantHeader: React.FC<TenantHeaderProps> = ({
-  tenantName 
-}) => {
+const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const { isAuthenticated, user, logout } = useAuth();
-
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,49 +17,51 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("Search submitted:", searchTerm);
+    console.log("Búsqueda enviada:", searchTerm);
   };
 
   return (
-    <form onSubmit={handleSearchSubmit} className={styles.headerForm}>
-      <header className={styles.header}>
+    <header className={styles.header}>
+      <div className={styles.headerContent}>
         <div className={styles.tenantInfo}>
           <Link to="/" className={styles.tenantLink}>
             <h1 className={styles.tenantName}>{tenantName}</h1>
           </Link>
         </div>
 
-        <div className={styles.searchContainer}>
+        <form onSubmit={handleSearchSubmit} className={styles.searchContainer}>
           <input
             type="search"
-            placeholder="Search products..."
+            placeholder="Buscar productos..."
             value={searchTerm}
             onChange={handleSearchChange}
             className={styles.searchInput}
           />
-        </div>
+        </form>
 
         <nav className={styles.actions}>
           {isAuthenticated ? (
             <>
-              <span className={styles.userName}>Hi, {user?.name}!</span>
-              <button onClick={logout} className={styles.button}>
-                Logout
+              <span className={styles.userName} title={`¡Hola, ${user?.name}!`}>
+                ¡Hola, {user?.name}!
+              </span>
+              <button onClick={logout} className={styles.actionButton}>
+                Cerrar Sesión
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className={styles.button}>
-                Login
+              <Link to="/login" className={styles.actionLink}>
+                Iniciar Sesión
               </Link>
-              <Link to="/signup" className={styles.button}>
-                Sign Up
+              <Link to="/signup" className={styles.actionLink}>
+                Registrarse
               </Link>
             </>
           )}
         </nav>
-      </header>
-    </form>
+      </div>
+    </header>
   );
 };
 
