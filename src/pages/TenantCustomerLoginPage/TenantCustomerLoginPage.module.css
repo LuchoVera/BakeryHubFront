@@ -1,0 +1,37 @@
+.pageContainer {
+  padding: var(--space-lg);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: var(--space-lg);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+.backLink:hover {
+  text-decoration: underline;
+  color: var(--color-text-primary);
+}
+
+.pageTitle {
+  text-align: center;
+  margin-bottom: var(--space-sm);
+}
+
+.pageSubtitle {
+  text-align: center;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+}
+.pageSubtitle strong {
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.signUpLink {
+  text-align: center;
+  margin-top: var(--space-md);
+}
