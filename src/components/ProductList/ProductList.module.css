@@ -10,3 +10,9 @@
   font-style: italic;
   margin-top: 30px;
 }
+
+@media (max-width: 600px) {
+  .list {
+    gap: 15px;
+  }
+}

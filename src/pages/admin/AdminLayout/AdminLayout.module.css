@@ -11,8 +11,10 @@
   padding: var(--space-lg);
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, padding 0.3s ease;
   overflow-x: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .sidebarCollapsed {
@@ -175,5 +177,57 @@
   padding: var(--space-lg);
   background-color: var(--color-background);
   transition: margin-left 0.3s ease;
-  margin-left: 0;
+  margin-left: 220px;
+}
+
+.layoutContainer.layoutContainerCollapsed .mainContent {
+  margin-left: 70px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+    padding: var(--space-lg) var(--space-sm);
+  }
+
+  .sidebar .sidebarHeaderContainer {
+    justify-content: center;
+  }
+  .sidebar .sidebarHeader {
+    display: none;
+  }
+  .sidebar .toggleButton {
+    display: none;
+  }
+  .sidebar .navLink {
+    justify-content: center;
+    padding: var(--space-sm);
+    gap: 0;
+    margin-bottom: var(--space-sm);
+  }
+  .sidebar .navText {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    margin-left: -10px;
+    display: none;
+  }
+  .sidebar .separator {
+    display: none;
+  }
+  .sidebar .logoutButton {
+    justify-content: center;
+    padding: var(--space-sm);
+    gap: 0;
+    margin-top: var(--space-sm);
+  }
+
+  .mainContent {
+    margin-left: 70px;
+    padding: var(--space-md);
+  }
+
+  .layoutContainer.layoutContainerCollapsed .mainContent {
+    margin-left: 70px;
+  }
 }

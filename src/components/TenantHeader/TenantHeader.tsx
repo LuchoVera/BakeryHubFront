@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./TenantHeader.module.css";
 import { useAuth } from "../../AuthContext";
+import { FaSearch } from "react-icons/fa";
 
 interface TenantHeaderProps {
   tenantName: string;
@@ -10,14 +11,14 @@ interface TenantHeaderProps {
 const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const { isAuthenticated, user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    console.log("Búsqueda enviada:", searchTerm);
+  const toggleSearchVisibility = () => {
+    setIsSearchVisible(!isSearchVisible);
   };
 
   return (
@@ -29,15 +30,26 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
           </Link>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className={styles.searchContainer}>
+        <div className={styles.searchContainer}>
+          <button
+            type="button"
+            className={styles.searchIconButton}
+            onClick={toggleSearchVisibility}
+            aria-label="Mostrar/Ocultar búsqueda"
+          >
+            <FaSearch />
+          </button>
+
           <input
             type="search"
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className={styles.searchInput}
+            className={`${styles.searchInput} ${
+              isSearchVisible ? styles.visible : ""
+            }`}
           />
-        </form>
+        </div>
 
         <nav className={styles.actions}>
           {isAuthenticated ? (

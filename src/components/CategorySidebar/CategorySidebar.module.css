@@ -45,3 +45,69 @@
   background-color: var(--color-secondary);
   color: var(--color-primary-dark);
 }
+
+.showMoreButton {
+  display: none;
+  width: 100%;
+  padding: var(--space-sm);
+  margin-top: var(--space-md);
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  text-align: center;
+}
+.showMoreButton:hover {
+  background-color: var(--color-secondary);
+  border-color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .categorySidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    top: auto;
+    align-self: stretch;
+    overflow-y: visible;
+    box-shadow: var(--shadow-md);
+    border-radius: var(--border-radius-lg);
+  }
+
+  .sidebarTitle {
+    text-align: center;
+    font-size: 1.1rem;
+  }
+
+  .categoryList {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .categoryLink {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.9rem;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+  }
+
+  .categoryLink:hover {
+    background-color: var(--color-secondary);
+    color: var(--color-primary-dark);
+  }
+
+  .showMoreButton {
+    display: block;
+  }
+}

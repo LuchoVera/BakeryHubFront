@@ -24,6 +24,7 @@
   width: 100%;
   max-width: 300px;
   padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
 }
 .submitButton:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
@@ -50,6 +51,7 @@
   border-radius: var(--border-radius-md);
   font-weight: 600;
   cursor: pointer;
+  font-size: 1rem;
 }
 .secondaryButton:hover:not(:disabled) {
   background-color: var(--color-secondary);
@@ -92,7 +94,6 @@
   font-size: 0.8em;
   margin-top: var(--space-xs);
   display: block;
-
   white-space: pre-wrap;
 }
 
@@ -128,4 +129,23 @@ input[aria-invalid="true"] {
 input[aria-invalid="true"]:focus {
   border-color: var(--color-error);
   box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+}
+
+@media (max-width: 600px) {
+  .submitButton,
+  .secondaryButton {
+    max-width: none;
+    width: 100%;
+    align-self: stretch;
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .linkAccountSection {
+    padding: var(--space-md);
+  }
+
+  .error,
+  .success {
+    font-size: 0.85em;
+  }
 }
