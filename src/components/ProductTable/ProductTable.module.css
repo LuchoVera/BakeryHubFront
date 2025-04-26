@@ -136,3 +136,98 @@
 .deleteButton:hover:not(:disabled) {
   background-color: #c9302c;
 }
+
+@media (max-width: 768px) {
+  .productTable {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin-top: var(--space-md);
+  }
+
+  .tableHeaderRow {
+    display: none;
+  }
+
+  .tableRow {
+    display: block;
+    margin-bottom: var(--space-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+  .tableRow:last-child {
+    margin-bottom: 0;
+  }
+
+  .tableCell,
+  .actionsCell {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding-left: 0;
+    position: relative;
+    border-bottom: 1px solid var(--color-border);
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    min-height: auto;
+    padding-right: var(--space-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tableCell:last-child,
+  .actionsCell:last-child {
+    border-bottom: none;
+  }
+
+  .tableCell::before,
+  .actionsCell::before {
+    content: attr(data-label);
+    display: block;
+    font-weight: bold;
+    color: var(--color-text-primary);
+    font-size: 0.9em;
+    margin-bottom: var(--space-xs);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .actionsCell {
+    padding-top: var(--space-md);
+    border-bottom: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .actionsCell::before {
+    display: none;
+  }
+
+  .actionButtons {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    margin-top: var(--space-sm);
+    gap: var(--space-sm);
+    width: 100%;
+  }
+
+  .actionButton {
+    font-size: 0.9em;
+    min-width: auto;
+    width: 100%;
+    height: auto;
+    padding: var(--space-sm) var(--space-md);
+    flex-grow: 0;
+    box-sizing: border-box;
+  }
+}

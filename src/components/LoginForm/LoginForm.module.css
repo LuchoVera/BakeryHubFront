@@ -20,6 +20,8 @@
   border-color: var(--color-primary);
   align-self: flex-start;
   margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
 }
 
 .submitButton:hover:not(:disabled) {
@@ -67,12 +69,12 @@ input[aria-invalid="true"]:focus {
 }
 
 .rememberMeGroup {
+  display: flex;
   flex-direction: row;
   align-items: center;
   gap: var(--space-sm);
   margin-top: var(--space-sm);
   margin-bottom: var(--space-md);
-
   justify-content: center;
 }
 
@@ -95,6 +97,22 @@ input[aria-invalid="true"]:focus {
   font-size: 0.9em;
   color: var(--color-text-primary);
   cursor: pointer;
-
   line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .submitButton {
+    width: 100%;
+    align-self: stretch;
+    font-size: 1rem;
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .rememberMeGroup {
+    gap: var(--space-xs);
+  }
+
+  .rememberMeLabel {
+    font-size: 0.85em;
+  }
 }

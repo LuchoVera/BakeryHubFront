@@ -20,6 +20,8 @@
   border-color: var(--color-primary);
   align-self: flex-start;
   margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
 }
 
 .submitButton:hover:not(:disabled) {
@@ -69,22 +71,22 @@ input[aria-invalid="true"]:focus {
 .imagePreviewContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 12px;
   margin-top: 10px;
   padding: 10px;
   border: 1px solid #eee;
   border-radius: 4px;
-  min-height: 100px;
+  min-height: 80px;
   background-color: #fdfdfd;
 }
 
 .imagePreviewItem {
   position: relative;
   border: 1px solid #ddd;
-  padding: 5px;
+  padding: 4px;
   background-color: #f9f9f9;
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -92,17 +94,16 @@ input[aria-invalid="true"]:focus {
 
 .removeImageButton {
   position: absolute;
-
-  top: -12px;
-  right: -12px;
-  width: 26px;
-  height: 26px;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
   background-color: #dc3545;
   color: white;
   border: 1px solid white;
   border-radius: 50%;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 22px;
   text-align: center;
   cursor: pointer;
   font-weight: bold;
@@ -123,17 +124,6 @@ input[aria-invalid="true"]:focus {
   box-shadow: none;
 }
 
-.imagePreviewContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  min-height: 100px;
-  background-color: #fdfdfd;
-}
 .imagePreview {
   display: block;
   width: 100%;
@@ -151,4 +141,44 @@ input[aria-invalid="true"]:focus {
   text-align: center;
   padding: 2px 0;
   box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .submitButton {
+    width: 100%;
+    align-self: stretch;
+    font-size: 1rem;
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .imagePreviewContainer {
+    gap: 10px;
+    min-height: 70px;
+  }
+
+  .imagePreviewItem {
+    width: 70px;
+    height: 70px;
+    padding: 3px;
+  }
+
+  .removeImageButton {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    line-height: 20px;
+    top: -8px;
+    right: -8px;
+  }
+
+  .coverLabel {
+    font-size: 0.65em;
+  }
+
+  .formGroup select {
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 }

@@ -18,10 +18,12 @@
   padding: var(--space-sm) var(--space-lg);
   height: 60px;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .tenantInfo {
   flex-shrink: 0;
+  text-align: left;
 }
 
 .tenantLink {
@@ -37,14 +39,14 @@
 }
 
 .searchContainer {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
   max-width: 400px;
   margin: 0 var(--space-lg);
   position: relative;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-  border-radius: 0;
+  min-width: 40px;
 }
 
 .searchInput {
@@ -58,6 +60,7 @@
   height: 36px;
   box-sizing: border-box;
   box-shadow: var(--shadow-sm);
+  display: block;
 }
 
 .searchInput:focus {
@@ -67,11 +70,26 @@
   border-color: var(--color-primary);
 }
 
+.searchIconButton {
+  display: none;
+  padding: var(--space-xs);
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+}
+.searchIconButton:hover {
+  color: var(--color-primary);
+}
+
 .actions {
   display: flex;
   align-items: center;
   gap: var(--space-md);
   flex-shrink: 0;
+  justify-content: flex-start;
 }
 
 .userName {
@@ -96,6 +114,7 @@
   cursor: pointer;
   font-size: 0.9rem;
   line-height: 1.5;
+  white-space: nowrap;
 }
 
 .actionButton:hover,
@@ -103,4 +122,77 @@
   border-color: var(--color-primary);
   background-color: var(--color-secondary);
   text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .headerContent {
+    flex-wrap: wrap;
+    height: auto;
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-md);
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tenantInfo {
+    order: 1;
+    flex-basis: 100%;
+    text-align: center;
+    margin: 0;
+    padding-bottom: 0;
+  }
+
+  .tenantName {
+    font-size: 1.2rem;
+  }
+
+  .actions,
+  .searchContainer {
+    order: 2;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: auto;
+  }
+
+  .actions {
+    gap: var(--space-sm);
+  }
+
+  .searchContainer {
+    justify-content: center;
+    min-width: auto;
+    margin-left: var(--space-xs);
+  }
+
+  .searchInput {
+    order: 3;
+    flex-basis: 100%;
+    margin-top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    display: none;
+  }
+  .searchInput.visible {
+    display: block;
+  }
+
+  .searchIconButton {
+    display: inline-flex;
+    font-size: 1.4rem;
+    padding: var(--space-xs);
+  }
+
+  .userName {
+    display: none;
+  }
+
+  .actionButton,
+  .actionLink {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.85rem;
+  }
 }

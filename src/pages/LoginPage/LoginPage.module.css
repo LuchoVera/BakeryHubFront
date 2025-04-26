@@ -13,4 +13,21 @@
 .pageSubtitle {
   color: var(--color-text-secondary);
   margin-bottom: var(--space-lg);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .pageContainer {
+    padding: var(--space-md);
+    max-width: 100%;
+  }
+
+  .pageSubtitle {
+    font-size: 0.9em;
+    margin-bottom: var(--space-md);
+  }
+
+  .registerLink {
+    font-size: 0.9em;
+  }
 }

@@ -52,6 +52,8 @@
   border-color: var(--color-primary);
   align-self: flex-start;
   margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
 }
 
 .submitButton:hover:not(:disabled) {
@@ -60,7 +62,8 @@
   box-shadow: var(--shadow-sm);
 }
 
-.error {
+.error,
+.success {
   color: var(--color-error);
   background-color: rgba(217, 83, 79, 0.1);
   border: 1px solid var(--color-error);
@@ -75,10 +78,6 @@
   color: var(--color-success);
   background-color: rgba(92, 184, 92, 0.1);
   border: 1px solid var(--color-success);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.9em;
-  margin-top: var(--space-md);
 }
 
 .validationError {
@@ -104,4 +103,13 @@ input[aria-invalid="true"] {
 input[aria-invalid="true"]:focus {
   border-color: var(--color-error);
   box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+}
+
+@media (max-width: 600px) {
+  .submitButton {
+    width: 100%;
+    align-self: stretch;
+    font-size: 1rem;
+    padding: var(--space-md) var(--space-lg);
+  }
 }
