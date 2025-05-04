@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios, { AxiosError } from "axios";
 import styles from "./TenantViewPage.module.css";
 import { ApiErrorResponse, ProductDto, TenantPublicInfoDto } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategorySidebar from "../../components/CategorySidebar/CategorySidebar";
+import { useAuth } from "../../AuthContext";
 
 interface TenantViewPageProps {
   subdomain: string;
@@ -19,6 +20,15 @@ type GroupedProductsRender = Record<string, ProductDto[]>;
 
 const apiUrl = "/api";
 
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffledArray = [...array];
+  for (let i = shuffledArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+  }
+  return shuffledArray;
+};
+
 const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
@@ -28,6 +38,16 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [categoryLinks, setCategoryLinks] = useState<CategoryLinkData[]>([]);
+
+  const { isAuthenticated } = useAuth();
+  const [allRecommendations, setAllRecommendations] = useState<ProductDto[]>(
+    []
+  );
+  const [displayedRecommendations, setDisplayedRecommendations] = useState<
+    ProductDto[]
+  >([]);
+  const [loadingRecommendations, setLoadingRecommendations] =
+    useState<boolean>(false);
 
   useEffect(() => {
     setIsLoadingTenant(true);
@@ -63,9 +83,10 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
           const response = await axios.get<ProductDto[]>(
             `/api/public/tenants/${tenantInfo.subdomain}/products`
           );
-          setProducts(response.data);
+          const fetchedProducts = response.data || [];
+          setProducts(fetchedProducts);
 
-          const grouped = response.data.reduce((acc, product) => {
+          const grouped = fetchedProducts.reduce((acc, product) => {
             const categoryKey = product.categoryName || "Otros";
             const categoryId = categoryKey
               .toLowerCase()
@@ -102,14 +123,64 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     }
   }, [tenantInfo, error]);
 
-  const groupedProductsRender = products.reduce((acc, product) => {
-    const categoryKey = product.categoryName || "Otros";
-    if (!acc[categoryKey]) {
-      acc[categoryKey] = [];
+  useEffect(() => {
+    if (isAuthenticated && subdomain) {
+      setLoadingRecommendations(true);
+
+      setAllRecommendations([]);
+      setDisplayedRecommendations([]);
+
+      const fetchRecommendations = async () => {
+        try {
+          const response = await axios.get<ProductDto[]>(
+            `${apiUrl}/public/tenants/${subdomain}/recommendations`,
+            { withCredentials: true }
+          );
+          setAllRecommendations(response.data || []);
+        } catch (err) {
+          const axiosError = err as AxiosError<ApiErrorResponse>;
+          if (
+            axiosError.response?.status !== 401 &&
+            axiosError.response?.status !== 404
+          ) {
+            console.error(
+              "Failed to fetch recommendations:",
+              axiosError.response?.data || axiosError.message
+            );
+          }
+          setAllRecommendations([]);
+        } finally {
+          setLoadingRecommendations(false);
+        }
+      };
+      fetchRecommendations();
+    } else {
+      setAllRecommendations([]);
+      setDisplayedRecommendations([]);
+      setLoadingRecommendations(false);
     }
-    acc[categoryKey].push(product);
-    return acc;
-  }, {} as GroupedProductsRender);
+  }, [isAuthenticated, subdomain]);
+
+  useEffect(() => {
+    if (allRecommendations.length > 0) {
+      const shuffled = shuffleArray(allRecommendations);
+
+      setDisplayedRecommendations(shuffled.slice(0, 6));
+    } else {
+      setDisplayedRecommendations([]);
+    }
+  }, [allRecommendations]);
+
+  const groupedProductsRender = useMemo(
+    () =>
+      products.reduce((acc, product) => {
+        const categoryKey = product.categoryName || "Otros";
+        if (!acc[categoryKey]) acc[categoryKey] = [];
+        acc[categoryKey].push(product);
+        return acc;
+      }, {} as GroupedProductsRender),
+    [products]
+  );
 
   if (isLoadingTenant) {
     return (
@@ -118,17 +189,14 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className={styles.loadingOrError}>
-        <h1>Error</h1>
-        <p>{error}</p>
+        <h1>Error</h1> <p>{error}</p>{" "}
         <a href={`/`}>Volver a la página principal</a>
       </div>
     );
   }
-
   if (!tenantInfo) {
     return (
       <div className={styles.loadingOrError}>
@@ -142,17 +210,40 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       <TenantHeader tenantName={tenantInfo.name} />
       <div className={styles.pageLayout}>
         <CategorySidebar categories={categoryLinks} />
+
         <main className={styles.productsArea}>
           <div className={styles.productsAreaContent}>
+            {isAuthenticated &&
+              !loadingRecommendations &&
+              displayedRecommendations.length > 0 && (
+                <section
+                  className={styles.recommendationSection}
+                  id="recommendations"
+                >
+                  <h2 className={styles.categoryTitle}>Recomendado para ti</h2>
+                  <div className={styles.productGrid}>
+                    {displayedRecommendations.map((product) => (
+                      <ProductCard
+                        key={`rec-${product.id}`}
+                        product={product}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            {isAuthenticated && loadingRecommendations && (
+              <p className={styles.loadingText}>Cargando recomendaciones...</p>
+            )}
+
             {isLoadingProducts ? (
               <p className={styles.loadingOrError}>Cargando productos...</p>
             ) : categoryLinks.length === 0 && products.length > 0 ? (
               <section
-                key="otros"
-                id="otros"
+                key="todos"
+                id="todos"
                 className={styles.categorySection}
               >
-                <h2 className={styles.categoryTitle}>Otros</h2>
+                <h2 className={styles.categoryTitle}>Productos</h2>
                 <div className={styles.productGrid}>
                   {products.map((product) => (
                     <ProductCard key={product.id} product={product} />

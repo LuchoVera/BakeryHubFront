@@ -21,6 +21,7 @@ import "./App.css";
 import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCustomerLoginPage";
 import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
 import ProductDetailPage from "./pages/ProductDetailPage/ProductDetailPage";
+import SearchResultsPage from "./pages/SearchResultsPage/SearchResultsPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -97,6 +98,11 @@ function App() {
               path="/signup"
               element={<TenantCustomerSignUpPage subdomain={subdomain} />}
             />
+            <Route
+              path="/search"
+              element={<SearchResultsPage subdomain={subdomain} />}
+            />
+
             <Route
               path="*"
               element={<div>404 - Página no Encontrada en {subdomain}</div>}

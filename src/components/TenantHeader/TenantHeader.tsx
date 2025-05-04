@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./TenantHeader.module.css";
 import { useAuth } from "../../AuthContext";
 import { FaSearch } from "react-icons/fa";
@@ -10,15 +10,29 @@ interface TenantHeaderProps {
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const { isAuthenticated, user, logout } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const navigate = useNavigate();
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+  const handleLocalSearchChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setLocalSearchTerm(event.target.value);
   };
 
   const toggleSearchVisibility = () => {
     setIsSearchVisible(!isSearchVisible);
+    if (isSearchVisible) {
+      setLocalSearchTerm("");
+    }
+  };
+
+  const handleSearchSubmit = (event?: FormEvent<HTMLFormElement>) => {
+    if (event) event.preventDefault();
+    const trimmedTerm = localSearchTerm.trim();
+    if (trimmedTerm) {
+      navigate(`/search?q=${encodeURIComponent(trimmedTerm)}`);
+    }
   };
 
   return (
@@ -30,7 +44,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
           </Link>
         </div>
 
-        <div className={styles.searchContainer}>
+        <form className={styles.searchContainer} onSubmit={handleSearchSubmit}>
           <button
             type="button"
             className={styles.searchIconButton}
@@ -43,13 +57,14 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
           <input
             type="search"
             placeholder="Buscar productos..."
-            value={searchTerm}
-            onChange={handleSearchChange}
+            value={localSearchTerm}
+            onChange={handleLocalSearchChange}
             className={`${styles.searchInput} ${
               isSearchVisible ? styles.visible : ""
             }`}
+            aria-label="Buscar productos"
           />
-        </div>
+        </form>
 
         <nav className={styles.actions}>
           {isAuthenticated ? (
