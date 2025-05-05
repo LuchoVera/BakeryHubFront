@@ -65,6 +65,16 @@
   border-color: var(--color-primary);
 }
 
+.categoryLinkActive {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.categoryLinkActive:hover {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
 @media (max-width: 768px) {
   .categorySidebar {
     position: static;
@@ -109,5 +119,9 @@
 
   .showMoreButton {
     display: block;
+  }
+  .categoryLinkActive {
+    border-color: var(--color-primary);
+    background-color: var(--color-secondary);
   }
 }

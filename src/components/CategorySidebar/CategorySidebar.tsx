@@ -8,12 +8,17 @@ interface CategoryLinkData {
 
 interface CategorySidebarProps {
   categories: CategoryLinkData[];
+  selectedCategoryId: string | null;
+  onSelectCategory: (categoryId: string | null) => void;
 }
 
-const CategorySidebar: React.FC<CategorySidebarProps> = ({ categories }) => {
+const CategorySidebar: React.FC<CategorySidebarProps> = ({
+  categories,
+  selectedCategoryId,
+  onSelectCategory,
+}) => {
   const [showAll, setShowAll] = useState(false);
   const initialLimit = 6;
-
   const categoriesToShow = showAll
     ? categories
     : categories.slice(0, initialLimit);
@@ -23,6 +28,14 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({ categories }) => {
     setShowAll(!showAll);
   };
 
+  const handleCategoryClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    categoryId: string | null
+  ) => {
+    event.preventDefault();
+    onSelectCategory(categoryId);
+  };
+
   return (
     <aside
       className={`${styles.categorySidebar} ${styles.mobileCategoryContainer}`}
@@ -30,9 +43,32 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({ categories }) => {
       <nav>
         <h3 className={styles.sidebarTitle}>Categorías</h3>
         <ul className={styles.categoryList}>
+          <li>
+            <a
+              href="#"
+              onClick={(e) => handleCategoryClick(e, null)}
+              className={`${styles.categoryLink} ${
+                selectedCategoryId === null ? styles.categoryLinkActive : ""
+              }`}
+            >
+              Todas las Categorías
+            </a>
+          </li>
+
           {categoriesToShow.map((category) => (
             <li key={category.id}>
-              <a href={`#${category.id}`} className={styles.categoryLink}>
+              <a
+                href={`#${category.id}`}
+                onClick={(e) => handleCategoryClick(e, category.id)}
+                className={`${styles.categoryLink} ${
+                  selectedCategoryId === category.id
+                    ? styles.categoryLinkActive
+                    : ""
+                }`}
+                aria-current={
+                  selectedCategoryId === category.id ? "page" : undefined
+                }
+              >
                 {category.name}
               </a>
             </li>

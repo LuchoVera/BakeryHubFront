@@ -17,6 +17,140 @@
   padding-top: var(--space-lg);
 }
 
+.filterButtonContainer {
+  text-align: right;
+  margin-bottom: var(--space-md);
+}
+
+.filterToggleButton {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.9em;
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.filterToggleButton:hover {
+  background-color: var(--color-secondary);
+}
+.filterToggleButton svg {
+  margin-bottom: -2px;
+}
+
+.filterButtonActive {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.filterPanel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.3s ease-out;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filterPanel h4 {
+  margin-top: 0;
+  margin-bottom: var(--space-sm);
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.filterGroup label {
+  font-weight: 500;
+  font-size: 0.9em;
+  color: var(--color-text-secondary);
+}
+
+.filterGroup select,
+.filterGroup input[type="number"] {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.95rem;
+  background-color: var(--color-surface);
+}
+
+.filterActions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--space-md);
+}
+
+.applyButton,
+.clearButton {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  font-size: 0.9em;
+  flex-grow: 1;
+}
+
+.applyButton {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+}
+.applyButton:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.clearButton {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+.clearButton:hover {
+  background-color: var(--color-background);
+  border-color: var(--color-text-secondary);
+}
+
+.recommendationSection {
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px dashed var(--color-border-light);
+}
+
 .categorySection {
   margin-bottom: var(--space-xl);
   scroll-margin-top: 70px;
@@ -72,6 +206,12 @@
   align-items: center;
 }
 
+.loadingText {
+  text-align: center;
+  padding: var(--space-md);
+  color: var(--color-text-secondary);
+}
+
 @media (max-width: 768px) {
   .pageLayout {
     flex-direction: column;
@@ -89,6 +229,28 @@
     padding-top: 0;
   }
 
+  .filterButtonContainer {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+  }
+  .filterToggleButton {
+    width: 80%;
+    justify-content: center;
+    padding: var(--space-sm);
+  }
+  .filterPanel {
+    max-width: none;
+    padding: var(--space-md);
+  }
+  .filterActions {
+    gap: var(--space-sm);
+  }
+  .applyButton,
+  .clearButton {
+    font-size: 0.85em;
+    padding: var(--space-sm);
+  }
+
   .categoryTitle {
     font-size: 1.8rem;
     margin-bottom: var(--space-md);
@@ -96,15 +258,46 @@
 
   .productGrid {
     gap: var(--space-md);
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 
   .loadingOrError {
     padding: var(--space-lg);
     font-size: 1em;
+    min-height: 200px;
   }
 
   .noProducts {
     padding: var(--space-lg) 0;
     font-size: 1em;
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .productGrid {
+    grid-template-columns: 1fr;
+  }
+  .categoryTitle {
+    font-size: 1.5rem;
+  }
+  .filterPanel {
+    padding: var(--space-sm);
+    gap: var(--space-sm);
+  }
+  .filterGroup label {
+    font-size: 0.85em;
+  }
+  .filterGroup select,
+  .filterGroup input[type="number"] {
+    font-size: 0.9rem;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  .filterActions {
+    flex-direction: column;
+  }
+  .applyButton,
+  .clearButton {
+    width: 100%;
   }
 }
