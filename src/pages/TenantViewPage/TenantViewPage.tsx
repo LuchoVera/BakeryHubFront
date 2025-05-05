@@ -1,19 +1,20 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios, { AxiosError } from "axios";
 import styles from "./TenantViewPage.module.css";
-import { ApiErrorResponse, ProductDto, TenantPublicInfoDto } from "../../types";
+import {
+  ApiErrorResponse,
+  ProductDto,
+  TenantPublicInfoDto,
+  CategoryDto,
+} from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategorySidebar from "../../components/CategorySidebar/CategorySidebar";
 import { useAuth } from "../../AuthContext";
+import { LuFilter, LuX } from "react-icons/lu";
 
 interface TenantViewPageProps {
   subdomain: string;
-}
-
-interface CategoryLinkData {
-  id: string;
-  name: string;
 }
 
 type GroupedProductsRender = Record<string, ProductDto[]>;
@@ -34,11 +35,11 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     null
   );
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
   const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [categoryLinks, setCategoryLinks] = useState<CategoryLinkData[]>([]);
-
   const { isAuthenticated } = useAuth();
   const [allRecommendations, setAllRecommendations] = useState<ProductDto[]>(
     []
@@ -48,13 +49,21 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   >([]);
   const [loadingRecommendations, setLoadingRecommendations] =
     useState<boolean>(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [appliedMinPrice, setAppliedMinPrice] = useState<string | null>(null);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState<string | null>(null);
+  const [tempMinPrice, setTempMinPrice] = useState<string>("");
+  const [tempMaxPrice, setTempMaxPrice] = useState<string>("");
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
 
   useEffect(() => {
     setIsLoadingTenant(true);
     setError(null);
     setTenantInfo(null);
     setProducts([]);
-    setCategoryLinks([]);
+    setAllCategories([]);
     const fetchTenantInfo = async () => {
       try {
         const response = await axios.get<TenantPublicInfoDto>(
@@ -68,6 +77,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
         } else {
           setError("Ocurrió un error cargando la información de la tienda.");
         }
+        setTenantInfo(null);
       } finally {
         setIsLoadingTenant(false);
       }
@@ -77,59 +87,89 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
 
   useEffect(() => {
     if (tenantInfo && !error) {
-      setIsLoadingProducts(true);
-      const fetchProducts = async () => {
+      setIsLoadingCategories(true);
+      const fetchInitialProductsForCategories = async () => {
         try {
           const response = await axios.get<ProductDto[]>(
             `/api/public/tenants/${tenantInfo.subdomain}/products`
           );
           const fetchedProducts = response.data || [];
-          setProducts(fetchedProducts);
-
-          const grouped = fetchedProducts.reduce((acc, product) => {
-            const categoryKey = product.categoryName || "Otros";
-            const categoryId = categoryKey
-              .toLowerCase()
-              .replace(/\s+/g, "-")
-              .replace(/[^a-z0-9-]/g, "");
-            if (!acc[categoryKey]) {
-              acc[categoryKey] = { id: categoryId || "otros", items: [] };
+          const categoriesMap = new Map<string, string>();
+          fetchedProducts.forEach((p) => {
+            if (
+              p.categoryId &&
+              p.categoryName &&
+              !categoriesMap.has(p.categoryId)
+            ) {
+              categoriesMap.set(p.categoryId, p.categoryName);
             }
-            acc[categoryKey].items.push(product);
-            return acc;
-          }, {} as Record<string, { id: string; items: ProductDto[] }>);
-
-          const sortedNames = Object.keys(grouped).sort((a, b) =>
-            a.localeCompare(b)
+          });
+          const derivedCategories = Array.from(categoriesMap.entries()).map(
+            ([id, name]) => ({ id, name })
           );
-          const links = sortedNames.map((name) => ({
-            name,
-            id: grouped[name].id,
-          }));
-          setCategoryLinks(links);
-        } catch (err) {
-          setError(
-            (prevError) => prevError || "No se pudieron cargar los productos."
+          derivedCategories.sort((a, b) => a.name.localeCompare(b.name));
+          setAllCategories(derivedCategories);
+        } catch (catErr) {
+          console.error(
+            "Could not derive categories from initial product fetch",
+            catErr
           );
+          setAllCategories([]);
         } finally {
-          setIsLoadingProducts(false);
+          setIsLoadingCategories(false);
         }
       };
-      fetchProducts();
+      fetchInitialProductsForCategories();
     } else {
-      setIsLoadingProducts(false);
-      setProducts([]);
-      setCategoryLinks([]);
+      setIsLoadingCategories(false);
+      setAllCategories([]);
     }
   }, [tenantInfo, error]);
+
+  const fetchProducts = useCallback(async () => {
+    if (!tenantInfo || error) {
+      setIsLoadingProducts(false);
+      return;
+    }
+    setIsLoadingProducts(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedCategoryId) {
+        params.append("categoryId", selectedCategoryId);
+      }
+      if (appliedMinPrice) {
+        params.append("minPrice", appliedMinPrice);
+      }
+      if (appliedMaxPrice) {
+        params.append("maxPrice", appliedMaxPrice);
+      }
+
+      const queryString = params.toString();
+      const productUrl = `/api/public/tenants/${tenantInfo.subdomain}/products${
+        queryString ? `?${queryString}` : ""
+      }`;
+
+      const response = await axios.get<ProductDto[]>(productUrl);
+      setProducts(response.data || []);
+    } catch (err) {
+      setError(
+        (prevError) => prevError || "No se pudieron cargar los productos."
+      );
+      setProducts([]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, [tenantInfo, error, selectedCategoryId, appliedMinPrice, appliedMaxPrice]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   useEffect(() => {
     if (isAuthenticated && subdomain) {
       setLoadingRecommendations(true);
-
       setAllRecommendations([]);
       setDisplayedRecommendations([]);
-
       const fetchRecommendations = async () => {
         try {
           const response = await axios.get<ProductDto[]>(
@@ -164,23 +204,74 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   useEffect(() => {
     if (allRecommendations.length > 0) {
       const shuffled = shuffleArray(allRecommendations);
-
       setDisplayedRecommendations(shuffled.slice(0, 6));
     } else {
       setDisplayedRecommendations([]);
     }
   }, [allRecommendations]);
 
-  const groupedProductsRender = useMemo(
-    () =>
-      products.reduce((acc, product) => {
-        const categoryKey = product.categoryName || "Otros";
-        if (!acc[categoryKey]) acc[categoryKey] = [];
-        acc[categoryKey].push(product);
-        return acc;
-      }, {} as GroupedProductsRender),
-    [products]
-  );
+  const groupedProductsRender = useMemo(() => {
+    return products.reduce((acc, product) => {
+      const categoryKey = product.categoryName || "Otros";
+      if (!acc[categoryKey]) acc[categoryKey] = [];
+      acc[categoryKey].push(product);
+      return acc;
+    }, {} as GroupedProductsRender);
+  }, [products]);
+
+  const categoryLinksForSidebar = useMemo(() => {
+    return allCategories.map((cat) => ({ id: cat.id, name: cat.name }));
+  }, [allCategories]);
+
+  const handleSelectCategory = (categoryId: string | null) => {
+    setSelectedCategoryId(categoryId);
+  };
+
+  const toggleFilterPanel = () => {
+    if (!isFilterPanelOpen) {
+      setTempMinPrice(appliedMinPrice || "");
+      setTempMaxPrice(appliedMaxPrice || "");
+    }
+    setIsFilterPanelOpen(!isFilterPanelOpen);
+  };
+
+  const handleApplyFilters = () => {
+    const min = parseFloat(tempMinPrice);
+    const max = parseFloat(tempMaxPrice);
+
+    if (tempMinPrice && (isNaN(min) || min < 0)) {
+      alert("Precio mínimo inválido.");
+      return;
+    }
+    if (tempMaxPrice && (isNaN(max) || max < 0)) {
+      alert("Precio máximo inválido.");
+      return;
+    }
+    if (!isNaN(min) && !isNaN(max) && min > max) {
+      alert("El precio mínimo no puede ser mayor al máximo.");
+      return;
+    }
+
+    setAppliedMinPrice(tempMinPrice || null);
+    setAppliedMaxPrice(tempMaxPrice || null);
+    setIsFilterPanelOpen(false);
+  };
+
+  const handleClearPanelFilters = () => {
+    setTempMinPrice("");
+    setTempMaxPrice("");
+    setAppliedMinPrice(null);
+    setAppliedMaxPrice(null);
+    setIsFilterPanelOpen(false);
+  };
+
+  const areFiltersActive = useMemo(() => {
+    return (
+      selectedCategoryId !== null ||
+      appliedMinPrice !== null ||
+      appliedMaxPrice !== null
+    );
+  }, [selectedCategoryId, appliedMinPrice, appliedMaxPrice]);
 
   if (isLoadingTenant) {
     return (
@@ -189,7 +280,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       </div>
     );
   }
-  if (error) {
+  if (error && !tenantInfo) {
     return (
       <div className={styles.loadingOrError}>
         <h1>Error</h1> <p>{error}</p>{" "}
@@ -197,7 +288,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       </div>
     );
   }
-  if (!tenantInfo) {
+  if (!tenantInfo && !isLoadingTenant) {
     return (
       <div className={styles.loadingOrError}>
         No se pudo cargar la información de la tienda.
@@ -207,12 +298,78 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
 
   return (
     <div className={styles.tenantView}>
-      <TenantHeader tenantName={tenantInfo.name} />
+      <TenantHeader tenantName={tenantInfo?.name ?? "Cargando..."} />
       <div className={styles.pageLayout}>
-        <CategorySidebar categories={categoryLinks} />
+        {!isLoadingCategories && (
+          <CategorySidebar
+            categories={categoryLinksForSidebar}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={handleSelectCategory}
+          />
+        )}
 
-        <main className={styles.productsArea}>
+        <main className={styles.productsArea} id="product-area-start">
           <div className={styles.productsAreaContent}>
+            {error && products.length === 0 && !isLoadingProducts && (
+              <p className={styles.loadingOrError}>{error}</p>
+            )}
+
+            <div className={styles.filterButtonContainer}>
+              <button
+                onClick={toggleFilterPanel}
+                className={`${styles.filterToggleButton} ${
+                  areFiltersActive ? styles.filterButtonActive : ""
+                }`}
+              >
+                <LuFilter /> Filtros {isFilterPanelOpen ? <LuX /> : null}
+              </button>
+            </div>
+
+            {isFilterPanelOpen && (
+              <div className={styles.filterPanel}>
+                <h4>Filtros Adicionales</h4>
+                <div className={styles.filterGroup}>
+                  <label htmlFor="minPrice">Mínimo (Bs.):</label>
+                  <input
+                    type="number"
+                    id="minPrice"
+                    min="0"
+                    step="0.01"
+                    placeholder="Ej: 10"
+                    value={tempMinPrice}
+                    onChange={(e) => setTempMinPrice(e.target.value)}
+                  />
+                </div>
+                <div className={styles.filterGroup}>
+                  <label htmlFor="maxPrice">Máximo (Bs.):</label>
+                  <input
+                    type="number"
+                    id="maxPrice"
+                    min="0"
+                    step="0.01"
+                    placeholder="Ej: 100"
+                    value={tempMaxPrice}
+                    onChange={(e) => setTempMaxPrice(e.target.value)}
+                  />
+                </div>
+
+                <div className={styles.filterActions}>
+                  <button
+                    onClick={handleApplyFilters}
+                    className={styles.applyButton}
+                  >
+                    Aplicar Filtros
+                  </button>
+                  <button
+                    onClick={handleClearPanelFilters}
+                    className={styles.clearButton}
+                  >
+                    Limpiar Filtros
+                  </button>
+                </div>
+              </div>
+            )}
+
             {isAuthenticated &&
               !loadingRecommendations &&
               displayedRecommendations.length > 0 && (
@@ -237,40 +394,45 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
 
             {isLoadingProducts ? (
               <p className={styles.loadingOrError}>Cargando productos...</p>
-            ) : categoryLinks.length === 0 && products.length > 0 ? (
-              <section
-                key="todos"
-                id="todos"
-                className={styles.categorySection}
-              >
-                <h2 className={styles.categoryTitle}>Productos</h2>
-                <div className={styles.productGrid}>
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              </section>
-            ) : categoryLinks.length === 0 ? (
+            ) : products.length === 0 ? (
               <p className={styles.noProducts}>
-                No hay productos disponibles por el momento.
+                No se encontraron productos que coincidan con los filtros
+                seleccionados.
               </p>
             ) : (
-              categoryLinks.map(({ name: categoryName, id: categoryId }) => (
-                <section
-                  key={categoryId}
-                  id={categoryId}
-                  className={styles.categorySection}
-                >
-                  <h2 className={styles.categoryTitle}>{categoryName}</h2>
-                  <div className={styles.productGrid}>
-                    {(groupedProductsRender[categoryName] || []).map(
-                      (product) => (
+              (selectedCategoryId
+                ? categoryLinksForSidebar.filter(
+                    (c) => c.id === selectedCategoryId
+                  )
+                : categoryLinksForSidebar
+              ).map(({ name: categoryName, id: categoryId }) => {
+                const productsInCategory =
+                  groupedProductsRender[categoryName] || [];
+                if (productsInCategory.length === 0) return null;
+
+                const categoryIdForSection =
+                  categoryId ||
+                  categoryName
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")
+                    .replace(/[^a-z0-9-]/g, "") ||
+                  "otros";
+
+                return (
+                  <section
+                    key={categoryIdForSection}
+                    id={categoryIdForSection}
+                    className={styles.categorySection}
+                  >
+                    <h2 className={styles.categoryTitle}>{categoryName}</h2>
+                    <div className={styles.productGrid}>
+                      {productsInCategory.map((product) => (
                         <ProductCard key={product.id} product={product} />
-                      )
-                    )}
-                  </div>
-                </section>
-              ))
+                      ))}
+                    </div>
+                  </section>
+                );
+              })
             )}
           </div>
         </main>
