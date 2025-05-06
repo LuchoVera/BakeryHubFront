@@ -118,3 +118,36 @@ export interface LinkCustomerDto {
 export interface UpdateCategoryDto {
   name: string;
 }
+
+export interface CartItem {
+  product: ProductDto;
+  quantity: number;
+}
+
+export interface CartContextType {
+  cartItems: CartItem[];
+  addItemToCart: (product: ProductDto) => void;
+  removeItemFromCart: (productId: string) => void;
+  decrementItemQuantity: (productId: string) => void;
+  getCartTotalQuantity: () => number;
+  isCartOpen: boolean;
+  toggleCartOpen: () => void;
+}
+
+export type NotificationType = "info" | "success" | "error" | "loginPrompt";
+
+export interface NotificationState {
+  message: string | null;
+  type: NotificationType;
+  duration?: number;
+}
+
+export interface NotificationContextType {
+  showNotification: (
+    message: string,
+    type: NotificationType,
+    duration?: number
+  ) => void;
+  hideNotification: () => void;
+  notification: NotificationState | null;
+}
