@@ -2,6 +2,9 @@ import React from "react";
 import { ProductDto } from "../../types";
 import styles from "./ProductCard.module.css";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../AuthContext";
+import { useCart } from "../../hooks/useCart";
+import { useNotification } from "../../hooks/useNotification";
 
 interface ProductCardProps {
   product: ProductDto;
@@ -10,14 +13,36 @@ interface ProductCardProps {
 const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
   const imageUrl =
     product.images && product.images.length > 0 ? product.images[0] : null;
-
   const fullPriceString = `Bs. ${product.price.toFixed(2)}`;
-
   const leadTimeNumber = Number(product.leadTimeDisplay);
   const leadTimeText =
     product.leadTimeDisplay && leadTimeNumber > 0
       ? `${leadTimeNumber} día${leadTimeNumber > 1 ? "s" : ""}`
       : null;
+
+  const { addItemToCart } = useCart();
+  const { user } = useAuth();
+  const { showNotification } = useNotification();
+
+  const isAdmin = user?.roles?.includes("Admin") ?? false;
+  const isButtonDisabled = !product.isAvailable || isAdmin;
+
+  const handleAddToCart = () => {
+    if (isAdmin) {
+      showNotification(
+        "Los administradores no pueden añadir productos al carrito.",
+        "info",
+        4000
+      );
+    } else if (product.isAvailable) {
+      addItemToCart(product);
+      showNotification(
+        `'${product.name}' añadido al carrito!`,
+        "success",
+        3000
+      );
+    }
+  };
 
   return (
     <div className={styles.card}>
@@ -52,7 +77,18 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
           <span className={styles.price} title={fullPriceString}>
             {fullPriceString}
           </span>
-          <button className={styles.addButton} disabled={!product.isAvailable}>
+          <button
+            className={styles.addButton}
+            onClick={handleAddToCart}
+            disabled={isButtonDisabled}
+            title={
+              !product.isAvailable
+                ? "Producto no disponible"
+                : isAdmin
+                ? "Los administradores no pueden comprar"
+                : "Añadir al carrito"
+            }
+          >
             {product.isAvailable ? "Añadir al Carrito" : "No Disponible"}
           </button>
         </div>
@@ -62,5 +98,4 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
 };
 
 const ProductCard = React.memo(ProductCardComponent);
-
 export default ProductCard;

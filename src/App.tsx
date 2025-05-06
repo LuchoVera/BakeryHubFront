@@ -5,7 +5,12 @@ import {
   Route,
   Navigate,
   Outlet,
+  useLocation,
 } from "react-router-dom";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { CartProvider } from "./contexts/CartContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import NotificationPopup from "./components/NotificationPopup/NotificationPopup";
 import HomePage from "./pages/HomePage/HomePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import AdminRegistrationPage from "./pages/admin/AdminRegistrationPage/AdminRegistrationPage";
@@ -16,106 +21,105 @@ import ProductListPage from "./pages/admin/ProductListPage/ProductListPage";
 import AddProductPage from "./pages/admin/AddProductPage/AddProductPage";
 import EditProductPage from "./pages/admin/EditProductPage/EditProductPage";
 import TenantViewPage from "./pages/TenantViewPage/TenantViewPage";
-import { useAuth } from "./AuthContext";
-import "./App.css";
+import SearchResultsPage from "./pages/SearchResultsPage/SearchResultsPage";
+import ProductDetailPage from "./pages/ProductDetailPage/ProductDetailPage";
 import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCustomerLoginPage";
 import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
-import ProductDetailPage from "./pages/ProductDetailPage/ProductDetailPage";
-import SearchResultsPage from "./pages/SearchResultsPage/SearchResultsPage";
+import "./App.css";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <div>Cargando la Sesión...</div>;
   }
-
   const isAdmin = isAuthenticated && (user?.roles?.includes("Admin") ?? false);
-
   if (!isAdmin) {
-    return (
-      <Navigate
-        to="/login"
-        state={{ from: window.location.pathname + window.location.search }}
-        replace
-      />
-    );
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
-
   return <Outlet />;
 };
 
 function App() {
-  const { isLoading } = useAuth();
-
   const host = window.location.hostname;
-  const parts = host.split(".");
-  const isLikelySubdomain =
-    parts.length > 2 || (parts.length === 2 && parts[0] !== "www");
-  const subdomain = isLikelySubdomain ? parts[0] : null;
+  let subdomain: string | null = null;
 
-  if (isLoading) {
-    return <div>Cargando Aplicación...</div>;
+  if (host !== "localhost") {
+    const parts = host.split(".");
+    if (parts.length > 0) {
+      subdomain = parts[0];
+    }
   }
 
   return (
-    <Router>
-      <Routes>
-        {!subdomain && (
-          <>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register-admin" element={<AdminRegistrationPage />} />
-            <Route path="/redirecting" element={<RedirectingPage />} />
-            <Route path="/admin" element={<ProtectedAdminRoute />}>
-              <Route element={<AdminLayout />}>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="categories" element={<CategoryListPage />} />
-                <Route path="products" element={<ProductListPage />} />
-                <Route path="products/new" element={<AddProductPage />} />
-                <Route path="products/edit/:id" element={<EditProductPage />} />
-              </Route>
-            </Route>
-            <Route path="*" element={<div>404 - No Encontrado</div>} />
-          </>
-        )}
-
-        {subdomain && (
-          <>
-            <Route
-              path="/"
-              element={<TenantViewPage subdomain={subdomain} />}
-            />
-            <Route
-              path="/products/:productId"
-              element={<ProductDetailPage subdomain={subdomain} />}
-            />
-            <Route
-              path="/login"
-              element={<TenantCustomerLoginPage subdomain={subdomain} />}
-            />
-            <Route
-              path="/signup"
-              element={<TenantCustomerSignUpPage subdomain={subdomain} />}
-            />
-            <Route
-              path="/search"
-              element={<SearchResultsPage subdomain={subdomain} />}
-            />
-
-            <Route
-              path="*"
-              element={<div>404 - Página no Encontrada en {subdomain}</div>}
-            />
-          </>
-        )}
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <CartProvider>
+        <NotificationProvider>
+          <Router>
+            <Routes>
+              {subdomain ? (
+                <>
+                  <Route
+                    path="/"
+                    element={<TenantViewPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/products/:productId"
+                    element={<ProductDetailPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/login"
+                    element={<TenantCustomerLoginPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/signup"
+                    element={<TenantCustomerSignUpPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/search"
+                    element={<SearchResultsPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="*"
+                    element={
+                      <div>404 - Página no Encontrada en {subdomain}</div>
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route
+                    path="/register-admin"
+                    element={<AdminRegistrationPage />}
+                  />
+                  <Route path="/admin" element={<ProtectedAdminRoute />}>
+                    <Route element={<AdminLayout />}>
+                      <Route index element={<AdminDashboardPage />} />
+                      <Route path="categories" element={<CategoryListPage />} />
+                      <Route path="products" element={<ProductListPage />} />
+                      <Route path="products/new" element={<AddProductPage />} />
+                      <Route
+                        path="products/edit/:id"
+                        element={<EditProductPage />}
+                      />
+                    </Route>
+                  </Route>
+                  <Route
+                    path="*"
+                    element={<div>404 - Página Principal No Encontrada</div>}
+                  />
+                </>
+              )}
+            </Routes>
+            <NotificationPopup />
+          </Router>
+        </NotificationProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }
-
-const RedirectingPage: React.FC = () => {
-  return <div>Redirigiendo...</div>;
-};
 
 export default App;

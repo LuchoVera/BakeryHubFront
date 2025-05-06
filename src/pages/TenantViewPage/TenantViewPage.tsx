@@ -281,10 +281,17 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     );
   }
   if (error && !tenantInfo) {
+    const { protocol, port } = window.location;
+    const baseHost = window.location.hostname.endsWith(".localhost")
+      ? "localhost"
+      : window.location.hostname;
+    const baseUrl = `${protocol}//${baseHost}${port ? ":" + port : ""}/`;
+
     return (
       <div className={styles.loadingOrError}>
-        <h1>Error</h1> <p>{error}</p>{" "}
-        <a href={`/`}>Volver a la página principal</a>
+        <h1>Error</h1>
+        <p>{error}</p>
+        <a href={baseUrl}>Volver a la página principal</a>
       </div>
     );
   }

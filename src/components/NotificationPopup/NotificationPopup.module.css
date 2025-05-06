@@ -1,0 +1,164 @@
+.popup {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 2000;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  max-width: 450px;
+  min-width: 300px;
+  animation: slideIn 0.3s ease-out forwards;
+
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.popup.info {
+  background-color: #e7f3fe;
+  color: #31708f;
+  border-color: #bce8f1;
+}
+
+.popup.success {
+  background-color: #dff0d8;
+  color: #3c763d;
+  border-color: #d6e9c6;
+}
+
+.popup.error {
+  background-color: #f2dede;
+  color: #a94442;
+  border-color: #ebccd1;
+}
+
+.popup.loginPrompt {
+  background-color: #fcf8e3;
+  color: #8a6d3b;
+  border-color: #faebcc;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-grow: 1;
+}
+
+.popup.loginPrompt .content {
+  justify-content: center;
+  margin-bottom: var(--space-sm);
+}
+
+.icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-bottom: -3px;
+}
+
+.message {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  margin-top: var(--space-md);
+  width: 100%;
+}
+
+.actionButton {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.85em;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.actionButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.actionButton svg {
+  margin-bottom: -2px;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: var(--space-xs);
+  margin-left: var(--space-sm);
+  font-size: 1.2rem;
+  line-height: 1;
+  align-self: flex-start;
+}
+
+.popup.loginPrompt .closeButton {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .popup {
+    max-width: 90%;
+    min-width: auto;
+    right: 5%;
+    left: 5%;
+    bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .message {
+    font-size: 0.9rem;
+  }
+
+  .icon {
+    font-size: 1.3rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actionButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

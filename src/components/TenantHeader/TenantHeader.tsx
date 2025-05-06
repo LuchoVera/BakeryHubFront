@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import styles from "./TenantHeader.module.css";
 import { useAuth } from "../../AuthContext";
 import { FaSearch } from "react-icons/fa";
+import { LuShoppingCart } from "react-icons/lu";
+import { useCart } from "../../hooks/useCart";
 
 interface TenantHeaderProps {
   tenantName: string;
@@ -10,9 +12,12 @@ interface TenantHeaderProps {
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { getCartTotalQuantity, toggleCartOpen } = useCart();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  const shouldShowCart = !user?.roles?.includes("Admin");
 
   const handleLocalSearchChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -35,6 +40,8 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
     }
   };
 
+  const totalCartQuantity = getCartTotalQuantity();
+
   return (
     <header className={styles.header}>
       <div className={styles.headerContent}>
@@ -53,7 +60,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
           >
             <FaSearch />
           </button>
-
           <input
             type="search"
             placeholder="Buscar productos..."
@@ -72,12 +78,44 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
               <span className={styles.userName} title={`¡Hola, ${user?.name}!`}>
                 ¡Hola, {user?.name}!
               </span>
+
+              {shouldShowCart && (
+                <button
+                  onClick={toggleCartOpen}
+                  className={`${styles.actionButton} ${styles.cartButton}`}
+                  aria-label={`Carrito de compras con ${totalCartQuantity} items`}
+                  title="Ver carrito"
+                >
+                  <LuShoppingCart />
+                  {totalCartQuantity > 0 && (
+                    <span className={styles.cartBadge}>
+                      {totalCartQuantity}
+                    </span>
+                  )}
+                </button>
+              )}
+
               <button onClick={logout} className={styles.actionButton}>
                 Cerrar Sesión
               </button>
             </>
           ) : (
             <>
+              {shouldShowCart && (
+                <button
+                  onClick={toggleCartOpen}
+                  className={`${styles.actionButton} ${styles.cartButton}`}
+                  aria-label={`Carrito de compras con ${totalCartQuantity} items`}
+                  title="Ver carrito"
+                >
+                  <LuShoppingCart />
+                  {totalCartQuantity > 0 && (
+                    <span className={styles.cartBadge}>
+                      {totalCartQuantity}
+                    </span>
+                  )}
+                </button>
+              )}
               <Link to="/login" className={styles.actionLink}>
                 Iniciar Sesión
               </Link>
