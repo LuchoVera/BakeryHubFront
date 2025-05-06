@@ -4,21 +4,30 @@ import axios, { AxiosError } from "axios";
 import { ProductDto, TenantPublicInfoDto, ApiErrorResponse } from "../../types";
 import styles from "./ProductDetailPage.module.css";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
-
-const apiUrl = "/api";
+import { useAuth } from "../../AuthContext";
+import { useCart } from "../../hooks/useCart";
+import { useNotification } from "../../hooks/useNotification";
 
 interface ProductDetailPageProps {
   subdomain: string;
 }
 
+const apiUrl = "/api";
+
 const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<ProductDto | null>(null);
-  const [tenantName, setTenantName] = useState<string>("");
+  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
+    null
+  );
   const [loadingProduct, setLoadingProduct] = useState<boolean>(true);
   const [loadingTenant, setLoadingTenant] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const { user } = useAuth();
+  const { addItemToCart } = useCart();
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     if (!subdomain) {
@@ -27,15 +36,21 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
       return;
     }
     setLoadingTenant(true);
+    setError(null);
+    setTenantInfo(null);
     const fetchTenantInfo = async () => {
       const requestUrl = `${apiUrl}/public/tenants/${subdomain}`;
       try {
         const response = await axios.get<TenantPublicInfoDto>(requestUrl);
-        setTenantName(response.data.name);
+        setTenantInfo(response.data);
       } catch (err) {
-        setError(
-          (prev) => prev || "No se pudo cargar la información de la tienda."
-        );
+        const axiosError = err as AxiosError<ApiErrorResponse>;
+        if (axiosError.response?.status === 404) {
+          setError(`La tienda "${subdomain}" no fue encontrada.`);
+        } else {
+          setError("Ocurrió un error cargando la información de la tienda.");
+        }
+        setTenantInfo(null);
       } finally {
         setLoadingTenant(false);
       }
@@ -49,7 +64,14 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
       setLoadingProduct(false);
       return;
     }
+    if (error && !product) {
+      setLoadingProduct(false);
+      return;
+    }
+
     setLoadingProduct(true);
+    setError(null);
+    setProduct(null);
     const fetchProductDetails = async () => {
       const requestUrl = `${apiUrl}/Products/${subdomain}/products/${productId}`;
       try {
@@ -57,6 +79,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
         setProduct(response.data);
         if (response.data.images && response.data.images.length > 0) {
           setSelectedImage(response.data.images[0]);
+        } else {
+          setSelectedImage(null);
         }
       } catch (err) {
         const axiosError = err as AxiosError<ApiErrorResponse>;
@@ -68,27 +92,53 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
               prev || "Ocurrió un error cargando los detalles del producto."
           );
         }
+        setProduct(null);
       } finally {
         setLoadingProduct(false);
       }
     };
-    fetchProductDetails();
-  }, [productId, subdomain]);
+    if (tenantInfo || !error) {
+      fetchProductDetails();
+    } else {
+      setLoadingProduct(false);
+    }
+  }, [productId, subdomain, tenantInfo, error]);
 
-  const isLoading = loadingProduct || loadingTenant;
+  const isAdmin = user?.roles?.includes("Admin") ?? false;
+  const isButtonDisabled = !product || !product.isAvailable || isAdmin;
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    if (isAdmin) {
+      showNotification(
+        "Los administradores no pueden añadir productos al carrito.",
+        "info",
+        4000
+      );
+    } else if (product.isAvailable) {
+      addItemToCart(product);
+      showNotification(
+        `'${product.name}' añadido al carrito!`,
+        "success",
+        3000
+      );
+    }
+  };
 
   const handleThumbnailClick = (imageUrl: string) => {
     setSelectedImage(imageUrl);
   };
 
+  const isLoading = loadingProduct || loadingTenant;
+
   if (isLoading) {
     return <div className={styles.message}>Cargando...</div>;
   }
-
-  if (error) {
+  if (error && !product) {
     return (
       <div className={styles.pageContainerWithError}>
-        {tenantName && <TenantHeader tenantName={tenantName} />}
+        {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
         <div className={styles.message} style={{ paddingTop: "20px" }}>
           <p className={styles.errorText}>{error}</p>
           <Link to="/" className={styles.backLink}>
@@ -98,16 +148,12 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
       </div>
     );
   }
-
-  if (!product || !tenantName) {
+  if (!product && !isLoading) {
     return (
       <div className={styles.pageContainerWithError}>
-        {tenantName && <TenantHeader tenantName={tenantName} />}
+        {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
         <div className={styles.message} style={{ paddingTop: "20px" }}>
-          {!tenantName
-            ? "No se pudo cargar la información de la tienda."
-            : "No se pudieron cargar los datos del producto."}
-          <br />
+          <p>No se pudo cargar la información del producto.</p>
           <Link to="/" className={styles.backLink}>
             Volver al Catálogo
           </Link>
@@ -115,6 +161,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
       </div>
     );
   }
+  if (!product) return null;
 
   const leadTimeNumber = Number(product.leadTimeDisplay);
   const leadTimeText =
@@ -124,7 +171,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
 
   return (
     <div>
-      <TenantHeader tenantName={tenantName} />
+      <TenantHeader tenantName={tenantInfo?.name ?? ""} />
       <div className={styles.pageContainer}>
         <div className={styles.productDetailLayout}>
           <div className={styles.imageSection}>
@@ -185,9 +232,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
                 <p>{product.description}</p>
               </div>
             )}
+
             <button
               className={styles.addToCartButton}
-              disabled={!product.isAvailable}
+              onClick={handleAddToCart}
+              disabled={isButtonDisabled}
+              title={
+                !product?.isAvailable
+                  ? "Producto no disponible"
+                  : isAdmin
+                  ? "Los administradores no pueden comprar"
+                  : "Añadir al carrito"
+              }
             >
               {product.isAvailable ? "Añadir al Carrito" : "No Disponible"}
             </button>
