@@ -12,7 +12,7 @@ interface TenantHeaderProps {
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const { isAuthenticated, user, logout } = useAuth();
-  const { getCartTotalQuantity, toggleCartOpen } = useCart();
+  const { getCartTotalQuantity } = useCart();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState("");
   const navigate = useNavigate();
@@ -40,6 +40,9 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
     }
   };
 
+  const handleCartClick = () => {
+    navigate("/cart");
+  };
   const totalCartQuantity = getCartTotalQuantity();
 
   return (
@@ -81,7 +84,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
 
               {shouldShowCart && (
                 <button
-                  onClick={toggleCartOpen}
+                  onClick={handleCartClick}
                   className={`${styles.actionButton} ${styles.cartButton}`}
                   aria-label={`Carrito de compras con ${totalCartQuantity} items`}
                   title="Ver carrito"
@@ -94,7 +97,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
                   )}
                 </button>
               )}
-
               <button onClick={logout} className={styles.actionButton}>
                 Cerrar Sesión
               </button>
@@ -103,7 +105,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
             <>
               {shouldShowCart && (
                 <button
-                  onClick={toggleCartOpen}
+                  onClick={handleCartClick}
                   className={`${styles.actionButton} ${styles.cartButton}`}
                   aria-label={`Carrito de compras con ${totalCartQuantity} items`}
                   title="Ver carrito"

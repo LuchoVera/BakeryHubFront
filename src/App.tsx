@@ -26,6 +26,7 @@ import ProductDetailPage from "./pages/ProductDetailPage/ProductDetailPage";
 import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCustomerLoginPage";
 import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
 import "./App.css";
+import CartPage from "./pages/CartPage/CartPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -79,6 +80,10 @@ function App() {
                   <Route
                     path="/search"
                     element={<SearchResultsPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/cart"
+                    element={<CartPage subdomain={subdomain} />}
                   />
                   <Route
                     path="*"

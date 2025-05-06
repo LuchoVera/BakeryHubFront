@@ -130,8 +130,7 @@ export interface CartContextType {
   removeItemFromCart: (productId: string) => void;
   decrementItemQuantity: (productId: string) => void;
   getCartTotalQuantity: () => number;
-  isCartOpen: boolean;
-  toggleCartOpen: () => void;
+  updateItemQuantity: (productId: string, newQuantity: number) => void;
 }
 
 export type NotificationType = "info" | "success" | "error" | "loginPrompt";
@@ -150,4 +149,8 @@ export interface NotificationContextType {
   ) => void;
   hideNotification: () => void;
   notification: NotificationState | null;
+}
+
+export interface CartPageProps {
+  subdomain: string;
 }
