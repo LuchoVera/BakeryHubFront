@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, ReactNode } from "react";
 import axios, { AxiosError } from "axios";
 import {
   CategoryDto,
@@ -7,6 +7,8 @@ import {
 } from "../../../types";
 import styles from "./CategoryListPage.module.css";
 import CategoryTable from "../../../components/CategoryTable/CategoryTable";
+import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
+import { LuTriangleAlert, LuCircleX } from "react-icons/lu";
 import {
   validateRequired,
   validateMinLength,
@@ -14,6 +16,11 @@ import {
 } from "../../../utils/validationUtils";
 
 const apiUrl = "/api";
+
+interface CategoryDeleteModalData {
+  id: string;
+  name: string;
+}
 
 interface AddCategoryFormProps {
   onCategoryAdded: () => void;
@@ -28,13 +35,11 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     const trimmedName = name.trim();
     let validationError =
       validateRequired(trimmedName) ||
       validateMinLength(trimmedName, 3) ||
       validateMaxLength(trimmedName, 30);
-
     if (validationError) {
       if (validationError.includes("required")) {
         validationError = "El nombre es requerido.";
@@ -46,7 +51,6 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
       setError(validationError);
       return;
     }
-
     setLoading(true);
     try {
       await axios.post(`${apiUrl}/categories`, { name: trimmedName });
@@ -55,17 +59,10 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
-      console.error(
-        "Error adding category:",
-        response?.data || axiosError.message
-      );
-
       let errorMessage = "Ocurrió un error inesperado al añadir la categoría.";
-
       if (response) {
         if (response.status === 400) {
-          errorMessage =
-            "Error: La categoría ya existe o los datos son inválidos.";
+          errorMessage = "Error: La categoría ya existe.";
         } else if (response.status === 409) {
           errorMessage =
             "Conflicto: El recurso ya podría existir o hubo un problema.";
@@ -133,20 +130,23 @@ const CategoryListPage: React.FC = () => {
   const [editingName, setEditingName] = useState<string>("");
   const [editLoading, setEditLoading] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<CategoryDeleteModalData | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
+  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
+    null
+  );
 
   const fetchCategories = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const response = await axios.get<CategoryDto[]>(`${apiUrl}/categories`);
       setCategories(response.data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        "Error fetching categories:",
-        axiosError.response?.data || axiosError.message
-      );
+
       if (axiosError.response?.status === 401) {
         setError("Autenticación requerida. Por favor, inicia sesión de nuevo.");
       } else {
@@ -162,6 +162,7 @@ const CategoryListPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setLoading(true);
     fetchCategories();
   }, [fetchCategories]);
 
@@ -198,7 +199,6 @@ const CategoryListPage: React.FC = () => {
       setEditError(validationError);
       return;
     }
-
     setEditLoading(true);
     setEditError(null);
     try {
@@ -211,16 +211,11 @@ const CategoryListPage: React.FC = () => {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
       const responseData = response?.data;
-      console.error(
-        `Error updating category ${categoryId}:`,
-        responseData || axiosError.message
-      );
 
       let errorMessage = "Ocurrió un error al guardar los cambios.";
       if (response) {
         if (response.status === 400) {
-          errorMessage =
-            "Error: La categoría ya existe o los datos son inválidos.";
+          errorMessage = "Error: La categoría ya existe.";
         } else if (response.status === 409) {
           errorMessage =
             "Conflicto: El recurso ya podría existir o hubo un problema.";
@@ -247,32 +242,62 @@ const CategoryListPage: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = async (categoryId: string) => {
-    if (
-      window.confirm(
-        `¿Estás seguro de querer borrar esta categoría? Esta acción no se puede deshacer.`
-      )
-    ) {
-      setDeletingId(categoryId);
-      setEditError(null);
-      try {
-        await axios.delete(`${apiUrl}/categories/${categoryId}`);
-        await fetchCategories();
-      } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        const responseData = axiosError.response?.data;
-        console.error(
-          `Error deleting category ${categoryId}:`,
-          responseData || axiosError.message
-        );
-        alert(
-          `No se pudo borrar la categoría. Puede que tenga productos asociados.`
-        );
-      } finally {
-        setDeletingId(null);
-      }
+  const handleDeleteClick = (categoryId: string) => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    if (category) {
+      setCategoryToDelete({ id: category.id, name: category.name });
+      setIsDeleteModalOpen(true);
+      setErrorModalMessage(null);
+      setIsErrorModalOpen(false);
     }
   };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    setDeletingId(categoryToDelete.id);
+    setIsDeleteModalOpen(false);
+
+    try {
+      await axios.delete(`${apiUrl}/categories/${categoryToDelete.id}`);
+      setCategoryToDelete(null);
+      await fetchCategories();
+    } catch (err) {
+      let userErrorMessage =
+        "No se pudo borrar la categoría. Tiene productos asociados.";
+
+      setErrorModalMessage(userErrorMessage);
+      setIsErrorModalOpen(true);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setCategoryToDelete(null);
+  };
+
+  const handleErrorModalClose = () => {
+    setIsErrorModalOpen(false);
+    setErrorModalMessage(null);
+  };
+
+  const deleteModalMessage: ReactNode = categoryToDelete ? (
+    <>
+      ¿Estás seguro de querer borrar la categoría{" "}
+      <strong>"{categoryToDelete.name}"</strong>?
+    </>
+  ) : (
+    ""
+  );
+
+  const deleteModalWarning: ReactNode = (
+    <>
+      Esta acción no se puede deshacer. Si la categoría tiene productos
+      asociados, la eliminación podría fallar.
+    </>
+  );
 
   return (
     <div className={styles.pageContainer}>
@@ -297,6 +322,34 @@ const CategoryListPage: React.FC = () => {
           onEditingNameChange={handleEditingNameChange}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Eliminación"
+        message={deleteModalMessage}
+        warningMessage={deleteModalWarning}
+        confirmText="Sí, Borrar"
+        cancelText="Cancelar"
+        isConfirming={!!deletingId}
+        icon={<LuTriangleAlert />}
+        iconType="danger"
+        confirmButtonVariant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={isErrorModalOpen}
+        onClose={handleErrorModalClose}
+        onConfirm={handleErrorModalClose}
+        title="Error al Eliminar"
+        message={errorModalMessage || "Ocurrió un error."}
+        confirmText="OK"
+        showCancelButton={false}
+        icon={<LuCircleX />}
+        iconType="danger"
+        confirmButtonVariant="primary"
+      />
     </div>
   );
 };
