@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from "react";
 import axios, { AxiosError } from "axios";
 import styles from "./AdminOrdersPage.module.css";
 import {
@@ -8,7 +14,8 @@ import {
   StatusConfirmModalData,
 } from "../../../types";
 import OrdersTable from "../../../components/OrdersTable/OrdersTable";
-import { LuTriangleAlert, LuCircleCheck, LuCircleX } from "react-icons/lu";
+import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
+import { LuTriangleAlert } from "react-icons/lu";
 
 const apiUrl = "/api";
 
@@ -72,9 +79,7 @@ const AdminOrdersPage: React.FC = () => {
     const groups: Record<string, OrderDto[]> = {};
     allOrders.forEach((order) => {
       const statusKey = order.status || "Unknown";
-      if (!groups[statusKey]) {
-        groups[statusKey] = [];
-      }
+      if (!groups[statusKey]) groups[statusKey] = [];
       groups[statusKey].push(order);
     });
     return groups;
@@ -102,13 +107,8 @@ const AdminOrdersPage: React.FC = () => {
     const currentStatus = order.status;
     const orderNumber = order.orderNumber ?? order.id.substring(0, 8);
 
-    if (newStatus === "Confirmed" || newStatus === "Cancelled") {
-      setConfirmModalData({
-        orderId,
-        orderNumber,
-        currentStatus,
-        newStatus,
-      });
+    if (newStatus === "Received" || newStatus === "Cancelled") {
+      setConfirmModalData({ orderId, orderNumber, currentStatus, newStatus });
       setIsConfirmModalOpen(true);
     } else {
       executeUpdateStatus(orderId, newStatus);
@@ -143,6 +143,45 @@ const AdminOrdersPage: React.FC = () => {
     }
     return groupedOrders[activeFilter] ? [activeFilter] : [];
   }, [activeFilter, groupedOrders]);
+
+  const getModalMessage = (): ReactNode => {
+    if (!confirmModalData) return "";
+    return (
+      <>
+        Vas a marcar el pedido <strong>#{confirmModalData.orderNumber}</strong>{" "}
+        como{" "}
+        <strong>
+          "
+          {STATUS_LABELS[confirmModalData.newStatus] ??
+            confirmModalData.newStatus}
+          "
+        </strong>
+        .
+      </>
+    );
+  };
+
+  const getModalWarning = (): ReactNode | undefined => {
+    if (
+      !confirmModalData ||
+      (confirmModalData.newStatus !== "Received" &&
+        confirmModalData.newStatus !== "Cancelled")
+    ) {
+      return undefined;
+    }
+    const message =
+      confirmModalData.newStatus === "Cancelled"
+        ? "Esta acción no se puede deshacer."
+        : "Una vez marcado como entregado, no podrás cambiar el estado.";
+
+    return (
+      <>
+        {message}
+        <br />
+        ¿Estás seguro de continuar?
+      </>
+    );
+  };
 
   return (
     <div className={styles.pageContainer}>
@@ -203,61 +242,22 @@ const AdminOrdersPage: React.FC = () => {
         </div>
       )}
 
-      {isConfirmModalOpen && confirmModalData && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h3>
-              <LuTriangleAlert
-                style={{ color: "orange", marginRight: "8px" }}
-              />{" "}
-              Confirmar Cambio de Estado
-            </h3>
-            <p>
-              Vas a cambiar el estado del pedido{" "}
-              <strong>#{confirmModalData.orderNumber}</strong> a{" "}
-              <strong>
-                "
-                {STATUS_LABELS[confirmModalData.newStatus] ??
-                  confirmModalData.newStatus}
-                "
-              </strong>
-              .
-            </p>
-            {(confirmModalData.newStatus === "Confirmed" ||
-              confirmModalData.newStatus === "Cancelled") && (
-              <p className={styles.warningText}>
-                {confirmModalData.newStatus === "Cancelled"
-                  ? "Esta acción no se puede deshacer."
-                  : "Asegúrate de que esta sea la acción correcta. No se podrá revertir."}
-                <br />
-                ¿Estás seguro de continuar?
-              </p>
-            )}
-            <div className={styles.modalActions}>
-              <button
-                onClick={handleModalConfirm}
-                className={styles.modalButtonConfirm}
-                disabled={isUpdatingStatus}
-              >
-                {isUpdatingStatus ? (
-                  "Actualizando..."
-                ) : (
-                  <>
-                    <LuCircleCheck /> Sí, Confirmar
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleModalCancel}
-                className={styles.modalButtonCancel}
-                disabled={isUpdatingStatus}
-              >
-                <LuCircleX /> Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleModalCancel}
+        onConfirm={handleModalConfirm}
+        title="Confirmar Cambio de Estado"
+        message={getModalMessage()}
+        warningMessage={getModalWarning()}
+        confirmText="Sí, Confirmar"
+        cancelText="Cancelar"
+        isConfirming={isUpdatingStatus}
+        icon={<LuTriangleAlert />}
+        iconType="warning"
+        confirmButtonVariant={
+          confirmModalData?.newStatus === "Cancelled" ? "danger" : "primary"
+        }
+      />
     </div>
   );
 };

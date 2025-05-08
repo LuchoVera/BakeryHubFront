@@ -1,10 +1,22 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios, { AxiosError } from "axios";
-import { OrderDto, ApiErrorResponse } from "../../../types";
+import {
+  OrderDto,
+  ApiErrorResponse,
+  OrderStatus,
+  StatusConfirmModalData,
+} from "../../../types";
 import styles from "./AdminOrderDetailPage.module.css";
+import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
 import { FaWhatsapp } from "react-icons/fa";
-import { LuArrowLeft, LuUser, LuHash, LuClipboardList } from "react-icons/lu";
+import {
+  LuArrowLeft,
+  LuUser,
+  LuHash,
+  LuClipboardList,
+  LuTriangleAlert,
+} from "react-icons/lu";
 
 const apiUrl = "/api";
 
@@ -16,11 +28,7 @@ const formatDate = (dateString: string | null | undefined): string => {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
     };
-
     return date.toLocaleString("es-BO", options);
   } catch (e) {
     return "Fecha Inválida";
@@ -30,6 +38,15 @@ const formatDate = (dateString: string | null | undefined): string => {
 const formatCurrency = (amount: number): string => {
   return `Bs. ${amount.toFixed(2)}`;
 };
+
+const statusOptions: { value: OrderStatus | string; label: string }[] = [
+  { value: "Pending", label: "Pendiente" },
+  { value: "Confirmed", label: "Confirmado" },
+  { value: "Preparing", label: "En Preparación" },
+  { value: "Ready", label: "Listo" },
+  { value: "Received", label: "Entregado" },
+  { value: "Cancelled", label: "Cancelado" },
+];
 
 const STATUS_LABELS_DETAIL: Record<string, string> = {
   Pending: "Pendiente",
@@ -41,11 +58,35 @@ const STATUS_LABELS_DETAIL: Record<string, string> = {
   Unknown: "Desconocido",
 };
 
+const getStatusClass = (status: OrderStatus | string): string => {
+  switch (status?.toLowerCase()) {
+    case "pending":
+      return styles.statusPending;
+    case "confirmed":
+      return styles.statusConfirmed;
+    case "preparing":
+      return styles.statusPreparing;
+    case "ready":
+      return styles.statusReady;
+    case "received":
+      return styles.statusReceived;
+    case "cancelled":
+      return styles.statusCancelled;
+    default:
+      return styles.statusDefault;
+  }
+};
+
 const AdminOrderDetailPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const [orderData, setOrderData] = useState<OrderDto | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+  const [confirmModalData, setConfirmModalData] =
+    useState<StatusConfirmModalData | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) {
@@ -53,7 +94,7 @@ const AdminOrderDetailPage: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+
     setError(null);
     try {
       const response = await axios.get<OrderDto>(
@@ -78,8 +119,83 @@ const AdminOrderDetailPage: React.FC = () => {
   }, [orderId]);
 
   useEffect(() => {
+    setIsLoading(true);
     fetchOrderDetails();
   }, [fetchOrderDetails]);
+
+  const executeUpdateStatus = async (
+    orderIdToUpdate: string,
+    newStatus: string
+  ) => {
+    setIsUpdatingStatus(true);
+    try {
+      await axios.put(`${apiUrl}/admin/orders/${orderIdToUpdate}/status`, {
+        NewStatus: newStatus,
+      });
+
+      await fetchOrderDetails();
+    } catch (updateError) {
+      console.error("Error updating order status:", updateError);
+      alert(`Error al actualizar estado del pedido ${orderIdToUpdate}`);
+
+      await fetchOrderDetails();
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const requestStatusChange = (newStatus: string) => {
+    if (!orderData) return;
+
+    const currentStatus = orderData.status;
+
+    if (newStatus === currentStatus) return;
+
+    const orderNumber = orderData.orderNumber ?? orderData.id.substring(0, 8);
+
+    if (newStatus === "Received" || newStatus === "Cancelled") {
+      setConfirmModalData({
+        orderId: orderData.id,
+        orderNumber,
+        currentStatus,
+        newStatus,
+      });
+      setIsConfirmModalOpen(true);
+
+      setOrderData((prev) =>
+        prev ? { ...prev, status: currentStatus } : null
+      );
+    } else {
+      executeUpdateStatus(orderData.id, newStatus);
+    }
+  };
+
+  const handleModalConfirm = () => {
+    if (confirmModalData) {
+      setOrderData((prev) =>
+        prev ? { ...prev, status: confirmModalData.newStatus } : null
+      );
+      executeUpdateStatus(confirmModalData.orderId, confirmModalData.newStatus);
+    }
+    setIsConfirmModalOpen(false);
+    setConfirmModalData(null);
+  };
+
+  const handleModalCancel = () => {
+    setIsConfirmModalOpen(false);
+    setConfirmModalData(null);
+  };
+
+  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = event.target.value;
+
+    const currentStatus = orderData?.status;
+    if (currentStatus && newStatus !== currentStatus) {
+      setOrderData((prev) => (prev ? { ...prev, status: newStatus } : null));
+
+      requestStatusChange(newStatus);
+    }
+  };
 
   const handleWhatsAppClick = (
     phoneNumber: string | null | undefined,
@@ -135,9 +251,6 @@ const AdminOrderDetailPage: React.FC = () => {
     );
   }
 
-  const currentStatusLabel =
-    STATUS_LABELS_DETAIL[orderData.status] ?? orderData.status;
-
   return (
     <div className={styles.pageContainer}>
       <Link to="/admin/orders" className={styles.backLink}>
@@ -161,7 +274,6 @@ const AdminOrderDetailPage: React.FC = () => {
                 {orderData.orderNumber ?? orderData.id.substring(0, 8)}
               </span>
             </div>
-
             <div>
               <strong>Fecha Pedido:</strong>{" "}
               <span>{formatDate(orderData.orderDate)}</span>
@@ -170,15 +282,38 @@ const AdminOrderDetailPage: React.FC = () => {
               <strong>Fecha Entrega:</strong>{" "}
               <span>{formatDate(orderData.deliveryDate)}</span>
             </div>
-            <div>
+
+            <div className={styles.statusSelectContainer}>
               <strong>Estado Actual:</strong>
-              <span
-                className={`${styles.statusBadge} ${
-                  styles[orderData.status.toLowerCase()]
-                }`}
+              <select
+                value={orderData.status}
+                onChange={handleSelectChange}
+                className={`${styles.statusSelect} ${getStatusClass(
+                  orderData.status
+                )}`}
+                disabled={
+                  isUpdatingStatus ||
+                  orderData.status === "Received" ||
+                  orderData.status === "Cancelled"
+                }
               >
-                {currentStatusLabel}
-              </span>
+                {statusOptions.map((opt) => (
+                  <option
+                    key={opt.value}
+                    value={opt.value}
+                    disabled={
+                      (orderData.status === "Received" ||
+                        orderData.status === "Cancelled") &&
+                      orderData.status !== opt.value
+                    }
+                  >
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {isUpdatingStatus && (
+                <span className={styles.statusSpinner}> (Guardando...)</span>
+              )}
             </div>
           </div>
         </section>
@@ -258,6 +393,49 @@ const AdminOrderDetailPage: React.FC = () => {
           </tfoot>
         </table>
       </section>
+
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleModalCancel}
+        onConfirm={handleModalConfirm}
+        title="Confirmar Cambio de Estado"
+        message={
+          confirmModalData ? (
+            <>
+              Vas a marcar el pedido{" "}
+              <strong>#{confirmModalData.orderNumber}</strong> como{" "}
+              <strong>
+                "
+                {STATUS_LABELS_DETAIL[confirmModalData.newStatus] ??
+                  confirmModalData.newStatus}
+                "
+              </strong>
+              .
+            </>
+          ) : (
+            ""
+          )
+        }
+        warningMessage={
+          confirmModalData ? (
+            <>
+              {confirmModalData.newStatus === "Cancelled"
+                ? "Esta acción generalmente no se puede deshacer."
+                : "Una vez marcado como entregado, no deberías cambiar el estado."}
+              <br />
+              ¿Estás seguro de continuar?
+            </>
+          ) : undefined
+        }
+        confirmText="Sí, Confirmar"
+        cancelText="Cancelar"
+        isConfirming={isUpdatingStatus}
+        icon={<LuTriangleAlert />}
+        iconType="warning"
+        confirmButtonVariant={
+          confirmModalData?.newStatus === "Cancelled" ? "danger" : "primary"
+        }
+      />
     </div>
   );
 };
