@@ -4,6 +4,12 @@
 }
 
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1000;
   width: 220px;
   flex-shrink: 0;
   background-color: var(--color-surface);
@@ -13,8 +19,6 @@
   flex-direction: column;
   transition: width 0.3s ease, padding 0.3s ease;
   overflow-x: hidden;
-  position: relative;
-  z-index: 1;
 }
 
 .sidebarCollapsed {
@@ -63,10 +67,17 @@
   list-style: none;
   padding: 0;
   margin: 0;
-}
 
+  margin-bottom: var(--space-md);
+}
+.navList:last-of-type {
+  margin-bottom: 0;
+}
 .navItem {
   margin-bottom: var(--space-sm);
+}
+.navItem:last-child {
+  margin-bottom: 0;
 }
 
 .navLink {
@@ -132,40 +143,50 @@
 .separator {
   border: none;
   border-top: 1px solid var(--color-border);
-  margin: var(--space-md) 0;
+  margin: var(--space-lg) 0;
+}
+
+.logoutNavItem {
+  margin-top: var(--space-md);
 }
 
 .logoutButton {
-  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
   padding: var(--space-sm) var(--space-md);
   width: 100%;
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+
   background-color: transparent;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
   cursor: pointer;
-  text-align: center;
-  font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease,
-    border-color 0.2s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
+  text-align: left;
+  justify-content: flex-start;
 }
 
 .sidebarCollapsed .logoutButton {
   justify-content: center;
   padding: var(--space-sm);
   gap: 0;
+  border: none;
 }
 
 .logoutButton:hover {
   background-color: var(--color-neutral-warm);
   border-color: var(--color-text-secondary);
   color: var(--color-text-primary);
+}
+
+.sidebarCollapsed .logoutButton:hover {
+  background-color: var(--color-neutral-warm);
 }
 
 .logoutButton .navIcon {
@@ -178,6 +199,8 @@
   background-color: var(--color-background);
   transition: margin-left 0.3s ease;
   margin-left: 220px;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .layoutContainer.layoutContainerCollapsed .mainContent {
