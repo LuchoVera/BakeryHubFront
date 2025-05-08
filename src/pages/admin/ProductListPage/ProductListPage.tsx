@@ -1,29 +1,48 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, ReactNode } from "react";
 import axios, { AxiosError } from "axios";
 import { ProductDto, ApiErrorResponse } from "../../../types";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./ProductListPage.module.css";
 import ProductTable from "../../../components/ProductTable/ProductTable";
+import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
+import { LuTriangleAlert, LuCircleCheck, LuCircleX } from "react-icons/lu";
 
 const apiUrl = "/api";
+
+interface ProductActionModalData {
+  action: "delete" | "deactivate";
+  product: ProductDto;
+}
 
 const ProductListPage: React.FC = () => {
   const [allProducts, setAllProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [toggleLoading, setToggleLoading] = useState<boolean>(false);
-  const [deletingProductId, setDeletingProductId] = useState<string | null>(
+  const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+  const [productActionData, setProductActionData] =
+    useState<ProductActionModalData | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
+  const [successModalMessage, setSuccessModalMessage] = useState<string | null>(
     null
   );
+  const [successModalTitle, setSuccessModalTitle] = useState<string>("Éxito");
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
+  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
+    null
+  );
+
   const navigate = useNavigate();
 
   const fetchProducts = useCallback(async () => {
-    setLoading(true);
     setError(null);
-    setDeletingProductId(null);
     try {
       const response = await axios.get<ProductDto[]>(`${apiUrl}/products`);
-      setAllProducts(response.data);
+      const fetchedProducts = response.data || [];
+      fetchedProducts.sort((a, b) =>
+        a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+      );
+      setAllProducts(fetchedProducts);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       if (axiosError.response?.status === 401) {
@@ -41,77 +60,219 @@ const ProductListPage: React.FC = () => {
         );
       }
     } finally {
-      setLoading(false);
+      if (loading) setLoading(false);
     }
-  }, []);
+  }, [apiUrl, loading]);
 
   useEffect(() => {
+    const needsInitialLoad = allProducts.length === 0 && !error && !loading;
+    if (needsInitialLoad) {
+      setLoading(true);
+    }
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleToggleAvailability = async (
+  const executeToggleAvailability = async (
     productId: string,
-    currentAvailability: boolean
+    newAvailability: boolean,
+    productName?: string
   ) => {
-    setToggleLoading(true);
+    setIsProcessingAction(true);
     try {
       await axios.patch(
         `${apiUrl}/products/${productId}/availability`,
-        !currentAvailability,
+        newAvailability,
         { headers: { "Content-Type": "application/json" } }
       );
       await fetchProducts();
+      if (newAvailability && productName) {
+        setSuccessModalTitle("Producto Activado");
+        setSuccessModalMessage(
+          `Producto "${productName}" activado y ahora visible para clientes.`
+        );
+        setIsSuccessModalOpen(true);
+      }
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      alert(
-        `Fallo al actualizar disponibilidad del producto. ${
+
+      console.error("Error toggling availability:", err);
+      setErrorModalTitle("Error al Actualizar");
+      setErrorModalMessage(
+        `Fallo al actualizar disponibilidad. ${
           axiosError.response?.data?.detail ||
-          axiosError.response?.data?.title ||
           axiosError.message ||
-          ""
+          "Error desconocido"
         }`
       );
+      setIsErrorModalOpen(true);
     } finally {
-      setToggleLoading(false);
+      setIsProcessingAction(false);
     }
+  };
+
+  const executeDeleteProduct = async (
+    productId: string,
+    productName: string
+  ) => {
+    setIsProcessingAction(true);
+    try {
+      await axios.delete(`${apiUrl}/products/${productId}`);
+      await fetchProducts();
+      setSuccessModalTitle("Producto Eliminado");
+      setSuccessModalMessage(
+        `Producto "${productName}" eliminado correctamente.`
+      );
+      setIsSuccessModalOpen(true);
+    } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      console.error(
+        `Error deleting product ${productId}:`,
+        axiosError.response?.data || axiosError.message
+      );
+
+      let userErrorMessage = `No se pudo borrar el producto "${productName}".`;
+
+      if (
+        axiosError.response?.status === 500 ||
+        axiosError.response?.status === 400 ||
+        axiosError.response?.status === 409
+      ) {
+        userErrorMessage +=
+          " Es probable que esté asociado a pedidos registrados.";
+      } else {
+        userErrorMessage += " Ocurrió un error inesperado.";
+      }
+      userErrorMessage +=
+        " Puedes dejar el producto desactivado y no será visible.";
+
+      setErrorModalTitle("Error al Eliminar");
+      setErrorModalMessage(userErrorMessage);
+      setIsErrorModalOpen(true);
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
+
+  const handleToggleAvailability = (
+    productId: string,
+    currentAvailability: boolean
+  ) => {
+    const product = allProducts.find((p) => p.id === productId);
+    if (!product) return;
+    const isDeactivating = currentAvailability === true;
+    if (isDeactivating) {
+      setProductActionData({ action: "deactivate", product });
+      setIsConfirmModalOpen(true);
+    } else {
+      executeToggleAvailability(productId, true, product.name);
+    }
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    const product = allProducts.find((p) => p.id === productId);
+    if (product && !product.isAvailable) {
+      setProductActionData({ action: "delete", product });
+      setIsConfirmModalOpen(true);
+    } else if (product?.isAvailable) {
+      setErrorModalTitle("Acción no permitida");
+      setErrorModalMessage(
+        "Primero debes desactivar el producto para poder borrarlo."
+      );
+      setIsErrorModalOpen(true);
+    }
+  };
+
+  const handleModalConfirm = () => {
+    if (!productActionData) return;
+    const { action, product } = productActionData;
+    setIsConfirmModalOpen(false);
+    if (action === "deactivate") {
+      executeToggleAvailability(product.id, false);
+    } else if (action === "delete") {
+      executeDeleteProduct(product.id, product.name);
+    }
+    setProductActionData(null);
+  };
+
+  const handleModalCancel = () => {
+    setIsConfirmModalOpen(false);
+    setProductActionData(null);
+  };
+
+  const handleSuccessModalClose = () => {
+    setIsSuccessModalOpen(false);
+    setSuccessModalMessage(null);
+    setSuccessModalTitle("Éxito");
+  };
+
+  const handleErrorModalClose = () => {
+    setIsErrorModalOpen(false);
+    setErrorModalMessage(null);
+    setErrorModalTitle("Error");
   };
 
   const handleEdit = (productId: string) => {
     navigate(`/admin/products/edit/${productId}`);
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de querer borrar este producto permanentemente? Esta acción no se puede deshacer."
-      )
-    ) {
-      return;
-    }
-    setDeletingProductId(productId);
-    setError(null);
-    try {
-      await axios.delete(`${apiUrl}/products/${productId}`);
-      await fetchProducts();
-    } catch (err) {
-      const axiosError = err as AxiosError<ApiErrorResponse>;
-      alert(
-        `Fallo al borrar producto: ${
-          axiosError.response?.data?.detail ||
-          axiosError.response?.data?.message ||
-          "Ocurrió un error desconocido."
-        }`
-      );
-      setDeletingProductId(null);
+  const getModalInfo = (): {
+    title: string;
+    message: ReactNode;
+    warning: ReactNode | undefined;
+    confirmText: string;
+    variant: "primary" | "danger";
+    iconType: "warning" | "danger";
+  } => {
+    if (!productActionData)
+      return {
+        title: "",
+        message: "",
+        warning: undefined,
+        confirmText: "",
+        variant: "primary",
+        iconType: "warning",
+      };
+    const { action, product } = productActionData;
+    if (action === "deactivate") {
+      return {
+        title: "Confirmar Desactivación",
+        message: (
+          <>
+            ¿Estás seguro de querer desactivar el producto{" "}
+            <strong>"{product.name}"</strong>?
+          </>
+        ),
+        warning:
+          "El producto ya no será visible ni se podrá comprar por los clientes.",
+        confirmText: "Sí, Desactivar",
+        variant: "primary",
+        iconType: "warning",
+      };
+    } else {
+      return {
+        title: "Confirmar Eliminación",
+        message: (
+          <>
+            ¿Estás seguro de querer borrar permanentemente el producto{" "}
+            <strong>"{product.name}"</strong>?
+          </>
+        ),
+        warning: "Esta acción no se puede deshacer.",
+        confirmText: "Sí, Borrar",
+        variant: "danger",
+        iconType: "danger",
+      };
     }
   };
 
+  const modalInfo = getModalInfo();
   const availableProducts = allProducts.filter((p) => p.isAvailable);
   const unavailableProducts = allProducts.filter((p) => !p.isAvailable);
-
   const getToggleButtonLabel = (isAvailable: boolean): string => {
     return isAvailable ? "Desactivar" : "Activar";
   };
+
+  const [errorModalTitle, setErrorModalTitle] = useState<string>("Error");
 
   return (
     <div className={styles.pageContainer}>
@@ -134,10 +295,14 @@ const ProductListPage: React.FC = () => {
             actionButtonLabel={getToggleButtonLabel}
             onToggleAvailability={handleToggleAvailability}
             onEdit={handleEdit}
-            isLoading={toggleLoading || !!deletingProductId}
-            deletingProductId={deletingProductId}
+            isLoading={
+              isProcessingAction &&
+              productActionData?.action === "deactivate" &&
+              productActionData?.product.isAvailable
+            }
+            deletingProductId={null}
+            isUnavailableList={false}
           />
-
           <ProductTable
             products={unavailableProducts}
             title="Productos No Disponibles"
@@ -146,11 +311,60 @@ const ProductListPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDeleteProduct}
             isUnavailableList={true}
-            isLoading={toggleLoading || !!deletingProductId}
-            deletingProductId={deletingProductId}
+            isLoading={
+              isProcessingAction &&
+              productActionData?.action === "delete" &&
+              !productActionData?.product.isAvailable
+            }
+            deletingProductId={
+              isProcessingAction && productActionData?.action === "delete"
+                ? productActionData.product.id
+                : null
+            }
           />
         </>
       )}
+
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleModalCancel}
+        onConfirm={handleModalConfirm}
+        title={modalInfo.title}
+        message={modalInfo.message}
+        warningMessage={modalInfo.warning}
+        confirmText={modalInfo.confirmText}
+        cancelText="Cancelar"
+        isConfirming={isProcessingAction}
+        icon={<LuTriangleAlert />}
+        iconType={modalInfo.iconType}
+        confirmButtonVariant={modalInfo.variant}
+      />
+
+      <ConfirmationModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleSuccessModalClose}
+        onConfirm={handleSuccessModalClose}
+        title={successModalTitle}
+        message={successModalMessage || "Operación exitosa."}
+        confirmText="OK"
+        showCancelButton={false}
+        icon={<LuCircleCheck />}
+        iconType="success"
+        confirmButtonVariant="primary"
+      />
+
+      <ConfirmationModal
+        isOpen={isErrorModalOpen}
+        onClose={handleErrorModalClose}
+        onConfirm={handleErrorModalClose}
+        title={errorModalTitle}
+        message={errorModalMessage || "Ocurrió un error."}
+        confirmText="OK"
+        showCancelButton={false}
+        icon={<LuCircleX />}
+        iconType="danger"
+        confirmButtonVariant="primary"
+      />
     </div>
   );
 };
