@@ -15,7 +15,6 @@ const CART_STORAGE_KEY = "bakeryHubCart";
 const clearCartData = (
   setter: React.Dispatch<React.SetStateAction<CartItem[]>>
 ) => {
-  console.log("Clearing cart data...");
   setter([]);
   try {
     localStorage.removeItem(CART_STORAGE_KEY);
@@ -31,26 +30,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const prevIsAuthenticated = usePrevious(isAuthenticated);
 
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    console.log("CartContext: Initializing cart state...");
     try {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-      console.log("CartContext: Found in localStorage on init:", storedCart);
-      const parsedCart = storedCart ? JSON.parse(storedCart) : [];
-      console.log("CartContext: Parsed initial cart:", parsedCart);
-      return parsedCart;
+      return storedCart ? JSON.parse(storedCart) : [];
     } catch (error) {
       console.error("Error loading cart from localStorage", error);
       return [];
     }
   });
 
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-
   useEffect(() => {
-    console.log(
-      "CartContext: cartItems changed, saving to localStorage:",
-      cartItems
-    );
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     } catch (error) {
@@ -59,13 +48,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   }, [cartItems]);
 
   useEffect(() => {
-    console.log(
-      `CartContext: Auth check effect. PrevAuth: ${prevIsAuthenticated}, CurrentAuth: ${isAuthenticated}`
-    );
     if (prevIsAuthenticated === true && isAuthenticated === false) {
-      console.warn(
-        "CartContext: Clearing cart due to logout (isAuthenticated changed true -> false)"
-      );
       clearCartData(setCartItems);
     }
   }, [isAuthenticated, prevIsAuthenticated]);
@@ -113,12 +96,30 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     );
   }, []);
 
+  const updateItemQuantity = useCallback(
+    (productId: string, newQuantity: number) => {
+      const quantity = Math.max(0, Math.floor(newQuantity));
+      setCartItems((prevItems) => {
+        if (quantity === 0) {
+          return prevItems.filter((item) => item.product.id !== productId);
+        } else {
+          return prevItems.map((item) =>
+            item.product.id === productId
+              ? { ...item, quantity: quantity }
+              : item
+          );
+        }
+      });
+    },
+    []
+  );
+
   const getCartTotalQuantity = useCallback(() => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   }, [cartItems]);
 
-  const toggleCartOpen = useCallback(() => {
-    setIsCartOpen((prev) => !prev);
+  const clearCart = useCallback(() => {
+    clearCartData(setCartItems);
   }, []);
 
   const value = useMemo(
@@ -128,8 +129,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       removeItemFromCart,
       decrementItemQuantity,
       getCartTotalQuantity,
-      isCartOpen,
-      toggleCartOpen,
+      updateItemQuantity,
+      clearCart,
     }),
     [
       cartItems,
@@ -137,8 +138,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       removeItemFromCart,
       decrementItemQuantity,
       getCartTotalQuantity,
-      isCartOpen,
-      toggleCartOpen,
+      updateItemQuantity,
+      clearCart,
     ]
   );
 
