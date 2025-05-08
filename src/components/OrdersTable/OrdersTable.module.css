@@ -1,0 +1,261 @@
+.tableWrapper {
+  overflow-x: auto;
+  margin-top: var(--space-lg);
+}
+
+.ordersTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.ordersTable th,
+.ordersTable td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+  white-space: nowrap;
+}
+
+.ordersTable th {
+  background-color: var(--color-secondary-light);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom-width: 2px;
+  border-color: var(--color-border);
+  white-space: normal;
+}
+
+.ordersTable th:nth-child(1),
+.ordersTable td:nth-child(1) {
+  width: 15%;
+}
+.ordersTable th:nth-child(2),
+.ordersTable td:nth-child(2) {
+  width: 10%;
+}
+.ordersTable th:nth-child(3),
+.ordersTable td:nth-child(3) {
+  width: 10%;
+}
+.ordersTable th:nth-child(4),
+.ordersTable td:nth-child(4) {
+  width: 15%;
+}
+.ordersTable th:nth-child(5),
+.ordersTable td:nth-child(5) {
+  width: 10%;
+  text-align: center;
+}
+.ordersTable th:nth-child(6),
+.ordersTable td:nth-child(6) {
+  width: 10%;
+  text-align: right;
+}
+.ordersTable th:nth-child(7),
+.ordersTable td:nth-child(7) {
+  width: 15%;
+  text-align: center;
+}
+.ordersTable th:nth-child(8),
+.ordersTable td:nth-child(8) {
+  width: 15%;
+  text-align: center;
+}
+
+.ordersTable tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+.clickableRow:hover {
+  background-color: var(--color-secondary);
+}
+
+.statusSelect {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  background-color: var(--color-surface);
+  min-width: 130px;
+}
+
+.statusSelect:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background-color: var(--color-border-light);
+}
+.statusPending {
+  border-left: 4px solid var(--color-warning);
+  background-color: var(--color-warning-light);
+}
+.statusConfirmed {
+  border-left: 4px solid var(--color-info);
+  background-color: var(--color-info-light);
+}
+.statusPreparing {
+  border-left: 4px solid var(--color-primary-light);
+  background-color: var(--color-secondary);
+}
+.statusReady {
+  border-left: 4px solid var(--color-success-light);
+  background-color: var(--color-success-xlight);
+}
+.statusReceived {
+  border-left: 4px solid var(--color-success);
+  background-color: var(--color-success-light);
+}
+.statusCancelled {
+  border-left: 4px solid var(--color-text-secondary);
+  background-color: var(--color-neutral-warm);
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+.statusDefault {
+  border-left: 4px solid var(--color-border);
+}
+
+.statusSpinner {
+  font-size: 0.8em;
+  color: var(--color-text-secondary);
+  margin-left: var(--space-xs);
+}
+
+.actionButtons {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: center;
+  align-items: center;
+}
+
+.actionButton {
+  font-size: 1.1rem;
+  line-height: 1;
+  border-radius: var(--border-radius-sm);
+  transition: color 0.2s, background-color 0.2s, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  padding: var(--space-xs);
+}
+
+.actionButton:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+  transform: translateY(-1px);
+}
+
+.actionButton:disabled {
+  color: var(--color-border);
+  cursor: not-allowed;
+  background-color: var(--color-border-light);
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.whatsappButton {
+  color: #25d366;
+  border-color: #adeecf;
+  padding: var(--space-xs) var(--space-sm);
+  min-width: auto;
+}
+
+.whatsappButton:hover:not(:disabled) {
+  background-color: #25d366;
+  color: white;
+  border-color: #1da851;
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.whatsappButton:disabled {
+  color: #99e4b4;
+  background-color: var(--color-background);
+  border-color: var(--color-border);
+  opacity: 0.6;
+}
+
+.whatsappText {
+  display: inline;
+  margin-left: var(--space-xs);
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1;
+}
+
+@media (max-width: 950px) {
+  .ordersTable thead {
+    display: none;
+  }
+  .ordersTable,
+  .ordersTable tbody,
+  .ordersTable tr,
+  .ordersTable td {
+    display: block;
+  }
+  .ordersTable tr {
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--space-md);
+    border-radius: var(--border-radius-md);
+    background-color: var(--color-surface);
+    cursor: pointer;
+    padding: var(--space-sm);
+  }
+  .ordersTable tr:hover {
+    background-color: var(--color-secondary);
+  }
+  .ordersTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px dashed var(--color-border-light);
+    text-align: right;
+    white-space: normal;
+  }
+  .ordersTable tr td:last-child {
+    border-bottom: none;
+  }
+  .ordersTable td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    margin-right: var(--space-md);
+    text-align: left;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .ordersTable td:nth-child(5),
+  .ordersTable td:nth-child(6) {
+    text-align: right;
+  }
+  .ordersTable td:nth-child(7) {
+    flex-wrap: wrap;
+  }
+  .statusSelect {
+    width: auto;
+    flex-grow: 1;
+    max-width: none;
+    margin-left: auto;
+  }
+  .actionButtons {
+    justify-content: flex-end;
+  }
+  .actionButton {
+    height: 32px;
+    font-size: 1rem;
+  }
+}

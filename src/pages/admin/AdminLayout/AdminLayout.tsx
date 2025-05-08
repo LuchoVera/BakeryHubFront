@@ -9,11 +9,13 @@ import {
   LuTags,
   LuBoxes,
   LuLogOut,
-  LuExternalLink, 
+  LuExternalLink,
+  LuSettings,
+  LuPackage,
 } from "react-icons/lu";
 
 const AdminLayout: React.FC = () => {
-  const { user, logout } = useAuth(); 
+  const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
@@ -24,9 +26,8 @@ const AdminLayout: React.FC = () => {
     return `${styles.navLink} ${isActive ? styles.navLinkActive : ""}`;
   };
 
-  
   const tenantSubdomain = user?.administeredTenantSubdomain;
-  
+
   const tenantUrl = tenantSubdomain
     ? `${window.location.protocol}//${tenantSubdomain}.localhost:5173/`
     : null;
@@ -59,7 +60,9 @@ const AdminLayout: React.FC = () => {
           <li className={styles.navItem}>
             <NavLink to="/admin" end className={getNavLinkClass} title="Panel">
               <LuLayoutDashboard className={styles.navIcon} />
-              {isSidebarOpen && <span className={styles.navText}>Dashboard</span>}
+              {isSidebarOpen && (
+                <span className={styles.navText}>Dashboard</span>
+              )}
             </NavLink>
           </li>
           <li className={styles.navItem}>
@@ -86,39 +89,66 @@ const AdminLayout: React.FC = () => {
               )}
             </NavLink>
           </li>
+
+          <li className={styles.navItem}>
+            <NavLink
+              to="/admin/orders"
+              className={getNavLinkClass}
+              title="Pedidos"
+            >
+              <LuPackage className={styles.navIcon} />
+              {isSidebarOpen && <span className={styles.navText}>Pedidos</span>}
+            </NavLink>
+          </li>
         </ul>
 
-        
         {isSidebarOpen && <hr className={styles.separator} />}
 
-        
-        {tenantUrl && (
-          <a
-            href={tenantUrl}
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className={styles.navLink} 
-            title="Ir a mi Negocio (Vista Cliente)"
-          >
-            <LuExternalLink className={styles.navIcon} />
-            {isSidebarOpen && (
-              <span className={styles.navText}>Ir a mi Negocio</span>
-            )}
-          </a>
-        )}
+        <ul className={styles.navList}>
+          <li className={styles.navItem}>
+            <NavLink
+              to="/admin/settings"
+              className={getNavLinkClass}
+              title="Ajustes de Tienda"
+            >
+              <LuSettings className={styles.navIcon} />
+              {isSidebarOpen && (
+                <span className={styles.navText}>Ajustes de Tienda</span>
+              )}
+            </NavLink>
+          </li>
 
-        <button
-          onClick={logout}
-          className={styles.logoutButton}
-          title="Cerrar Sesión"
-        >
-          <LuLogOut className={styles.navIcon} />
-          {isSidebarOpen && (
-            <span className={styles.navText}>Cerrar Sesión</span>
+          {tenantUrl && (
+            <li className={styles.navItem}>
+              <a
+                href={tenantUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.navLink}
+                title="Ir a mi Negocio (Vista Cliente)"
+              >
+                <LuExternalLink className={styles.navIcon} />
+                {isSidebarOpen && (
+                  <span className={styles.navText}>Ir a mi Negocio</span>
+                )}
+              </a>
+            </li>
           )}
-        </button>
-      </nav>
 
+          <li className={`${styles.navItem} ${styles.logoutNavItem}`}>
+            <button
+              onClick={logout}
+              className={styles.logoutButton}
+              title="Cerrar Sesión"
+            >
+              <LuLogOut className={styles.navIcon} />
+              {isSidebarOpen && (
+                <span className={styles.navText}>Cerrar Sesión</span>
+              )}
+            </button>
+          </li>
+        </ul>
+      </nav>
       <main className={styles.mainContent}>
         <Outlet />
       </main>

@@ -83,6 +83,7 @@ export interface ApiErrorResponse {
 export interface TenantPublicInfoDto {
   name: string;
   subdomain: string;
+  phoneNumber?: string | null;
 }
 
 export interface CustomerRegisterDto {
@@ -131,6 +132,7 @@ export interface CartContextType {
   decrementItemQuantity: (productId: string) => void;
   getCartTotalQuantity: () => number;
   updateItemQuantity: (productId: string, newQuantity: number) => void;
+  clearCart: () => void;
 }
 
 export type NotificationType = "info" | "success" | "error" | "loginPrompt";
@@ -153,4 +155,47 @@ export interface NotificationContextType {
 
 export interface CartPageProps {
   subdomain: string;
+}
+
+export type OrderStatus =
+  | "Pending"
+  | "Confirmed"
+  | "Preparing"
+  | "Cancelled"
+  | "Ready"
+  | "Received";
+
+export interface OrderItemDto {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+
+  productName?: string;
+}
+
+export interface CreateOrderDto {
+  deliveryDate: Date | string;
+  items: OrderItemDto[];
+  totalAmount: number;
+}
+
+export interface OrderDto {
+  id: string;
+  tenantId: string;
+  applicationUserId?: string | null;
+  orderDate: string;
+  deliveryDate: string;
+  totalAmount: number;
+  status: OrderStatus | string;
+  items: OrderItemDto[];
+  customerName?: string | null;
+  orderNumber?: string | null;
+  customerPhoneNumber?: string | null;
+}
+
+export interface StatusConfirmModalData {
+  orderId: string;
+  orderNumber: string;
+  currentStatus: string;
+  newStatus: string;
 }
