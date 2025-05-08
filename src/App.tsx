@@ -27,6 +27,9 @@ import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCusto
 import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
 import "./App.css";
 import CartPage from "./pages/CartPage/CartPage";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage/AdminOrdersPage";
+import StoreSettingsPage from "./pages/admin/StoreSettingsPage/StoreSettingsPage";
+import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage/AdminOrderDetailPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -110,11 +113,18 @@ function App() {
                         path="products/edit/:id"
                         element={<EditProductPage />}
                       />
+                      <Route path="orders" element={<AdminOrdersPage />} />
+                      <Route
+                        path="orders/:orderId"
+                        element={<AdminOrderDetailPage />}
+                      />
+
+                      <Route path="settings" element={<StoreSettingsPage />} />
                     </Route>
                   </Route>
                   <Route
                     path="*"
-                    element={<div>404 - Página Principal No Encontrada</div>}
+                    element={<div>404 - Página No Encontrada</div>}
                   />
                 </>
               )}
