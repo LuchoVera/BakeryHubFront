@@ -24,6 +24,7 @@ import {
   validateExactLength,
 } from "../../utils/validationUtils";
 import styles from "./TenantCustomerSignUpForm.module.css";
+import { LuEye, LuEyeOff } from "react-icons/lu";
 
 interface TenantCustomerSignUpFormProps {
   subdomain: string;
@@ -53,6 +54,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -625,20 +627,38 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           </div>
           <div className={styles.formGroup}>
             <label htmlFor="password">Contraseña</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleDetailInputChange}
-              onBlur={handleDetailBlur}
-              required
-              disabled={isFormDisabled}
-              aria-invalid={!!getClientError("password")}
-              aria-describedby={
-                getClientError("password") ? "password-error" : undefined
-              }
-            />
+            <div className={styles.passwordInputWrapper}>
+              {" "}
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleDetailInputChange}
+                onBlur={handleDetailBlur}
+                required
+                disabled={isFormDisabled}
+                aria-invalid={!!getClientError("password")}
+                aria-describedby={
+                  getClientError("password") ? "password-error" : undefined
+                }
+                className={styles.passwordInput}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={styles.passwordToggleBtn}
+                aria-label={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                title={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                disabled={isFormDisabled}
+              >
+                {showPassword ? <LuEyeOff /> : <LuEye />}
+              </button>
+            </div>
             {getClientError("password") && (
               <span id="password-error" className={styles.validationError}>
                 {getClientError("password")}
