@@ -10,6 +10,7 @@ import {
 } from "../../types";
 import { validateRequired, validateEmail } from "../../utils/validationUtils";
 import styles from "./LoginForm.module.css";
+import { LuEye, LuEyeOff } from "react-icons/lu";
 
 interface LoginFormProps {
   subdomainContext?: string | null;
@@ -24,6 +25,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -173,19 +176,34 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
 
       <div className={styles.formGroup}>
         <label htmlFor="password">Contraseña</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          required
-          aria-invalid={!!getFieldError("password")}
-          aria-describedby={
-            getFieldError("password") ? "password-error" : undefined
-          }
-        />
+        <div className={styles.passwordInputWrapper}>
+          <input
+            type={showPassword ? "text" : "password"}
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            required
+            aria-invalid={!!getFieldError("password")}
+            aria-describedby={
+              getFieldError("password") ? "password-error" : undefined
+            }
+            className={styles.passwordInput}
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className={styles.passwordToggleBtn}
+            aria-label={
+              showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+            }
+            title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+          >
+            {showPassword ? <LuEyeOff /> : <LuEye />}
+          </button>
+        </div>
         {getFieldError("password") && (
           <span id="password-error" className={styles.validationError}>
             {getFieldError("password")}

@@ -12,7 +12,7 @@ import {
   validateExactLength,
 } from "../../utils/validationUtils";
 import styles from "./AdminRegistrationForm.module.css";
-import { LuCircleHelp } from "react-icons/lu";
+import { LuCircleHelp, LuEye, LuEyeOff } from "react-icons/lu";
 
 const apiUrl = "/api";
 
@@ -34,6 +34,7 @@ const AdminRegistrationForm: React.FC = () => {
   >({});
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const validateField = (name: string, value: string): string => {
     let error = "";
@@ -320,19 +321,33 @@ const AdminRegistrationForm: React.FC = () => {
       </div>
       <div className={styles.formGroup}>
         <label htmlFor="password">Contraseña</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          required
-          aria-invalid={!!getFieldError("password")}
-          aria-describedby={
-            getFieldError("password") ? "password-error" : undefined
-          }
-        />
+        <div className={styles.passwordInputWrapper}>
+          <input
+            type={showPassword ? "text" : "password"}
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            required
+            aria-invalid={!!getFieldError("password")}
+            aria-describedby={
+              getFieldError("password") ? "password-error" : undefined
+            }
+            className={styles.passwordInput}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className={styles.passwordToggleBtn}
+            aria-label={
+              showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+            }
+            title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+          >
+            {showPassword ? <LuEyeOff /> : <LuEye />}
+          </button>
+        </div>
         {getFieldError("password") && (
           <span id="password-error" className={styles.validationError}>
             {getFieldError("password")}
