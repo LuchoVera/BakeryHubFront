@@ -1,0 +1,194 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  padding: var(--space-md);
+  box-sizing: border-box;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modalContent {
+  background-color: var(--color-surface);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+.modalTitle {
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
+  margin-top: 0;
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.modalTitle span {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.2em;
+}
+
+.modalTitle span svg {
+  color: var(--color-primary);
+}
+
+.modalTitle span.iconWarning svg {
+  color: var(--color-warning);
+}
+.modalTitle span.iconDanger svg {
+  color: var(--color-error);
+}
+.modalTitle span.iconSuccess svg {
+  color: var(--color-success);
+}
+.modalTitle span.iconInfo svg {
+  color: var(--color-info, #5bc0de);
+}
+
+.modalMessage {
+  margin-bottom: var(--space-md);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.warningText {
+  font-size: 0.9em;
+  color: var(--color-warning-dark, #8a6d3b);
+  background-color: var(--color-warning-light, #fcf8e3);
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-warning, #faebcc);
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-md);
+  line-height: 1.5;
+}
+
+.modalActions {
+  margin-top: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.modalButtonConfirm,
+.modalButtonCancel {
+  padding: var(--space-md) var(--space-lg);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+  max-width: none;
+}
+.modalButtonConfirm:hover:not(:disabled),
+.modalButtonCancel:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.modalButtonConfirm {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary);
+}
+.modalButtonConfirm:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.modalButtonConfirm.danger {
+  background-color: var(--color-error);
+  border-color: var(--color-error);
+}
+.modalButtonConfirm.danger:hover:not(:disabled) {
+  background-color: #c9302c;
+  border-color: #c9302c;
+}
+
+.modalButtonConfirm:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #e9ecef;
+  border-color: #e9ecef;
+  color: var(--color-text-secondary);
+}
+
+.modalButtonCancel {
+  background-color: var(--color-background);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.modalButtonCancel:hover:not(:disabled) {
+  background-color: var(--color-border-light);
+  color: var(--color-text-primary);
+}
+.modalButtonCancel:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .modalContent {
+    padding: var(--space-lg);
+  }
+  .modalTitle {
+    font-size: 1.2rem;
+  }
+  .modalMessage,
+  .warningText {
+    font-size: 0.9rem;
+  }
+  .modalActions {
+    gap: var(--space-sm);
+  }
+  .modalButtonConfirm,
+  .modalButtonCancel {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.95rem;
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

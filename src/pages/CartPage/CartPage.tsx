@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo, ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
+import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import styles from "./CartPage.module.css";
 import {
   LuCirclePlus,
@@ -60,13 +61,13 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   } = useCart();
   const { isAuthenticated, user } = useAuth();
   const { showNotification } = useNotification();
+  const navigate = useNavigate();
 
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
   );
   const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] =
     useState<boolean>(false);
   const [minDeliveryDateISO, setMinDeliveryDateISO] = useState<string>("");
@@ -204,10 +205,18 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
     setIsConfirmOrderModalOpen(true);
   };
 
+  const handleDateSelectCancel = () => {
+    setIsDatePickerModalOpen(false);
+  };
+
   const handleChangeDateFromConfirmation = () => {
     setIsConfirmOrderModalOpen(false);
     setTempSelectedDate(finalSelectedDate || minDeliveryDateISO);
     setIsDatePickerModalOpen(true);
+  };
+
+  const handleConfirmModalClose = () => {
+    setIsConfirmOrderModalOpen(false);
   };
 
   const handleFinalOrderConfirm = async () => {
@@ -217,6 +226,7 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
         "error",
         0
       );
+      setIsConfirmOrderModalOpen(false);
       return;
     }
     setIsPlacingOrder(true);
@@ -226,13 +236,11 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       quantity: item.quantity,
       unitPrice: item.product.price,
     }));
-
     const createOrderPayload: CreateOrderDto = {
       deliveryDate: new Date(finalSelectedDate + "T00:00:00Z"),
       items: orderItemsDto,
       totalAmount: cartTotal,
     };
-
     try {
       const orderUrl = `${apiUrl}/public/tenants/${tenantInfo.subdomain}/orders`;
       const response = await axios.post<OrderDto>(orderUrl, createOrderPayload);
@@ -247,11 +255,11 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
         "success",
         8000
       );
-
       if (clearCart) {
         clearCart();
       }
       setFinalSelectedDate(null);
+      setIsConfirmOrderModalOpen(false);
 
       const adminPhoneNumber = tenantInfo.phoneNumber || "59100000000";
       const customerName = user.name || "Cliente";
@@ -262,7 +270,6 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
         month: "2-digit",
         year: "numeric",
       });
-
       const messageItems = cartItems
         .map(
           (item) =>
@@ -271,29 +278,20 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
             } (Bs. ${item.product.price.toFixed(2)})`
         )
         .join("\n");
-
-      const fullMessage = `Hola ${tenantInfo.name},
-¡Tienes un nuevo pedido!
------------------------------
-Pedido #: ${
+      const fullMessage = `Hola ${
+        tenantInfo.name
+      },\n¡Tienes un nuevo pedido!\n-----------------------------\nPedido #: ${
         createdOrder?.orderNumber ||
         createdOrder.id.substring(0, 8).toUpperCase()
-      }
-Cliente: ${customerName}
-Fecha de Entrega: ${deliveryDateFormatted}
------------------------------
-Detalle:
-${messageItems}
------------------------------
-Total: Bs. ${cartTotal.toFixed(2)}
------------------------------
-¡Gracias!`;
-
+      }\nCliente: ${customerName}\nFecha de Entrega: ${deliveryDateFormatted}\n-----------------------------\nDetalle:\n${messageItems}\n-----------------------------\nTotal: Bs. ${cartTotal.toFixed(
+        2
+      )}\n-----------------------------\n¡Gracias!`;
       const whatsappUrl = `https://wa.me/${adminPhoneNumber.replace(
         /\D/g,
         ""
       )}?text=${encodeURIComponent(fullMessage)}`;
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      navigate("/");
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       console.error(
@@ -314,9 +312,40 @@ Total: Bs. ${cartTotal.toFixed(2)}
       );
     } finally {
       setIsPlacingOrder(false);
-      setIsConfirmOrderModalOpen(false);
     }
   };
+
+  const getFinalConfirmModalMessage = (): ReactNode => {
+    if (!finalSelectedDate) return null;
+    return (
+      <p>
+        Has seleccionado la fecha de entrega para el{" "}
+        <strong>
+          {new Date(finalSelectedDate + "T00:00:00").toLocaleDateString(
+            "es-ES",
+            { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+          )}
+        </strong>
+        .
+        <br />
+        <button
+          onClick={handleChangeDateFromConfirmation}
+          className={styles.changeDateButton}
+          disabled={isPlacingOrder}
+        >
+          <LuPencil /> Cambiar Fecha
+        </button>
+      </p>
+    );
+  };
+
+  const finalConfirmWarning: ReactNode = (
+    <>
+      Una vez confirmado, no podrás cambiar este pedido.
+      <br />
+      Si deseas añadir más productos o cambiar la fecha, regresa al carrito.
+    </>
+  );
 
   if (isLoadingTenant) {
     return <div>Cargando...</div>;
@@ -424,7 +453,7 @@ Total: Bs. ${cartTotal.toFixed(2)}
                 <span>{distinctProductCount}</span>
               </div>
               <div className={styles.summaryLine}>
-                <span>Cantidad total de productos:</span>
+                <span>Cantidad total:</span>
                 <span>{totalItemQuantity}</span>
               </div>
               {finalSelectedDate && (
@@ -500,7 +529,7 @@ Total: Bs. ${cartTotal.toFixed(2)}
                 <LuCircleCheck /> Confirmar Fecha
               </button>
               <button
-                onClick={() => setIsDatePickerModalOpen(false)}
+                onClick={handleDateSelectCancel}
                 className={styles.modalButtonCancel}
               >
                 <LuCircleX /> Cancelar
@@ -510,62 +539,19 @@ Total: Bs. ${cartTotal.toFixed(2)}
         </div>
       )}
 
-      {isConfirmOrderModalOpen && finalSelectedDate && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h3>Confirmar Pedido</h3>
-            <p>
-              Has seleccionado la fecha de entrega para el{" "}
-              <strong>
-                {new Date(finalSelectedDate + "T00:00:00").toLocaleDateString(
-                  "es-ES",
-                  {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }
-                )}
-              </strong>
-              .
-            </p>
-            <button
-              onClick={handleChangeDateFromConfirmation}
-              className={styles.changeDateButton}
-              disabled={isPlacingOrder}
-            >
-              <LuPencil /> Cambiar Fecha
-            </button>
-            <p className={styles.warningText}>
-              Una vez confirmado, no podrás cambiar este pedido. <br />
-              Si deseas añadir más productos o cambiar la fecha, deberás volver
-              al carrito y realizar los cambios.
-            </p>
-            <div className={styles.modalActions}>
-              <button
-                onClick={handleFinalOrderConfirm}
-                className={styles.modalButtonConfirm}
-                disabled={isPlacingOrder}
-              >
-                {isPlacingOrder ? (
-                  "Confirmando..."
-                ) : (
-                  <>
-                    <LuCircleCheck /> Confirmar Pedido Definitivamente
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => setIsConfirmOrderModalOpen(false)}
-                className={styles.modalButtonCancel}
-                disabled={isPlacingOrder}
-              >
-                <LuCircleX /> Volver al Carrito
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={isConfirmOrderModalOpen}
+        onClose={handleConfirmModalClose}
+        onConfirm={handleFinalOrderConfirm}
+        title="Confirmar Pedido"
+        message={getFinalConfirmModalMessage()}
+        warningMessage={finalConfirmWarning}
+        confirmText="Confirmar Pedido Definitivamente"
+        cancelText="Volver al Carrito"
+        isConfirming={isPlacingOrder}
+        icon={<LuCircleCheck />}
+        iconType="success"
+      />
     </div>
   );
 };
