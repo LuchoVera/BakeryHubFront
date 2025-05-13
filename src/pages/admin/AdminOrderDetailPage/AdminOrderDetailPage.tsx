@@ -17,13 +17,23 @@ import {
   LuClipboardList,
   LuTriangleAlert,
 } from "react-icons/lu";
+import {
+  generateWhatsAppMessageForOrder,
+  getWhatsAppLink,
+} from "../../../utils/whatsappUtils";
+import { useAuth } from "../../../AuthContext";
 
 const apiUrl = "/api";
 
 const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return "N/A";
   try {
-    const date = new Date(dateString);
+    const dateParts = dateString.split("T")[0].split("-");
+    const date = new Date(
+      Number(dateParts[0]),
+      Number(dateParts[1]) - 1,
+      Number(dateParts[2])
+    );
     const options: Intl.DateTimeFormatOptions = {
       year: "numeric",
       month: "2-digit",
@@ -82,11 +92,11 @@ const AdminOrderDetailPage: React.FC = () => {
   const [orderData, setOrderData] = useState<OrderDto | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
   const [confirmModalData, setConfirmModalData] =
     useState<StatusConfirmModalData | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const { user } = useAuth();
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) {
@@ -94,7 +104,6 @@ const AdminOrderDetailPage: React.FC = () => {
       setIsLoading(false);
       return;
     }
-
     setError(null);
     try {
       const response = await axios.get<OrderDto>(
@@ -103,10 +112,6 @@ const AdminOrderDetailPage: React.FC = () => {
       setOrderData(response.data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        `Error fetching order ${orderId}:`,
-        axiosError.response?.data || axiosError.message
-      );
       if (axiosError.response?.status === 404) {
         setError("Pedido no encontrado.");
       } else {
@@ -132,12 +137,9 @@ const AdminOrderDetailPage: React.FC = () => {
       await axios.put(`${apiUrl}/admin/orders/${orderIdToUpdate}/status`, {
         NewStatus: newStatus,
       });
-
       await fetchOrderDetails();
     } catch (updateError) {
-      console.error("Error updating order status:", updateError);
       alert(`Error al actualizar estado del pedido ${orderIdToUpdate}`);
-
       await fetchOrderDetails();
     } finally {
       setIsUpdatingStatus(false);
@@ -146,13 +148,9 @@ const AdminOrderDetailPage: React.FC = () => {
 
   const requestStatusChange = (newStatus: string) => {
     if (!orderData) return;
-
     const currentStatus = orderData.status;
-
     if (newStatus === currentStatus) return;
-
     const orderNumber = orderData.orderNumber ?? orderData.id.substring(0, 8);
-
     if (newStatus === "Received" || newStatus === "Cancelled") {
       setConfirmModalData({
         orderId: orderData.id,
@@ -161,7 +159,6 @@ const AdminOrderDetailPage: React.FC = () => {
         newStatus,
       });
       setIsConfirmModalOpen(true);
-
       setOrderData((prev) =>
         prev ? { ...prev, status: currentStatus } : null
       );
@@ -188,43 +185,29 @@ const AdminOrderDetailPage: React.FC = () => {
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const newStatus = event.target.value;
-
     const currentStatus = orderData?.status;
     if (currentStatus && newStatus !== currentStatus) {
       setOrderData((prev) => (prev ? { ...prev, status: newStatus } : null));
-
       requestStatusChange(newStatus);
     }
   };
 
-  const handleWhatsAppClick = (
-    phoneNumber: string | null | undefined,
-    customerName: string | null | undefined,
-    orderNumber: string | null | undefined
-  ) => {
-    if (!phoneNumber) {
-      alert("Este cliente no tiene un número de teléfono registrado.");
+  const handleWhatsAppClick = () => {
+    if (!orderData || !orderData.customerPhoneNumber) {
+      alert(
+        orderData
+          ? "Este cliente no tiene un número de teléfono registrado."
+          : "Datos de la orden no cargados."
+      );
       return;
     }
-    let phone = phoneNumber.replace(/\D/g, "");
-    if (
-      phone.length === 8 &&
-      (phone.startsWith("6") || phone.startsWith("7"))
-    ) {
-      phone = `591${phone}`;
-    } else if (phone.startsWith("+")) {
-      phone = phone.substring(1);
-    }
-    if (!phone) {
-      alert("Número de teléfono inválido.");
-      return;
-    }
-    const name = customerName || "Cliente";
-    const num = orderNumber || "este pedido";
-    const message = `Hola ${name}, sobre tu pedido #${num}...`;
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(
-      message
-    )}`;
+    const tenantDisplayName =
+      user?.administeredTenantSubdomain || user?.name || "tu tienda";
+    const message = generateWhatsAppMessageForOrder(
+      orderData,
+      tenantDisplayName
+    );
+    const whatsappUrl = getWhatsAppLink(orderData.customerPhoneNumber, message);
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -238,7 +221,7 @@ const AdminOrderDetailPage: React.FC = () => {
     return (
       <div className={`${styles.message} ${styles.error}`}>
         <p>{error}</p>
-        <Link to="/admin/orders" className={styles.backButton}>
+        <Link to="/admin/orders" className={styles.backLink}>
           <LuArrowLeft /> Volver a la Lista
         </Link>
       </div>
@@ -282,7 +265,6 @@ const AdminOrderDetailPage: React.FC = () => {
               <strong>Fecha Entrega:</strong>{" "}
               <span>{formatDate(orderData.deliveryDate)}</span>
             </div>
-
             <div className={styles.statusSelectContainer}>
               <strong>Estado Actual:</strong>
               <select
@@ -333,13 +315,7 @@ const AdminOrderDetailPage: React.FC = () => {
                 {orderData.customerPhoneNumber ?? "No disponible"}
                 {orderData.customerPhoneNumber && (
                   <button
-                    onClick={() =>
-                      handleWhatsAppClick(
-                        orderData.customerPhoneNumber,
-                        orderData.customerName,
-                        orderData.orderNumber
-                      )
-                    }
+                    onClick={handleWhatsAppClick}
                     className={styles.whatsappButton}
                     title="Contactar por WhatsApp"
                   >

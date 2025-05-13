@@ -53,7 +53,6 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
-
 .filterToggleButton svg {
   margin-bottom: -2px;
 }
@@ -64,26 +63,110 @@
   color: var(--color-primary-dark);
   font-weight: 600;
 }
-
 .filterButtonActive:hover {
   background-color: var(--color-primary);
   color: var(--color-surface);
   border-color: var(--color-primary-dark);
 }
 
-.filterPanel {
-  background-color: var(--color-secondary-light);
+.filterPanelHorizontal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-md);
-  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.3s ease-out;
   margin-bottom: var(--space-xl);
+  justify-content: center;
+}
+
+.filterGroupItem {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  animation: fadeIn 0.3s ease-out;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+  gap: var(--space-xs);
+}
+
+.filterLabel {
+  font-size: 0.8em;
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+.filterSelect,
+.filterInput {
+  padding: calc(var(--space-xs) + 2px) var(--space-sm);
+  font-size: 0.9em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-surface);
+}
+.filterSelect {
+  min-width: 150px;
+}
+.filterInput {
+  width: 100px;
+}
+
+.filterSelect:disabled,
+.filterInput:disabled {
+  background-color: var(--color-border-light);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.filterSelect:focus,
+.filterInput:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.2);
+}
+.loadingSmall {
+  font-size: 0.8em;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.filterActionButtonsHorizontal {
+  display: flex;
+  gap: var(--space-sm);
+  margin-left: var(--space-md);
+  align-items: center;
+}
+
+.applyButtonSmall,
+.clearButtonSmall {
+  padding: var(--space-xs) var(--space-md);
+  font-size: 0.85em;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  height: fit-content;
+}
+
+.applyButtonSmall {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+}
+.applyButtonSmall:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.clearButtonSmall {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+.clearButtonSmall:hover {
+  background-color: var(--color-border-light);
+  border-color: var(--color-text-secondary);
 }
 
 @keyframes fadeIn {
@@ -95,83 +178,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.filterPanel h3 {
-  margin-top: 0;
-  margin-bottom: var(--space-sm);
-  text-align: center;
-  font-size: 1.1rem;
-  color: var(--color-text-primary);
-}
-
-.filterGroup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.filterGroup label {
-  font-weight: 500;
-  font-size: 0.9em;
-  color: var(--color-text-secondary);
-}
-.filterGroup small {
-  font-size: 0.8em;
-  color: var(--color-text-secondary);
-}
-
-.filterGroup select,
-.filterGroup input[type="number"] {
-  padding: var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.95rem;
-  background-color: var(--color-surface);
-}
-.filterGroup select:disabled {
-  background-color: var(--color-border-light);
-  cursor: not-allowed;
-}
-
-.filterActions {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-md);
-  margin-top: var(--space-md);
-  border-top: 1px solid var(--color-border-light);
-  padding-top: var(--space-md);
-}
-
-.applyButton,
-.clearButton {
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--border-radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  font-size: 0.9em;
-  min-width: 100px;
-}
-
-.applyButton {
-  background-color: var(--color-primary);
-  color: var(--color-surface);
-  border: 1px solid var(--color-primary);
-}
-.applyButton:hover {
-  background-color: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
-}
-
-.clearButton {
-  background-color: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-}
-.clearButton:hover {
-  background-color: var(--color-background);
-  border-color: var(--color-text-secondary);
 }
 
 .productGrid {
@@ -245,18 +251,31 @@
     justify-content: center;
     padding: var(--space-sm);
   }
-  .filterPanel {
-    padding: var(--space-md);
-  }
-  .filterActions {
+  .filterPanelHorizontal {
     flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+  .filterGroupItem {
+    width: 100%;
+  }
+  .filterSelect,
+  .filterInput {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .filterActionButtonsHorizontal {
+    flex-direction: column;
+    margin-left: 0;
+    width: 100%;
     gap: var(--space-sm);
   }
-  .applyButton,
-  .clearButton {
+  .applyButtonSmall,
+  .clearButtonSmall {
     width: 100%;
-    font-size: 0.85em;
     padding: var(--space-sm);
+    font-size: 0.9rem;
   }
   .productGrid {
     gap: var(--space-md);
@@ -278,20 +297,16 @@
   .resultsTitle {
     font-size: 1.3rem;
   }
-  .filterPanel {
+  .filterPanelHorizontal {
     padding: var(--space-sm);
     gap: var(--space-sm);
   }
-  .filterGroup label {
+  .filterLabel {
     font-size: 0.85em;
   }
-  .filterGroup select,
-  .filterGroup input[type="number"] {
+  .filterSelect,
+  .filterInput {
     font-size: 0.9rem;
     padding: var(--space-xs) var(--space-sm);
-  }
-  .applyButton,
-  .clearButton {
-    width: 100%;
   }
 }

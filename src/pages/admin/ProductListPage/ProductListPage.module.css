@@ -33,6 +33,51 @@
   font-weight: 500;
 }
 
+.searchContainerAdmin {
+  margin-bottom: var(--space-lg);
+  max-width: 600px;
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.searchInputAdmin {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+
+  padding-left: calc(var(--space-md) + var(--space-lg));
+  font-size: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.searchInputAdmin:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px
+    var(--color-primary-transparent, rgba(255, 143, 171, 0.25));
+}
+
+.searchIconAdmin {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+}
+
+.noProductsMessage {
+  text-align: center;
+  padding: var(--space-lg);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
 @media (max-width: 600px) {
   .pageContainer {
     padding: var(--space-md);
@@ -51,5 +96,16 @@
   .errorText {
     padding: var(--space-lg);
     font-size: 0.9em;
+  }
+  .searchContainerAdmin {
+    max-width: 100%;
+  }
+  .searchInputAdmin {
+    font-size: 0.9rem;
+    padding-left: calc(var(--space-sm) + var(--space-lg) - 4px);
+  }
+  .searchIconAdmin {
+    left: var(--space-sm);
+    font-size: 1rem;
   }
 }

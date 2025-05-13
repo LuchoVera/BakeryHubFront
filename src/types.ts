@@ -199,3 +199,7 @@ export interface StatusConfirmModalData {
   currentStatus: string;
   newStatus: string;
 }
+
+export interface SearchResultsPageProps {
+  subdomain: string;
+}

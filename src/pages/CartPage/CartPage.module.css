@@ -484,6 +484,82 @@
   font-size: 1.1em;
 }
 
+.confirmRemoveRow {
+  grid-column: 1 / -1;
+  background-color: var(--color-warning-light, #fcf8e3);
+  padding: var(--space-sm) var(--space-md);
+  margin-top: calc(-1 * var(--space-sm));
+  margin-bottom: var(--space-sm);
+  border: 1px solid var(--color-warning, #faebcc);
+  border-top: none;
+  border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  animation: fadeInConfirm 0.3s ease-out;
+}
+
+@keyframes fadeInConfirm {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.confirmRemoveMessage {
+  color: var(--color-warning-dark, #8a6d3b);
+  font-size: 0.9em;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.confirmRemoveMessage svg {
+  font-size: 1.2em;
+  margin-bottom: -2px;
+}
+
+.confirmRemoveActions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.confirmRemoveButton {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.85em;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  border: 1px solid transparent;
+  min-width: 70px;
+  text-align: center;
+}
+
+.confirmRemoveButtonYes {
+  background-color: var(--color-error);
+  color: var(--color-surface);
+  border-color: var(--color-error);
+}
+.confirmRemoveButtonYes:hover {
+  background-color: #c9302c;
+  border-color: #c9302c;
+}
+
+.confirmRemoveButtonNo {
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.confirmRemoveButtonNo:hover {
+  background-color: var(--color-border-light);
+}
+
 @media (max-width: 900px) {
   .cartLayout {
     grid-template-columns: 1fr;
@@ -638,6 +714,27 @@
   .modalButtonCancel {
     padding: var(--space-sm) var(--space-md);
     font-size: 0.95rem;
+  }
+  .confirmRemoveRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    margin-top: 0;
+    border-top: 1px dashed var(--color-warning);
+  }
+
+  .confirmRemoveMessage {
+    text-align: center;
+    margin-bottom: var(--space-xs);
+  }
+
+  .confirmRemoveActions {
+    width: 100%;
+    justify-content: center;
+  }
+  .confirmRemoveButton {
+    flex-grow: 1;
   }
 }
 
