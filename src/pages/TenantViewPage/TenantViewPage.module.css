@@ -1,8 +1,15 @@
+.tenantView {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .pageLayout {
   display: flex;
   padding: 0;
   align-items: flex-start;
   position: relative;
+  flex-grow: 1;
 }
 
 .productsArea {
@@ -17,9 +24,14 @@
   padding-top: var(--space-lg);
 }
 
+.filterControlsContainer {
+  margin-bottom: var(--space-lg);
+  position: relative;
+}
+
 .filterButtonContainer {
-  text-align: right;
-  margin-bottom: var(--space-md);
+  text-align: left;
+  margin-bottom: var(--space-sm);
 }
 
 .filterToggleButton {
@@ -30,10 +42,12 @@
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
+  flex-shrink: 0;
 }
 .filterToggleButton:hover {
   background-color: var(--color-secondary);
@@ -48,101 +62,101 @@
   color: var(--color-primary-dark);
   font-weight: 600;
 }
+.filterButtonActive:hover {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary-dark);
+}
 
-.filterPanel {
+.filterPanelHorizontal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-md);
-  padding: var(--space-lg);
-  margin-bottom: var(--space-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
   box-shadow: var(--shadow-sm);
   animation: fadeIn 0.3s ease-out;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: var(--space-xs);
+  justify-content: center;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.filterPanel h4 {
-  margin-top: 0;
-  margin-bottom: var(--space-sm);
-  text-align: center;
-  font-size: 1.1rem;
-  color: var(--color-text-primary);
-}
-
-.filterGroup {
+.filterPriceGroup {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
 }
 
-.filterGroup label {
-  font-weight: 500;
-  font-size: 0.9em;
+.filterLabel {
+  font-size: 0.8em;
   color: var(--color-text-secondary);
+  margin-bottom: 0;
+  font-weight: 500;
 }
 
-.filterGroup select,
-.filterGroup input[type="number"] {
-  padding: var(--space-sm);
+.filterInput {
+  padding: calc(var(--space-xs) + 2px) var(--space-sm);
+  font-size: 0.9em;
+  width: 100px;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
-  font-size: 0.95rem;
   background-color: var(--color-surface);
 }
-
-.filterActions {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-md);
-  margin-top: var(--space-md);
-  border-top: 1px solid var(--color-border-light);
-  padding-top: var(--space-md);
+.filterInput:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.2);
 }
 
-.applyButton,
-.clearButton {
-  padding: var(--space-sm) var(--space-md);
+.filterActionButtonsHorizontal {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.applyButtonSmall,
+.clearButtonSmall {
+  padding: var(--space-xs) var(--space-md);
+  font-size: 0.85em;
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   font-weight: 600;
   transition: background-color 0.2s ease, border-color 0.2s ease;
-  font-size: 0.9em;
-  flex-grow: 1;
+  height: fit-content;
 }
 
-.applyButton {
+.applyButtonSmall {
   background-color: var(--color-primary);
   color: var(--color-surface);
   border: 1px solid var(--color-primary);
 }
-.applyButton:hover {
+.applyButtonSmall:hover {
   background-color: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
 }
 
-.clearButton {
+.clearButtonSmall {
   background-color: transparent;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
 }
-.clearButton:hover {
-  background-color: var(--color-background);
+.clearButtonSmall:hover {
+  background-color: var(--color-border-light);
   border-color: var(--color-text-secondary);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .recommendationSection {
@@ -228,26 +242,37 @@
     max-width: none;
     padding-top: 0;
   }
-
-  .filterButtonContainer {
-    text-align: center;
+  .filterControlsContainer {
     margin-bottom: var(--space-lg);
   }
+  .filterButtonContainer {
+    text-align: center;
+  }
   .filterToggleButton {
-    width: 80%;
-    justify-content: center;
+    width: auto;
     padding: var(--space-sm);
   }
-  .filterPanel {
-    max-width: none;
+  .filterPanelHorizontal {
+    flex-direction: column;
+    align-items: stretch;
     padding: var(--space-md);
+    gap: var(--space-md);
   }
-  .filterActions {
-    gap: var(--space-sm);
+  .filterPriceGroup {
+    width: 100%;
   }
-  .applyButton,
-  .clearButton {
-    font-size: 0.85em;
+  .filterInput {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .filterActionButtonsHorizontal {
+    flex-direction: column;
+    margin-left: 0;
+    width: 100%;
+  }
+  .applyButtonSmall,
+  .clearButtonSmall {
+    width: 100%;
     padding: var(--space-sm);
   }
 
@@ -281,23 +306,19 @@
   .categoryTitle {
     font-size: 1.5rem;
   }
-  .filterPanel {
+  .filterPanelHorizontal {
     padding: var(--space-sm);
     gap: var(--space-sm);
   }
-  .filterGroup label {
+  .filterPriceGroup label {
     font-size: 0.85em;
   }
-  .filterGroup select,
-  .filterGroup input[type="number"] {
+  .filterInput {
     font-size: 0.9rem;
     padding: var(--space-xs) var(--space-sm);
   }
-  .filterActions {
-    flex-direction: column;
-  }
-  .applyButton,
-  .clearButton {
+  .applyButtonSmall,
+  .clearButtonSmall {
     width: 100%;
   }
 }

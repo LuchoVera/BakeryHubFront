@@ -16,10 +16,15 @@ import {
 import OrdersTable from "../../../components/OrdersTable/OrdersTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
 import { LuTriangleAlert } from "react-icons/lu";
+import {
+  generateWhatsAppMessageForOrder,
+  getWhatsAppLink,
+} from "../../../utils/whatsappUtils";
+import { useAuth } from "../../../AuthContext";
 
 const apiUrl = "/api";
 
-const STATUS_ORDER: (OrderStatus | string)[] = [
+const STATUS_ORDER: OrderStatus[] = [
   "Pending",
   "Confirmed",
   "Preparing",
@@ -42,11 +47,12 @@ const AdminOrdersPage: React.FC = () => {
   const [allOrders, setAllOrders] = useState<OrderDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<OrderStatus>("Pending");
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
   const [confirmModalData, setConfirmModalData] =
     useState<StatusConfirmModalData | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const { user } = useAuth();
 
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
@@ -56,10 +62,6 @@ const AdminOrdersPage: React.FC = () => {
       setAllOrders(response.data || []);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        "Error fetching orders:",
-        axiosError.response?.data || axiosError.message
-      );
       setError(
         axiosError.response?.data?.title ||
           axiosError.message ||
@@ -93,7 +95,6 @@ const AdminOrdersPage: React.FC = () => {
       });
       await fetchOrders();
     } catch (updateError) {
-      console.error("Error updating order status:", updateError);
       alert(`Error al actualizar estado del pedido ${orderId}`);
     } finally {
       setIsUpdatingStatus(false);
@@ -103,10 +104,8 @@ const AdminOrdersPage: React.FC = () => {
   const requestStatusChange = (orderId: string, newStatus: string) => {
     const order = allOrders.find((o) => o.id === orderId);
     if (!order) return;
-
     const currentStatus = order.status;
     const orderNumber = order.orderNumber ?? order.id.substring(0, 8);
-
     if (newStatus === "Received" || newStatus === "Cancelled") {
       setConfirmModalData({ orderId, orderNumber, currentStatus, newStatus });
       setIsConfirmModalOpen(true);
@@ -138,10 +137,7 @@ const AdminOrdersPage: React.FC = () => {
   };
 
   const statusesToRender = useMemo(() => {
-    if (activeFilter === null) {
-      return STATUS_ORDER.filter((status) => groupedOrders[status]?.length > 0);
-    }
-    return groupedOrders[activeFilter] ? [activeFilter] : [];
+    return groupedOrders[activeFilter]?.length > 0 ? [activeFilter] : [];
   }, [activeFilter, groupedOrders]);
 
   const getModalMessage = (): ReactNode => {
@@ -173,7 +169,6 @@ const AdminOrdersPage: React.FC = () => {
       confirmModalData.newStatus === "Cancelled"
         ? "Esta acción no se puede deshacer."
         : "Una vez marcado como entregado, no podrás cambiar el estado.";
-
     return (
       <>
         {message}
@@ -183,19 +178,22 @@ const AdminOrdersPage: React.FC = () => {
     );
   };
 
+  const handleWhatsAppClick = (order: OrderDto) => {
+    if (!order.customerPhoneNumber) {
+      alert("Este cliente no tiene un número de teléfono registrado.");
+      return;
+    }
+    const tenantDisplayName =
+      user?.administeredTenantSubdomain || user?.name || "tu tienda";
+    const message = generateWhatsAppMessageForOrder(order, tenantDisplayName);
+    const whatsappUrl = getWhatsAppLink(order.customerPhoneNumber, message);
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className={styles.pageContainer}>
       <h2>Gestión de Pedidos</h2>
-
       <div className={styles.filterTabs}>
-        <button
-          onClick={() => setActiveFilter(null)}
-          className={`${styles.filterTab} ${
-            activeFilter === null ? styles.activeFilterTab : ""
-          }`}
-        >
-          Todos ({allOrders.length})
-        </button>
         {STATUS_ORDER.map((status) => {
           const count = groupedOrders[status]?.length ?? 0;
           return (
@@ -221,27 +219,26 @@ const AdminOrdersPage: React.FC = () => {
 
       {!isLoading && !error && allOrders.length > 0 && (
         <div className={styles.orderGroupsContainer}>
-          {statusesToRender.length === 0 && activeFilter !== null && (
+          {statusesToRender.length === 0 && (
             <p className={styles.noOrdersText}>
               No hay pedidos con el estado "
               {STATUS_LABELS[activeFilter] ?? activeFilter}".
             </p>
           )}
-
-          {statusesToRender.map((status) => (
-            <section key={status} className={styles.orderGroup}>
+          {statusesToRender.map((statusKey) => (
+            <section key={statusKey} className={styles.orderGroup}>
               <h3 className={styles.groupTitle}>
-                {STATUS_LABELS[status] ?? status}
+                {STATUS_LABELS[statusKey] ?? statusKey}
               </h3>
               <OrdersTable
-                orders={groupedOrders[status] || []}
+                orders={groupedOrders[statusKey] || []}
                 onStatusChange={requestStatusChange}
+                onWhatsAppClick={handleWhatsAppClick}
               />
             </section>
           ))}
         </div>
       )}
-
       <ConfirmationModal
         isOpen={isConfirmModalOpen}
         onClose={handleModalCancel}

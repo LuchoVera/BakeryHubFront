@@ -7,6 +7,7 @@ import { FaWhatsapp } from "react-icons/fa";
 interface OrdersTableProps {
   orders: OrderDto[];
   onStatusChange: (orderId: string, newStatus: OrderStatus | string) => void;
+  onWhatsAppClick: (order: OrderDto) => void;
 }
 
 const statusOptions: { value: OrderStatus | string; label: string }[] = [
@@ -40,6 +41,7 @@ const getStatusClass = (status: OrderStatus | string): string => {
 const OrdersTable: React.FC<OrdersTableProps> = ({
   orders,
   onStatusChange,
+  onWhatsAppClick,
 }) => {
   const navigate = useNavigate();
 
@@ -54,7 +56,13 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleDateString("es-ES", {
+      const dateParts = dateString.split("T")[0].split("-");
+      const date = new Date(
+        Number(dateParts[0]),
+        Number(dateParts[1]) - 1,
+        Number(dateParts[2])
+      );
+      return date.toLocaleDateString("es-ES", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -70,61 +78,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
   const stopPropagation = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
-  };
-
-  const handleWhatsAppClick = (order: OrderDto) => {
-    if (!order.customerPhoneNumber) {
-      alert("Este cliente no tiene un número de teléfono registrado.");
-      return;
-    }
-
-    let phoneNumber = order.customerPhoneNumber.replace(/\D/g, "");
-    if (
-      phoneNumber.length === 8 &&
-      (phoneNumber.startsWith("6") || phoneNumber.startsWith("7"))
-    ) {
-      phoneNumber = `591${phoneNumber}`;
-    } else if (phoneNumber.startsWith("+")) {
-      phoneNumber = phoneNumber.substring(1);
-    }
-
-    if (!phoneNumber) {
-      alert("Número de teléfono inválido después de formatear.");
-      return;
-    }
-
-    let message = "";
-    const orderNum =
-      order.orderNumber ?? order.id.substring(0, 8).toUpperCase();
-    const deliveryDate = formatDate(order.deliveryDate);
-
-    switch (order.status?.toLowerCase()) {
-      case "pending":
-        message = `Hola ${order.customerName}, tu pedido #${orderNum} está pendiente. Por favor, confirma el pago para que podamos procesarlo. ¡Gracias!`;
-        break;
-      case "confirmed":
-        message = `Hola ${order.customerName}, ¡tu pedido #${orderNum} ha sido confirmado! Estará listo para el ${deliveryDate}. ¡Gracias!`;
-        break;
-      case "preparing":
-        message = `Hola ${order.customerName}, ¡tu pedido #${orderNum} ya está en preparación! Te avisaremos cuando esté listo.`;
-        break;
-      case "ready":
-        message = `Hola ${order.customerName}, ¡buenas noticias! Tu pedido #${orderNum} está listo para ser recogido/entregado hoy (${deliveryDate}).`;
-        break;
-      case "cancelled":
-        message = `Hola ${order.customerName}, lamentamos informarte que tu pedido #${orderNum} ha sido cancelado. Contáctanos si tienes dudas.`;
-        break;
-      case "received":
-        message = `Hola ${order.customerName}, esperamos que hayas disfrutado tu pedido #${orderNum}. ¡Gracias por tu preferencia!`;
-        break;
-      default:
-        message = `Hola ${order.customerName}, sobre tu pedido #${orderNum}...`;
-    }
-
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -185,16 +138,15 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                   ))}
                 </select>
               </td>
-
               <td data-label="Acciones:" onClick={stopPropagation}>
                 <div className={styles.actionButtons}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleWhatsAppClick(order);
+                      onWhatsAppClick(order);
                     }}
                     className={`${styles.actionButton} ${styles.whatsappButton}`}
-                    title="Enviar WhatsApp al Cliente"
+                    title="Contactar cliente por WhatsApp"
                     disabled={!order.customerPhoneNumber}
                     aria-label="Contactar cliente por WhatsApp"
                   >

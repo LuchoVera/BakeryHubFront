@@ -6,15 +6,12 @@ import {
   TenantPublicInfoDto,
   ApiErrorResponse,
   CategoryDto,
+  SearchResultsPageProps,
 } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import styles from "./SearchResultsPage.module.css";
 import { LuFilter, LuX } from "react-icons/lu";
-
-interface SearchResultsPageProps {
-  subdomain: string;
-}
 
 const apiUrl = "/api";
 
@@ -98,7 +95,6 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
           derivedCategories.sort((a, b) => a.name.localeCompare(b.name));
           setAllCategories(derivedCategories);
         } catch (catErr) {
-          console.error("Could not load categories for filters", catErr);
           setAllCategories([]);
         } finally {
           setIsLoadingCategories(false);
@@ -141,21 +137,17 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
       const response = await axios.get<ProductDto[]>(searchUrl);
       setSearchResults(response.data || []);
     } catch (err) {
-      const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        "Error searching products:",
-        axiosError.response?.data || axiosError.message
-      );
-      setError("Ocurrió un error al realizar la búsqueda.");
       setSearchResults([]);
     } finally {
       setIsLoadingSearch(false);
     }
-  }, [searchTerm, tenantInfo, appliedFilters]);
+  }, [searchTerm, tenantInfo, appliedFilters, error]);
 
   useEffect(() => {
-    fetchSearchResults();
-  }, [fetchSearchResults]);
+    if (tenantInfo) {
+      fetchSearchResults();
+    }
+  }, [fetchSearchResults, tenantInfo]);
 
   const handleApplyFilters = () => {
     const min = parseFloat(tempFilterMinPrice);
@@ -198,7 +190,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
     setIsFilterPanelOpen(!isFilterPanelOpen);
   };
 
-  const areFiltersActive = useMemo(() => {
+  const areAnyFiltersApplied = useMemo(() => {
     return (
       appliedFilters.categoryId !== null ||
       appliedFilters.minPrice !== null ||
@@ -242,7 +234,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                 <button
                   onClick={handleToggleFilterPanel}
                   className={`${styles.filterToggleButton} ${
-                    areFiltersActive ? styles.filterButtonActive : ""
+                    areAnyFiltersApplied ? styles.filterButtonActive : ""
                   }`}
                   disabled={isLoadingCategories}
                 >
@@ -252,15 +244,21 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
             </div>
 
             {isFilterPanelOpen && searchTerm && (
-              <div className={styles.filterPanel}>
-                <h3>Aplicar Filtros</h3>
-                <div className={styles.filterGroup}>
-                  <label htmlFor="filterCategory">Categoría:</label>
+              <div className={styles.filterPanelHorizontal}>
+                {" "}
+                <div className={styles.filterGroupItem}>
+                  <label
+                    htmlFor="filterCategory"
+                    className={styles.filterLabel}
+                  >
+                    Categoría:
+                  </label>
                   <select
                     id="filterCategory"
                     value={tempFilterCategoryId}
                     onChange={(e) => setTempFilterCategoryId(e.target.value)}
                     disabled={isLoadingCategories}
+                    className={styles.filterSelect}
                   >
                     <option value="">Todas</option>
                     {allCategories.map((cat) => (
@@ -269,42 +267,56 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                       </option>
                     ))}
                   </select>
-                  {isLoadingCategories && <small>Cargando categorías...</small>}
+                  {isLoadingCategories && (
+                    <small className={styles.loadingSmall}>Cargando...</small>
+                  )}
                 </div>
-                <div className={styles.filterGroup}>
-                  <label htmlFor="filterMinPrice">Precio Mínimo:</label>
+                <div className={styles.filterGroupItem}>
+                  <label
+                    htmlFor="filterMinPrice"
+                    className={styles.filterLabel}
+                  >
+                    Mín (Bs.):
+                  </label>
                   <input
                     type="number"
                     id="filterMinPrice"
                     placeholder="Ej: 10"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={tempFilterMinPrice}
                     onChange={(e) => setTempFilterMinPrice(e.target.value)}
+                    className={styles.filterInput}
                   />
                 </div>
-                <div className={styles.filterGroup}>
-                  <label htmlFor="filterMaxPrice">Precio Máximo:</label>
+                <div className={styles.filterGroupItem}>
+                  <label
+                    htmlFor="filterMaxPrice"
+                    className={styles.filterLabel}
+                  >
+                    Máx (Bs.):
+                  </label>
                   <input
                     type="number"
                     id="filterMaxPrice"
                     placeholder="Ej: 100"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={tempFilterMaxPrice}
                     onChange={(e) => setTempFilterMaxPrice(e.target.value)}
+                    className={styles.filterInput}
                   />
                 </div>
-                <div className={styles.filterActions}>
+                <div className={styles.filterActionButtonsHorizontal}>
                   <button
                     onClick={handleApplyFilters}
-                    className={styles.applyButton}
+                    className={styles.applyButtonSmall}
                   >
                     Aplicar
                   </button>
                   <button
                     onClick={handleClearPanelFilters}
-                    className={styles.clearButton}
+                    className={styles.clearButtonSmall}
                   >
                     Limpiar
                   </button>
@@ -325,7 +337,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
             {searchTerm && !isLoadingSearch && searchResults.length === 0 && (
               <p className={styles.message}>
                 No se encontraron productos que coincidan con "{searchTerm}"{" "}
-                {areFiltersActive ? " y los filtros aplicados" : ""}.
+                {areAnyFiltersApplied ? " y los filtros aplicados" : ""}.
               </p>
             )}
 

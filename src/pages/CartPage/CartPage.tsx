@@ -13,6 +13,7 @@ import {
   LuCircleCheck,
   LuCircleX,
   LuPencil,
+  LuTriangleAlert,
 } from "react-icons/lu";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../AuthContext";
@@ -25,10 +26,6 @@ import {
   OrderItemDto,
   OrderDto,
 } from "../../types";
-
-interface CartPageProps {
-  subdomain: string;
-}
 
 const apiUrl = "/api";
 
@@ -62,7 +59,6 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   const { isAuthenticated, user } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
   );
@@ -78,6 +74,10 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   const [isConfirmOrderModalOpen, setIsConfirmOrderModalOpen] =
     useState<boolean>(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
+
+  const [confirmingRemoveProductId, setConfirmingRemoveProductId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     setIsLoadingTenant(true);
@@ -126,27 +126,25 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
     );
   }, [cartItems]);
 
-  const handleRemoveItem = (productId: string, productName: string) => {
-    if (
-      window.confirm(
-        `¿Estás seguro de que quieres quitar "${productName}" del carrito?`
-      )
-    ) {
-      removeItemFromCart(productId);
-    }
+  const requestRemoveConfirmation = (productId: string) => {
+    setConfirmingRemoveProductId(productId);
+  };
+
+  const executeActualRemove = (productId: string) => {
+    removeItemFromCart(productId);
+    setConfirmingRemoveProductId(null);
+  };
+
+  const cancelRemoveConfirmation = () => {
+    setConfirmingRemoveProductId(null);
   };
 
   const handleDecrementItem = (item: CartItem) => {
     if (item.quantity === 1) {
-      if (
-        window.confirm(
-          `¿Estás seguro de que quieres quitar "${item.product.name}" del carrito? (Reduciendo de 1)`
-        )
-      ) {
-        decrementItemQuantity(item.product.id);
-      }
+      requestRemoveConfirmation(item.product.id);
     } else {
       decrementItemQuantity(item.product.id);
+      setConfirmingRemoveProductId(null);
     }
   };
 
@@ -294,10 +292,6 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       navigate("/");
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        "Error al crear el pedido:",
-        axiosError.response?.data || axiosError.message
-      );
       showNotification(
         `Error al confirmar el pedido: ${
           axiosError.response?.data?.errors
@@ -379,69 +373,97 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
               </div>
               <div className={styles.cartItemsList}>
                 {cartItems.map((item) => (
-                  <div key={item.product.id} className={styles.cartItem}>
-                    {item.product.images?.[0] ? (
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.name}
-                        className={styles.itemImage}
-                      />
-                    ) : (
-                      <div
-                        className={`${styles.itemImage} ${styles.itemImagePlaceholder}`}
+                  <React.Fragment key={item.product.id}>
+                    <div className={styles.cartItem}>
+                      {item.product.images?.[0] ? (
+                        <img
+                          src={item.product.images[0]}
+                          alt={item.product.name}
+                          className={styles.itemImage}
+                        />
+                      ) : (
+                        <div
+                          className={`${styles.itemImage} ${styles.itemImagePlaceholder}`}
+                        >
+                          <span>Sin Imagen</span>
+                        </div>
+                      )}
+                      <div className={styles.itemDetails}>
+                        <Link
+                          to={`/products/${item.product.id}`}
+                          className={styles.itemName}
+                        >
+                          {item.product.name}
+                        </Link>
+                        <p className={styles.itemPrice}>
+                          Bs. {item.product.price.toFixed(2)} c/u
+                        </p>
+                      </div>
+                      <div className={styles.itemQuantity} data-label="Cant:">
+                        <button
+                          onClick={() => handleDecrementItem(item)}
+                          className={styles.quantityButton}
+                          aria-label={`Reducir cantidad de ${item.product.name}`}
+                          title="Reducir cantidad"
+                          disabled={
+                            confirmingRemoveProductId === item.product.id &&
+                            item.quantity === 1
+                          }
+                        >
+                          <LuCircleMinus />
+                        </button>
+                        <span
+                          className={styles.quantityDisplay}
+                          aria-label="Cantidad actual"
+                        >
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => addItemToCart(item.product)}
+                          className={styles.quantityButton}
+                          aria-label={`Aumentar cantidad de ${item.product.name}`}
+                          title="Aumentar cantidad"
+                        >
+                          <LuCirclePlus />
+                        </button>
+                      </div>
+                      <p className={styles.itemSubtotal} data-label="Total:">
+                        Bs. {(item.product.price * item.quantity).toFixed(2)}
+                      </p>
+                      <button
+                        onClick={() =>
+                          requestRemoveConfirmation(item.product.id)
+                        }
+                        className={styles.removeItemButton}
+                        aria-label={`Quitar ${item.product.name} del carrito`}
+                        title="Quitar del carrito"
+                        disabled={confirmingRemoveProductId === item.product.id}
                       >
-                        <span>Sin Imagen</span>
+                        <LuTrash2 />
+                      </button>
+                    </div>
+                    {confirmingRemoveProductId === item.product.id && (
+                      <div className={styles.confirmRemoveRow}>
+                        <span className={styles.confirmRemoveMessage}>
+                          <LuTriangleAlert /> ¿Eliminar "{item.product.name}"?
+                        </span>
+                        <div className={styles.confirmRemoveActions}>
+                          <button
+                            onClick={() => executeActualRemove(item.product.id)}
+                            className={`${styles.confirmRemoveButton} ${styles.confirmRemoveButtonYes}`}
+                          >
+                            Sí
+                          </button>
+                          <button
+                            onClick={cancelRemoveConfirmation}
+                            className={`${styles.confirmRemoveButton} ${styles.confirmRemoveButtonNo}`}
+                          >
+                            No
+                          </button>
+                        </div>
                       </div>
                     )}
-                    <div className={styles.itemDetails}>
-                      <Link
-                        to={`/products/${item.product.id}`}
-                        className={styles.itemName}
-                      >
-                        {item.product.name}
-                      </Link>
-                      <p className={styles.itemPrice}>
-                        Bs. {item.product.price.toFixed(2)} c/u
-                      </p>
-                    </div>
-                    <div className={styles.itemQuantity} data-label="Cant:">
-                      <button
-                        onClick={() => handleDecrementItem(item)}
-                        className={styles.quantityButton}
-                        aria-label={`Reducir cantidad de ${item.product.name}`}
-                        title="Reducir cantidad"
-                      >
-                        <LuCircleMinus />
-                      </button>
-                      <span
-                        className={styles.quantityDisplay}
-                        aria-label="Cantidad actual"
-                      >
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => addItemToCart(item.product)}
-                        className={styles.quantityButton}
-                        aria-label={`Aumentar cantidad de ${item.product.name}`}
-                        title="Aumentar cantidad"
-                      >
-                        <LuCirclePlus />
-                      </button>
-                    </div>
-                    <p className={styles.itemSubtotal} data-label="Total:">
-                      Bs. {(item.product.price * item.quantity).toFixed(2)}
-                    </p>
-                    <button
-                      onClick={() =>
-                        handleRemoveItem(item.product.id, item.product.name)
-                      }
-                      className={styles.removeItemButton}
-                      aria-label={`Quitar ${item.product.name} del carrito`}
-                      title="Quitar del carrito"
-                    >
-                      <LuTrash2 />
-                    </button>
-                  </div>
+                  </React.Fragment>
                 ))}
               </div>
             </div>
@@ -481,7 +503,10 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
                 className={styles.checkoutButton}
                 onClick={handleProceedToOrder}
                 disabled={
-                  cartItems.length === 0 || isLoadingTenant || isPlacingOrder
+                  cartItems.length === 0 ||
+                  isLoadingTenant ||
+                  isPlacingOrder ||
+                  !!confirmingRemoveProductId
                 }
               >
                 {isPlacingOrder
@@ -555,5 +580,9 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
     </div>
   );
 };
+
+interface CartPageProps {
+  subdomain: string;
+}
 
 export default CartPage;

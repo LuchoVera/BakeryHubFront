@@ -13,13 +13,9 @@ import CategorySidebar from "../../components/CategorySidebar/CategorySidebar";
 import { useAuth } from "../../AuthContext";
 import { LuFilter, LuX } from "react-icons/lu";
 
-interface TenantViewPageProps {
-  subdomain: string;
-}
+const apiUrl = "/api";
 
 type GroupedProductsRender = Record<string, ProductDto[]>;
-
-const apiUrl = "/api";
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffledArray = [...array];
@@ -110,10 +106,6 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
           derivedCategories.sort((a, b) => a.name.localeCompare(b.name));
           setAllCategories(derivedCategories);
         } catch (catErr) {
-          console.error(
-            "Could not derive categories from initial product fetch",
-            catErr
-          );
           setAllCategories([]);
         } finally {
           setIsLoadingCategories(false);
@@ -182,13 +174,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
           if (
             axiosError.response?.status !== 401 &&
             axiosError.response?.status !== 404
-          ) {
-            console.error(
-              "Failed to fetch recommendations:",
-              axiosError.response?.data || axiosError.message
-            );
-          }
-          setAllRecommendations([]);
+          )
+            setAllRecommendations([]);
         } finally {
           setLoadingRecommendations(false);
         }
@@ -286,7 +273,6 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       ? "localhost"
       : window.location.hostname;
     const baseUrl = `${protocol}//${baseHost}${port ? ":" + port : ""}/`;
-
     return (
       <div className={styles.loadingOrError}>
         <h1>Error</h1>
@@ -321,65 +307,75 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
               <p className={styles.loadingOrError}>{error}</p>
             )}
 
-            <div className={styles.filterButtonContainer}>
-              <button
-                onClick={toggleFilterPanel}
-                className={`${styles.filterToggleButton} ${
-                  areFiltersActive ? styles.filterButtonActive : ""
-                }`}
-              >
-                <LuFilter /> Filtros {isFilterPanelOpen ? <LuX /> : null}
-              </button>
-            </div>
-
-            {isFilterPanelOpen && (
-              <div className={styles.filterPanel}>
-                <h4>Filtros Adicionales</h4>
-                <div className={styles.filterGroup}>
-                  <label htmlFor="minPrice">Mínimo (Bs.):</label>
-                  <input
-                    type="number"
-                    id="minPrice"
-                    min="0"
-                    step="0.01"
-                    placeholder="Ej: 10"
-                    value={tempMinPrice}
-                    onChange={(e) => setTempMinPrice(e.target.value)}
-                  />
-                </div>
-                <div className={styles.filterGroup}>
-                  <label htmlFor="maxPrice">Máximo (Bs.):</label>
-                  <input
-                    type="number"
-                    id="maxPrice"
-                    min="0"
-                    step="0.01"
-                    placeholder="Ej: 100"
-                    value={tempMaxPrice}
-                    onChange={(e) => setTempMaxPrice(e.target.value)}
-                  />
-                </div>
-
-                <div className={styles.filterActions}>
-                  <button
-                    onClick={handleApplyFilters}
-                    className={styles.applyButton}
-                  >
-                    Aplicar Filtros
-                  </button>
-                  <button
-                    onClick={handleClearPanelFilters}
-                    className={styles.clearButton}
-                  >
-                    Limpiar Filtros
-                  </button>
-                </div>
+            <div className={styles.filterControlsContainer}>
+              {" "}
+              <div className={styles.filterButtonContainer}>
+                <button
+                  onClick={toggleFilterPanel}
+                  className={`${styles.filterToggleButton} ${
+                    (appliedMinPrice || appliedMaxPrice) && !selectedCategoryId
+                      ? styles.filterButtonActive
+                      : ""
+                  }`}
+                >
+                  <LuFilter /> Filtros de Precio{" "}
+                  {isFilterPanelOpen ? <LuX /> : null}
+                </button>
               </div>
-            )}
+              {isFilterPanelOpen && (
+                <div className={styles.filterPanelHorizontal}>
+                  <div className={styles.filterPriceGroup}>
+                    <label htmlFor="minPrice" className={styles.filterLabel}>
+                      Mín (Bs.):
+                    </label>
+                    <input
+                      type="number"
+                      id="minPrice"
+                      min="0"
+                      step="1"
+                      placeholder="Ej: 10"
+                      value={tempMinPrice}
+                      onChange={(e) => setTempMinPrice(e.target.value)}
+                      className={styles.filterInput}
+                    />
+                  </div>
+                  <div className={styles.filterPriceGroup}>
+                    <label htmlFor="maxPrice" className={styles.filterLabel}>
+                      Máx (Bs.):
+                    </label>
+                    <input
+                      type="number"
+                      id="maxPrice"
+                      min="0"
+                      step="1"
+                      placeholder="Ej: 100"
+                      value={tempMaxPrice}
+                      onChange={(e) => setTempMaxPrice(e.target.value)}
+                      className={styles.filterInput}
+                    />
+                  </div>
+                  <div className={styles.filterActionButtonsHorizontal}>
+                    <button
+                      onClick={handleApplyFilters}
+                      className={styles.applyButtonSmall}
+                    >
+                      Aplicar
+                    </button>
+                    <button
+                      onClick={handleClearPanelFilters}
+                      className={styles.clearButtonSmall}
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {isAuthenticated &&
               !loadingRecommendations &&
-              displayedRecommendations.length > 0 && (
+              displayedRecommendations.length > 0 &&
+              !areFiltersActive && (
                 <section
                   className={styles.recommendationSection}
                   id="recommendations"
@@ -395,7 +391,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                   </div>
                 </section>
               )}
-            {isAuthenticated && loadingRecommendations && (
+            {isAuthenticated && loadingRecommendations && !areFiltersActive && (
               <p className={styles.loadingText}>Cargando recomendaciones...</p>
             )}
 
@@ -415,6 +411,30 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
               ).map(({ name: categoryName, id: categoryId }) => {
                 const productsInCategory =
                   groupedProductsRender[categoryName] || [];
+
+                if (selectedCategoryId && selectedCategoryId !== categoryId)
+                  return null;
+                if (
+                  productsInCategory.length === 0 &&
+                  selectedCategoryId === categoryId
+                ) {
+                  return (
+                    <section
+                      key={categoryId || categoryName}
+                      className={styles.categorySection}
+                      id={
+                        categoryId ||
+                        categoryName.toLowerCase().replace(/\s+/g, "-")
+                      }
+                    >
+                      <h2 className={styles.categoryTitle}>{categoryName}</h2>
+                      <p className={styles.noProducts}>
+                        No hay productos en esta categoría con los filtros
+                        aplicados.
+                      </p>
+                    </section>
+                  );
+                }
                 if (productsInCategory.length === 0) return null;
 
                 const categoryIdForSection =
@@ -447,5 +467,9 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     </div>
   );
 };
+
+interface TenantViewPageProps {
+  subdomain: string;
+}
 
 export default TenantViewPage;

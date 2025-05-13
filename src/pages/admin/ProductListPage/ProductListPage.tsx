@@ -1,11 +1,21 @@
-import React, { useState, useEffect, useCallback, ReactNode } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from "react";
 import axios, { AxiosError } from "axios";
 import { ProductDto, ApiErrorResponse } from "../../../types";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./ProductListPage.module.css";
 import ProductTable from "../../../components/ProductTable/ProductTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
-import { LuTriangleAlert, LuCircleCheck, LuCircleX } from "react-icons/lu";
+import {
+  LuTriangleAlert,
+  LuCircleCheck,
+  LuCircleX,
+} from "react-icons/lu";
 
 const apiUrl = "/api";
 
@@ -31,8 +41,10 @@ const ProductListPage: React.FC = () => {
   const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
     null
   );
-
+  const [errorModalTitle, setErrorModalTitle] = useState<string>("Error");
   const navigate = useNavigate();
+
+  const [adminSearchTerm, setAdminSearchTerm] = useState<string>("");
 
   const fetchProducts = useCallback(async () => {
     setError(null);
@@ -48,9 +60,9 @@ const ProductListPage: React.FC = () => {
       if (axiosError.response?.status === 401) {
         setError("Autenticación requerida. Redirigiendo al login...");
         setTimeout(() => {
-          window.location.href = `/login?redirect=${encodeURIComponent(
-            window.location.pathname
-          )}`;
+          navigate(
+            `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+          );
         }, 1500);
       } else {
         setError(
@@ -68,6 +80,27 @@ const ProductListPage: React.FC = () => {
     setLoading(true);
     fetchProducts();
   }, [fetchProducts]);
+
+  const filteredProducts = useMemo(() => {
+    if (!adminSearchTerm.trim()) {
+      return allProducts;
+    }
+    const lowercasedSearchTerm = adminSearchTerm.toLowerCase();
+    return allProducts.filter(
+      (product) =>
+        product.name.toLowerCase().includes(lowercasedSearchTerm) ||
+        (product.categoryName &&
+          product.categoryName.toLowerCase().includes(lowercasedSearchTerm))
+    );
+  }, [allProducts, adminSearchTerm]);
+
+  const filteredAvailableProducts = useMemo(() => {
+    return filteredProducts.filter((p) => p.isAvailable);
+  }, [filteredProducts]);
+
+  const filteredUnavailableProducts = useMemo(() => {
+    return filteredProducts.filter((p) => !p.isAvailable);
+  }, [filteredProducts]);
 
   const executeToggleAvailability = async (
     productId: string,
@@ -89,10 +122,15 @@ const ProductListPage: React.FC = () => {
         );
         setIsSuccessModalOpen(true);
       }
+      if (!newAvailability && productName) {
+        setSuccessModalTitle("Producto Desactivado");
+        setSuccessModalMessage(
+          `Producto "${productName}" desactivado y ya no será visible.`
+        );
+        setIsSuccessModalOpen(true);
+      }
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-
-      console.error("Error toggling availability:", err);
       setErrorModalTitle("Error al Actualizar");
       setErrorModalMessage(
         `Fallo al actualizar disponibilidad. ${
@@ -122,26 +160,19 @@ const ProductListPage: React.FC = () => {
       setIsSuccessModalOpen(true);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      console.error(
-        `Error deleting product ${productId}:`,
-        axiosError.response?.data || axiosError.message
-      );
-
       let userErrorMessage = `No se pudo borrar el producto "${productName}".`;
-
       if (
         axiosError.response?.status === 500 ||
         axiosError.response?.status === 400 ||
         axiosError.response?.status === 409
       ) {
         userErrorMessage +=
-          " Es probable que esté asociado a pedidos registrados.";
+          " Es probable que esté asociado a pedidos registrados o tenga otras dependencias.";
       } else {
         userErrorMessage += " Ocurrió un error inesperado.";
       }
       userErrorMessage +=
         " Puedes dejar el producto desactivado y no será visible.";
-
       setErrorModalTitle("Error al Eliminar");
       setErrorModalMessage(userErrorMessage);
       setIsErrorModalOpen(true);
@@ -184,7 +215,7 @@ const ProductListPage: React.FC = () => {
     const { action, product } = productActionData;
     setIsConfirmModalOpen(false);
     if (action === "deactivate") {
-      executeToggleAvailability(product.id, false);
+      executeToggleAvailability(product.id, false, product.name);
     } else if (action === "delete") {
       executeDeleteProduct(product.id, product.name);
     }
@@ -263,23 +294,28 @@ const ProductListPage: React.FC = () => {
   };
 
   const modalInfo = getModalInfo();
-  const availableProducts = allProducts.filter((p) => p.isAvailable);
-  const unavailableProducts = allProducts.filter((p) => !p.isAvailable);
   const getToggleButtonLabel = (isAvailable: boolean): string => {
     return isAvailable ? "Desactivar" : "Activar";
   };
 
-  const [errorModalTitle, setErrorModalTitle] = useState<string>("Error");
-
   return (
     <div className={styles.pageContainer}>
       <h2>Gestiona tus Productos</h2>
-
       <Link to="/admin/products/new">
         <button className={styles.addProductButton}>
           Añadir Nuevo Producto
         </button>
       </Link>
+
+      <div className={styles.searchContainerAdmin}>
+        <input
+          type="text"
+          placeholder="Buscar por nombre o categoría..."
+          value={adminSearchTerm}
+          onChange={(e) => setAdminSearchTerm(e.target.value)}
+          className={styles.searchInputAdmin}
+        />
+      </div>
 
       {loading && <p className={styles.loadingText}>Cargando productos...</p>}
       {error && <p className={styles.errorText}>{error}</p>}
@@ -287,7 +323,7 @@ const ProductListPage: React.FC = () => {
       {!loading && !error && (
         <>
           <ProductTable
-            products={availableProducts}
+            products={filteredAvailableProducts}
             title="Productos Disponibles"
             actionButtonLabel={getToggleButtonLabel}
             onToggleAvailability={handleToggleAvailability}
@@ -301,7 +337,7 @@ const ProductListPage: React.FC = () => {
             isUnavailableList={false}
           />
           <ProductTable
-            products={unavailableProducts}
+            products={filteredUnavailableProducts}
             title="Productos No Disponibles"
             actionButtonLabel={getToggleButtonLabel}
             onToggleAvailability={handleToggleAvailability}
@@ -319,6 +355,11 @@ const ProductListPage: React.FC = () => {
                 : null
             }
           />
+          {filteredProducts.length === 0 && adminSearchTerm && (
+            <p className={styles.noProductsMessage}>
+              No se encontraron productos que coincidan con "{adminSearchTerm}".
+            </p>
+          )}
         </>
       )}
 
@@ -336,7 +377,6 @@ const ProductListPage: React.FC = () => {
         iconType={modalInfo.iconType}
         confirmButtonVariant={modalInfo.variant}
       />
-
       <ConfirmationModal
         isOpen={isSuccessModalOpen}
         onClose={handleSuccessModalClose}
@@ -349,7 +389,6 @@ const ProductListPage: React.FC = () => {
         iconType="success"
         confirmButtonVariant="primary"
       />
-
       <ConfirmationModal
         isOpen={isErrorModalOpen}
         onClose={handleErrorModalClose}
