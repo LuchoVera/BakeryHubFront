@@ -60,15 +60,12 @@ const ProductListPage: React.FC = () => {
         );
       }
     } finally {
-      if (loading) setLoading(false);
+      setLoading(false);
     }
-  }, [apiUrl, loading]);
+  }, [navigate]);
 
   useEffect(() => {
-    const needsInitialLoad = allProducts.length === 0 && !error && !loading;
-    if (needsInitialLoad) {
-      setLoading(true);
-    }
+    setLoading(true);
     fetchProducts();
   }, [fetchProducts]);
 
