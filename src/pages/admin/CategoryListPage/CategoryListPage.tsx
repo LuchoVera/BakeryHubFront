@@ -8,7 +8,7 @@ import {
 import styles from "./CategoryListPage.module.css";
 import CategoryTable from "../../../components/CategoryTable/CategoryTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
-import { LuTriangleAlert, LuCircleX } from "react-icons/lu";
+import { LuTriangleAlert, LuCircleX, LuCircleCheck } from "react-icons/lu";
 import {
   validateRequired,
   validateMinLength,
@@ -89,7 +89,6 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
       setLoading(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className={styles.addForm}>
       <div className={styles.formGroup}>
@@ -138,6 +137,10 @@ const CategoryListPage: React.FC = () => {
   const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
     null
   );
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
+  const [successModalMessage, setSuccessModalMessage] = useState<string | null>(
+    null
+  );
 
   const fetchCategories = useCallback(async () => {
     setError(null);
@@ -146,7 +149,6 @@ const CategoryListPage: React.FC = () => {
       setCategories(response.data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-
       if (axiosError.response?.status === 401) {
         setError("Autenticación requerida. Por favor, inicia sesión de nuevo.");
       } else {
@@ -211,7 +213,6 @@ const CategoryListPage: React.FC = () => {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
       const responseData = response?.data;
-
       let errorMessage = "Ocurrió un error al guardar los cambios.";
       if (response) {
         if (response.status === 400) {
@@ -254,12 +255,14 @@ const CategoryListPage: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
-
     setDeletingId(categoryToDelete.id);
     setIsDeleteModalOpen(false);
-
     try {
       await axios.delete(`${apiUrl}/categories/${categoryToDelete.id}`);
+      setSuccessModalMessage(
+        `Categoría "${categoryToDelete.name}" eliminada correctamente.`
+      );
+      setIsSuccessModalOpen(true);
       setCategoryToDelete(null);
       await fetchCategories();
     } catch (err) {
@@ -281,6 +284,11 @@ const CategoryListPage: React.FC = () => {
   const handleErrorModalClose = () => {
     setIsErrorModalOpen(false);
     setErrorModalMessage(null);
+  };
+
+  const handleSuccessModalClose = () => {
+    setIsSuccessModalOpen(false);
+    setSuccessModalMessage(null);
   };
 
   const deleteModalMessage: ReactNode = categoryToDelete ? (
@@ -307,7 +315,7 @@ const CategoryListPage: React.FC = () => {
       {loading && <p className={styles.loadingText}>Cargando categorías...</p>}
       {error && <p className={styles.errorText}>{error}</p>}
 
-      {!loading && !error && (
+      {!loading && !error && categories.length > 0 && (
         <CategoryTable
           categories={categories}
           editingCategoryId={editingCategoryId}
@@ -321,6 +329,11 @@ const CategoryListPage: React.FC = () => {
           onDeleteClick={handleDeleteClick}
           onEditingNameChange={handleEditingNameChange}
         />
+      )}
+      {!loading && !error && categories.length === 0 && (
+        <p className={styles.loadingText}>
+          No hay categorías creadas. ¡Añade una!
+        </p>
       )}
 
       <ConfirmationModal
@@ -348,6 +361,18 @@ const CategoryListPage: React.FC = () => {
         showCancelButton={false}
         icon={<LuCircleX />}
         iconType="danger"
+        confirmButtonVariant="primary"
+      />
+      <ConfirmationModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleSuccessModalClose}
+        onConfirm={handleSuccessModalClose}
+        title="Éxito"
+        message={successModalMessage || "Operación completada."}
+        confirmText="OK"
+        showCancelButton={false}
+        icon={<LuCircleCheck />}
+        iconType="success"
         confirmButtonVariant="primary"
       />
     </div>
