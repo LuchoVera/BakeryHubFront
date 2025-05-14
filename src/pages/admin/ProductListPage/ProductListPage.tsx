@@ -43,7 +43,6 @@ const ProductListPage: React.FC = () => {
   );
   const [errorModalTitle, setErrorModalTitle] = useState<string>("Error");
   const navigate = useNavigate();
-
   const [adminSearchTerm, setAdminSearchTerm] = useState<string>("");
 
   const fetchProducts = useCallback(async () => {
@@ -167,12 +166,10 @@ const ProductListPage: React.FC = () => {
         axiosError.response?.status === 409
       ) {
         userErrorMessage +=
-          " Es probable que esté asociado a pedidos registrados o tenga otras dependencias.";
+          " Es probable que esté asociado a pedidos registrados.";
       } else {
         userErrorMessage += " Ocurrió un error inesperado.";
       }
-      userErrorMessage +=
-        " Puedes dejar el producto desactivado y no será visible.";
       setErrorModalTitle("Error al Eliminar");
       setErrorModalMessage(userErrorMessage);
       setIsErrorModalOpen(true);
@@ -198,15 +195,9 @@ const ProductListPage: React.FC = () => {
 
   const handleDeleteProduct = (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
-    if (product && !product.isAvailable) {
+    if (product) {
       setProductActionData({ action: "delete", product });
       setIsConfirmModalOpen(true);
-    } else if (product?.isAvailable) {
-      setErrorModalTitle("Acción no permitida");
-      setErrorModalMessage(
-        "Primero debes desactivar el producto para poder borrarlo."
-      );
-      setIsErrorModalOpen(true);
     }
   };
 
@@ -328,12 +319,19 @@ const ProductListPage: React.FC = () => {
             actionButtonLabel={getToggleButtonLabel}
             onToggleAvailability={handleToggleAvailability}
             onEdit={handleEdit}
+            onDelete={handleDeleteProduct}
             isLoading={
               isProcessingAction &&
               productActionData?.action === "deactivate" &&
               productActionData?.product.isAvailable
             }
-            deletingProductId={null}
+            deletingProductId={
+              isProcessingAction &&
+              productActionData?.action === "delete" &&
+              productActionData?.product.isAvailable
+                ? productActionData.product.id
+                : null
+            }
             isUnavailableList={false}
           />
           <ProductTable
@@ -350,7 +348,9 @@ const ProductListPage: React.FC = () => {
               !productActionData?.product.isAvailable
             }
             deletingProductId={
-              isProcessingAction && productActionData?.action === "delete"
+              isProcessingAction &&
+              productActionData?.action === "delete" &&
+              !productActionData?.product.isAvailable
                 ? productActionData.product.id
                 : null
             }
@@ -358,6 +358,18 @@ const ProductListPage: React.FC = () => {
           {filteredProducts.length === 0 && adminSearchTerm && (
             <p className={styles.noProductsMessage}>
               No se encontraron productos que coincidan con "{adminSearchTerm}".
+            </p>
+          )}
+          {allProducts.length > 0 &&
+            filteredProducts.length === 0 &&
+            !adminSearchTerm && (
+              <p className={styles.noProductsMessage}>
+                No hay productos para mostrar. Intenta añadir algunos.
+              </p>
+            )}
+          {allProducts.length === 0 && !adminSearchTerm && (
+            <p className={styles.noProductsMessage}>
+              Aún no has añadido ningún producto. ¡Empieza creando uno!
             </p>
           )}
         </>
