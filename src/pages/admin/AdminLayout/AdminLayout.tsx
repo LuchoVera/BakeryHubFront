@@ -67,6 +67,16 @@ const AdminLayout: React.FC = () => {
           </li>
           <li className={styles.navItem}>
             <NavLink
+              to="/admin/orders"
+              className={getNavLinkClass}
+              title="Pedidos"
+            >
+              <LuPackage className={styles.navIcon} />
+              {isSidebarOpen && <span className={styles.navText}>Pedidos</span>}
+            </NavLink>
+          </li>
+          <li className={styles.navItem}>
+            <NavLink
               to="/admin/categories"
               className={getNavLinkClass}
               title="Categorías"
@@ -87,17 +97,6 @@ const AdminLayout: React.FC = () => {
               {isSidebarOpen && (
                 <span className={styles.navText}>Productos</span>
               )}
-            </NavLink>
-          </li>
-
-          <li className={styles.navItem}>
-            <NavLink
-              to="/admin/orders"
-              className={getNavLinkClass}
-              title="Pedidos"
-            >
-              <LuPackage className={styles.navIcon} />
-              {isSidebarOpen && <span className={styles.navText}>Pedidos</span>}
             </NavLink>
           </li>
         </ul>
