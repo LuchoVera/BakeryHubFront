@@ -4,6 +4,7 @@ import styles from "./TenantHeader.module.css";
 import { useAuth } from "../../AuthContext";
 import { FaSearch } from "react-icons/fa";
 import { LuShoppingCart } from "react-icons/lu";
+import { PiUserCircle, PiReceiptLight } from "react-icons/pi";
 import { useCart } from "../../hooks/useCart";
 
 interface TenantHeaderProps {
@@ -11,12 +12,11 @@ interface TenantHeaderProps {
 }
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { getCartTotalQuantity } = useCart();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState("");
   const navigate = useNavigate();
-
   const shouldShowCart = !user?.roles?.includes("Admin");
 
   const handleLocalSearchChange = (
@@ -43,6 +43,15 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const handleCartClick = () => {
     navigate("/cart");
   };
+
+  const handleUserIconClick = () => {
+    navigate("/user-profile");
+  };
+
+  const handleMyOrdersClick = () => {
+    navigate("/my-orders");
+  };
+
   const totalCartQuantity = getCartTotalQuantity();
 
   return (
@@ -78,14 +87,29 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
         <nav className={styles.actions}>
           {isAuthenticated ? (
             <>
-              <span className={styles.userName} title={`¡Hola, ${user?.name}!`}>
-                ¡Hola, {user?.name}!
-              </span>
+              <button
+                onClick={handleUserIconClick}
+                className={`${styles.actionButton} ${styles.iconButton} ${styles.userProfileButton}`}
+                title={user?.name ? `Ver perfil de ${user.name}` : "Ver perfil"}
+                aria-label="Ver perfil de usuario"
+              >
+                <PiUserCircle />
+              </button>
+
+              <button
+                onClick={handleMyOrdersClick}
+                className={`${styles.actionButton} ${styles.myOrdersButton}`}
+                title="Mis pedidos"
+                aria-label="Ver mis pedidos"
+              >
+                <PiReceiptLight className={styles.buttonIcon} />{" "}
+                <span>Mis Pedidos</span>
+              </button>
 
               {shouldShowCart && (
                 <button
                   onClick={handleCartClick}
-                  className={`${styles.actionButton} ${styles.cartButton}`}
+                  className={`${styles.actionButton} ${styles.iconButton} ${styles.cartButton}`}
                   aria-label={`Carrito de compras con ${totalCartQuantity} items`}
                   title="Ver carrito"
                 >
@@ -97,16 +121,13 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
                   )}
                 </button>
               )}
-              <button onClick={logout} className={styles.actionButton}>
-                Cerrar Sesión
-              </button>
             </>
           ) : (
             <>
               {shouldShowCart && (
                 <button
                   onClick={handleCartClick}
-                  className={`${styles.actionButton} ${styles.cartButton}`}
+                  className={`${styles.actionButton} ${styles.iconButton} ${styles.cartButton}`}
                   aria-label={`Carrito de compras con ${totalCartQuantity} items`}
                   title="Ver carrito"
                 >

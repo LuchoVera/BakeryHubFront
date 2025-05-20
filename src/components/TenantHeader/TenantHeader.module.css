@@ -91,70 +91,91 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   flex-shrink: 0;
   justify-content: flex-end;
 }
 
-.userName {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 250px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
 .actionButton,
 .actionLink {
-  padding: var(--space-xs) var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
   text-decoration: none;
-  color: var(--color-primary);
   font-weight: 500;
   border-radius: var(--border-radius-sm);
   transition: all 0.2s ease;
   background: none;
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.5;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
 }
 
 .actionButton:hover,
 .actionLink:hover {
+  color: var(--color-primary);
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+.actionLink {
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+}
+
+.actionLink:hover {
   border-color: var(--color-primary);
   background-color: var(--color-secondary);
-  text-decoration: none;
 }
 
-.cartButton {
-  position: relative;
+.iconButton {
   padding: var(--space-xs);
-  font-size: 1.3rem;
+  font-size: 1.6rem;
+  line-height: 1;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: var(--color-text-secondary);
   background-color: transparent;
   border: none;
-  color: var(--color-text-secondary);
-  line-height: 1;
 }
 
-.cartButton:hover {
+.iconButton:hover {
   color: var(--color-primary);
   background-color: var(--color-secondary);
 }
 
+.buttonIcon {
+  margin-right: var(--space-xs);
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.myOrdersButton:hover,
+.myOrdersButton:hover .buttonIcon {
+  color: var(--color-primary);
+}
+
+.cartButton {
+  position: relative;
+}
+
 .cartBadge {
   position: absolute;
-  top: -5px;
-  right: -8px;
+  top: -4px;
+  right: -6px;
   background-color: var(--color-error);
   color: white;
   border-radius: 50%;
-  padding: 2px 5px;
-  font-size: 0.7rem;
+  padding: 1px 4px;
+  font-size: 0.65rem;
   font-weight: bold;
   line-height: 1;
-  min-width: 16px;
+  min-width: 14px;
   text-align: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -164,76 +185,91 @@
     flex-wrap: wrap;
     height: auto;
     padding: var(--space-sm) var(--space-md);
-    gap: var(--space-md);
-    justify-content: center;
+    gap: var(--space-xs);
+    justify-content: space-between;
     align-items: center;
   }
-
   .tenantInfo {
     order: 1;
-    flex-basis: 100%;
-    text-align: center;
+    flex-basis: auto;
+    text-align: left;
     margin: 0;
     padding-bottom: 0;
   }
-
   .tenantName {
     font-size: 1.2rem;
   }
-
-  .actions,
   .searchContainer {
-    order: 2;
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: 0;
-    flex-grow: 0;
-    flex-shrink: 0;
-    flex-basis: auto;
-  }
-
-  .actions {
-    gap: var(--space-sm);
-  }
-
-  .cartButton {
-    font-size: 1.4rem;
-    padding: var(--space-xs);
-  }
-
-  .searchContainer {
-    justify-content: center;
-    min-width: auto;
-    margin-left: var(--space-xs);
-  }
-
-  .searchInput {
     order: 3;
     flex-basis: 100%;
-    margin-top: 0;
-    width: 100%;
-    box-sizing: border-box;
-    display: none;
+    margin: var(--space-sm) 0 0 0;
+    padding: 0;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
   }
-
-  .searchInput.visible {
+  .searchInput {
     display: block;
   }
-
   .searchIconButton {
-    display: inline-flex;
-    font-size: 1.4rem;
-    padding: var(--space-xs);
-  }
-
-  .userName {
     display: none;
   }
-
+  .actions {
+    order: 2;
+    gap: var(--space-xs);
+  }
   .actionButton,
   .actionLink {
-    padding: var(--space-xs) var(--space-sm);
-    font-size: 0.85rem;
+    padding: var(--space-xs) 6px;
+    font-size: 0.8rem;
+  }
+  .iconButton {
+    font-size: 1.4rem;
+    width: 36px;
+    height: 36px;
+  }
+  .myOrdersButton {
+    padding: var(--space-xs);
+  }
+  .myOrdersButton .buttonIcon {
+    margin-right: 0;
+    font-size: 1.4rem;
+  }
+  .myOrdersButton span {
+    display: none;
+  }
+  .cartBadge {
+    top: -2px;
+    right: -3px;
+    padding: 1px 3px;
+    font-size: 0.6rem;
+    min-width: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .actions {
+    gap: 3px;
+  }
+  .actionButton,
+  .actionLink {
+    font-size: 0.75rem;
+    padding: 4px;
+  }
+  .iconButton,
+  .cartButton {
+    width: 32px;
+    height: 32px;
+    font-size: 1.3rem;
+  }
+  .myOrdersButton .buttonIcon {
+    font-size: 1.3rem;
+  }
+  .cartBadge {
+    top: 0px;
+    right: -1px;
+    font-size: 0.55rem;
+    min-width: 10px;
+    padding: 1px 2px;
   }
 }
