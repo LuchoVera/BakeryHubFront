@@ -30,6 +30,7 @@ import CartPage from "./pages/CartPage/CartPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage/AdminOrdersPage";
 import StoreSettingsPage from "./pages/admin/StoreSettingsPage/StoreSettingsPage";
 import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage/AdminOrderDetailPage";
+import MyOrdersPage from "./pages/MyOrdersPage/MyOrdersPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -87,6 +88,10 @@ function App() {
                   <Route
                     path="/cart"
                     element={<CartPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/my-orders"
+                    element={<MyOrdersPage subdomain={subdomain} />}
                   />
                   <Route
                     path="*"
