@@ -70,9 +70,9 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
         {product.description && (
           <p className={styles.description}>{product.description}</p>
         )}
-        {leadTimeText && (
-          <p className={styles.leadTimeDisplay}> Antelación: {leadTimeText}</p>
-        )}
+        <p className={styles.leadTimeDisplay}>
+          {leadTimeText ? `Antelación: ${leadTimeText}` : "\u00A0"}{" "}
+        </p>
         <div className={styles.footer}>
           <span className={styles.price} title={fullPriceString}>
             {fullPriceString}
