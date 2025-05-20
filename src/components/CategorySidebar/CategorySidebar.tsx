@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import styles from "./CategorySidebar.module.css";
 
 interface CategoryLinkData {
@@ -17,17 +17,6 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   selectedCategoryId,
   onSelectCategory,
 }) => {
-  const [showAll, setShowAll] = useState(false);
-  const initialLimit = 6;
-  const categoriesToShow = showAll
-    ? categories
-    : categories.slice(0, initialLimit);
-  const canShowMore = categories.length > initialLimit;
-
-  const toggleShowAll = () => {
-    setShowAll(!showAll);
-  };
-
   const handleCategoryClick = (
     event: React.MouseEvent<HTMLAnchorElement>,
     categoryId: string | null
@@ -55,7 +44,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             </a>
           </li>
 
-          {categoriesToShow.map((category) => (
+          {categories.map((category) => (
             <li key={category.id}>
               <a
                 href={`#${category.id}`}
@@ -74,12 +63,6 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             </li>
           ))}
         </ul>
-
-        {canShowMore && (
-          <button onClick={toggleShowAll} className={styles.showMoreButton}>
-            {showAll ? "Mostrar menos" : "Mostrar más"}
-          </button>
-        )}
       </nav>
     </aside>
   );

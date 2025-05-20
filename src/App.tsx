@@ -31,6 +31,7 @@ import AdminOrdersPage from "./pages/admin/AdminOrdersPage/AdminOrdersPage";
 import StoreSettingsPage from "./pages/admin/StoreSettingsPage/StoreSettingsPage";
 import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage/AdminOrderDetailPage";
 import MyOrdersPage from "./pages/MyOrdersPage/MyOrdersPage";
+import CustomerOrderDetailPage from "./pages/CustomerOrderDetailPage/CustomerOrderDetailPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -92,6 +93,10 @@ function App() {
                   <Route
                     path="/my-orders"
                     element={<MyOrdersPage subdomain={subdomain} />}
+                  />
+                  <Route
+                    path="/my-orders/:orderId"
+                    element={<CustomerOrderDetailPage subdomain={subdomain} />}
                   />
                   <Route
                     path="*"
