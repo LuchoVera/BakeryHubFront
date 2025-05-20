@@ -76,6 +76,10 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleCardClick = (orderId: string) => {
+    navigate(`/my-orders/${orderId}`);
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
@@ -202,7 +206,11 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
         {!error && !pageIsLoading && orders.length > 0 && (
           <div className={styles.ordersList}>
             {orders.map((order) => (
-              <div key={order.id} className={styles.orderCard}>
+              <div
+                key={order.id}
+                className={styles.orderCard}
+                onClick={() => handleCardClick(order.id)}
+              >
                 <div className={styles.orderHeader}>
                   <h3>
                     Pedido #{order.orderNumber || order.id.substring(0, 8)}
