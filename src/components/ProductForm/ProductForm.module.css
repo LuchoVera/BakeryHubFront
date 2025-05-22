@@ -1,54 +1,89 @@
-.form {
-  gap: var(--space-md);
+.formContainer {
+  max-width: 800px;
+  margin: var(--space-lg) auto;
+  padding: var(--space-md);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.productForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.formTitle {
+  font-family: var(--font-headings);
+  color: var(--color-primary-dark);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+  font-size: 2rem;
+}
+
+.fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  margin: 0;
+  background-color: #fdfdfd;
+}
+
+.legend {
+  font-family: var(--font-headings);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  padding: 0 var(--space-sm);
+  margin-left: var(--space-sm);
+}
+
+.formRow {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+.formRow:last-child {
+  margin-bottom: 0;
 }
 
 .formGroup {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+  flex-grow: 1;
+}
+.formGroupFull {
+  flex-basis: 100%;
+}
+.formGroupHalf {
+  flex-basis: calc(50% - (var(--space-lg) / 2));
 }
 
-.formGroup label {
+.label {
   font-weight: 600;
   font-size: 0.9em;
   color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
 }
 
-.submitButton {
-  background-color: var(--color-primary);
-  color: var(--color-surface);
-  border-color: var(--color-primary);
-  align-self: flex-start;
-  margin-top: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  font-size: 1rem;
+.input,
+.textarea,
+.select {
+  background-color: var(--color-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.submitButton:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
+.input:focus,
+.textarea:focus,
+.select:focus {
   border-color: var(--color-primary-dark);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 
-.error {
-  color: var(--color-error);
-  background-color: rgba(217, 83, 79, 0.1);
-  border: 1px solid var(--color-error);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.9em;
-  margin-top: var(--space-md);
-  white-space: pre-wrap;
-}
-
-.success {
-  color: var(--color-success);
-  background-color: rgba(92, 184, 92, 0.1);
-  border: 1px solid var(--color-success);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.9em;
-  margin-top: var(--space-md);
+.inputError {
+  border-color: var(--color-error) !important;
+  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.1) !important;
 }
 
 .validationError {
@@ -56,129 +91,256 @@
   font-size: 0.8em;
   margin-top: var(--space-xs);
   display: block;
+  white-space: pre-wrap;
 }
 
-input[aria-invalid="true"] {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
-}
+.imageUploadArea {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-lg);
+  text-align: center;
+  background-color: var(--color-secondary);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 
-input[aria-invalid="true"]:focus {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
-}
-
-.imagePreviewContainer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  min-height: 80px;
-  background-color: #fdfdfd;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 150px;
+}
+.imageUploadArea.dragging {
+  background-color: var(--color-accent);
+  border-color: var(--color-primary-dark);
+}
+.imageUploadArea:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-primary);
+}
+
+.uploadIcon {
+  font-size: 3rem;
+  color: var(--color-primary);
+  pointer-events: none;
+}
+.uploadText {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.fileInput {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.fileInputLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-surface);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: var(--space-xs);
+}
+.fileInputLabel:hover {
+  background-color: var(--color-primary-dark);
+}
+.fileInputLabel svg {
+  font-size: 1.2em;
+}
+
+.imagePreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-background);
 }
 
 .imagePreviewItem {
   position: relative;
-  border: 1px solid #ddd;
-  padding: 4px;
-  background-color: #f9f9f9;
-  width: 80px;
-  height: 80px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-surface);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
-.removeImageButton {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 24px;
-  height: 24px;
-  background-color: #dc3545;
-  color: white;
-  border: 1px solid white;
-  border-radius: 50%;
-  font-size: 14px;
-  line-height: 22px;
-  text-align: center;
-  cursor: pointer;
-  font-weight: bold;
-  padding: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.removeImageButton:hover {
-  background-color: #c82333;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-}
-.removeImageButton:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.7;
-  box-shadow: none;
-}
-
-.imagePreview {
+.imagePreviewImg {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
+.removeImageButton {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  width: 28px;
+  height: 28px;
+  background-color: rgba(220, 53, 69, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  padding: 0;
+}
+.removeImageButton:hover {
+  background-color: #dc3545;
+  transform: scale(1.1);
+}
+.removeImageButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.removeImageButton svg {
+  display: block;
+  line-height: 1;
+}
+
 .coverLabel {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.65);
   color: white;
-  font-size: 0.7em;
+  font-size: 0.75em;
   text-align: center;
-  padding: 2px 0;
+  padding: 3px 0;
   box-sizing: border-box;
+  font-weight: 500;
 }
 
-@media (max-width: 600px) {
-  .submitButton {
+.maxImagesText,
+.noImagesText {
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-sm);
+}
+.maxImagesText {
+  color: var(--color-warning);
+  font-weight: 500;
+}
+
+.formFeedback {
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-md);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9em;
+  text-align: center;
+}
+.formFeedback.errorText {
+  background-color: rgba(217, 83, 79, 0.1);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  white-space: pre-wrap;
+}
+
+.formActions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.button {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 150px;
+  justify-content: center;
+}
+.button svg {
+  font-size: 1.2em;
+}
+
+.submitButton {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+}
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.cancelButton {
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+.cancelButton:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+  border-color: var(--color-text-secondary);
+}
+
+.button:disabled {
+  background-color: #e0e0e0;
+  color: var(--color-text-secondary);
+  border-color: #d0d0d0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .formContainer {
+    margin: var(--space-md);
+    padding: var(--space-sm);
+  }
+  .formRow {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .formGroupHalf {
+    flex-basis: 100%;
+  }
+  .formActions {
+    flex-direction: column;
+  }
+  .button {
     width: 100%;
-    align-self: stretch;
-    font-size: 1rem;
-    padding: var(--space-md) var(--space-lg);
+    justify-content: center;
   }
-
-  .imagePreviewContainer {
-    gap: 10px;
-    min-height: 70px;
+  .imagePreviewGrid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--space-sm);
   }
-
-  .imagePreviewItem {
-    width: 70px;
-    height: 70px;
-    padding: 3px;
+  .legend {
+    font-size: 1.1rem;
   }
-
-  .removeImageButton {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-    line-height: 20px;
-    top: -8px;
-    right: -8px;
-  }
-
-  .coverLabel {
-    font-size: 0.65em;
-  }
-
-  .formGroup select {
-    font-size: 0.9rem;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
+  .formTitle {
+    font-size: 1.6rem;
   }
 }
