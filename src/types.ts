@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export interface ProductDto {
   id: string;
   name: string;
@@ -23,7 +25,7 @@ export interface UpdateProductDto {
   name: string;
   description?: string | null;
   price: number;
-  isAvailable: boolean;
+
   images?: string[] | null;
   leadTimeInput?: string | null;
   categoryId: string;
@@ -53,6 +55,7 @@ export interface AuthResponseDto {
   roles: string[];
   administeredTenantId?: string | null;
   administeredTenantSubdomain?: string | null;
+  phoneNumber?: string | null;
 }
 
 export interface AuthUser {
@@ -62,10 +65,15 @@ export interface AuthUser {
   roles: string[];
   administeredTenantId?: string | null;
   administeredTenantSubdomain?: string | null;
+  phoneNumber?: string | null;
 }
 
 export interface CategoryDto {
   id: string;
+  name: string;
+}
+
+export interface UpdateCategoryDto {
   name: string;
 }
 
@@ -74,9 +82,11 @@ export interface ValidationErrors {
 }
 
 export interface ApiErrorResponse {
+  type?: string;
   title?: string;
-  errors?: ValidationErrors;
+  status?: number;
   detail?: string;
+  errors?: ValidationErrors;
   message?: string;
 }
 
@@ -101,23 +111,8 @@ export interface EmailCheckResultDto {
   name?: string | null;
 }
 
-export enum RegistrationOutcome {
-  Failed = "Failed",
-  UserCreated = "UserCreated",
-  MembershipCreated = "MembershipCreated",
-  AlreadyMember = "AlreadyMember",
-  AdminConflict = "AdminConflict",
-  TenantNotFound = "TenantNotFound",
-  RoleAssignmentFailed = "RoleAssignmentFailed",
-  UnknownError = "UnknownError",
-}
-
 export interface LinkCustomerDto {
   email: string;
-}
-
-export interface UpdateCategoryDto {
-  name: string;
 }
 
 export interface CartItem {
@@ -169,7 +164,6 @@ export interface OrderItemDto {
   productId: string;
   quantity: number;
   unitPrice: number;
-
   productName?: string;
 }
 
@@ -202,4 +196,23 @@ export interface StatusConfirmModalData {
 
 export interface SearchResultsPageProps {
   subdomain: string;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
+export interface UpdateUserProfileDto {
+  name: string;
+  phoneNumber?: string | null;
+}
+
+export interface FeedbackModalData {
+  title: string;
+  message: ReactNode;
+  iconType: "success" | "danger" | "info" | "warning";
+  icon: ReactNode;
+  onClose?: () => void;
 }

@@ -114,6 +114,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
         roles: data.roles,
         administeredTenantId: data.administeredTenantId,
         administeredTenantSubdomain: data.administeredTenantSubdomain,
+        phoneNumber: data.phoneNumber,
       };
       login(user);
       setClientErrors({});
