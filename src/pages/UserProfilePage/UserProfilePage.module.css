@@ -1,0 +1,304 @@
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.loadingMessage,
+.errorMessage {
+  text-align: center;
+  padding: var(--space-xl);
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+}
+
+.errorMessage {
+  color: var(--color-error);
+}
+
+.mainContent {
+  max-width: 550px;
+  margin: var(--space-lg) auto;
+  padding: var(--space-md);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.9em;
+}
+.backLink:hover {
+  text-decoration: underline;
+  color: var(--color-text-primary);
+}
+
+.profileCard {
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.profileIconContainer {
+  margin-bottom: var(--space-sm);
+}
+
+.profileIcon {
+  color: var(--color-primary);
+}
+
+.userNameDisplay {
+  font-family: var(--font-headings);
+  color: var(--color-primary-dark);
+  font-size: 2.5rem;
+  font-weight: normal;
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  line-height: 1.2;
+}
+
+.infoSection {
+  margin-bottom: var(--space-lg);
+  text-align: left;
+}
+
+.sectionTitleCentered {
+  font-family: var(--font-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-xs);
+  border-bottom: none;
+  text-align: center;
+}
+
+.infoItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) 0;
+  border-bottom: 1px dotted #eee;
+  font-size: 0.95rem;
+  min-height: 40px;
+}
+
+.infoItem:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  color: var(--color-text-secondary);
+  font-weight: normal;
+  text-align: left;
+  grid-column: 1 / 2;
+  align-self: center;
+}
+
+.infoValue {
+  color: var(--color-text-primary);
+  text-align: right;
+  font-weight: normal;
+  grid-column: 2 / 3;
+  word-break: break-all;
+  align-self: center;
+}
+
+.infoValueFull {
+  grid-column: 2 / 4;
+}
+
+.editInputContainer {
+  grid-column: 2 / 4;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.inlineInput {
+  flex-grow: 1;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+}
+.inlineInput:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.2);
+}
+
+.editActionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-xs);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.saveButton {
+  color: var(--color-success);
+}
+.saveButton:hover {
+  color: darkgreen;
+}
+.cancelButton {
+  color: var(--color-error);
+}
+.cancelButton:hover {
+  color: darkred;
+}
+
+.editButton {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: var(--space-xs);
+  font-size: 0.9rem;
+  line-height: 1;
+  grid-column: 3 / 4;
+  justify-self: end;
+  align-self: center;
+}
+.editButton:hover {
+  color: var(--color-primary-dark);
+}
+
+.securitySectionNoTitle {
+  margin-top: calc(-1 * var(--space-sm));
+}
+
+.actionItemCentered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) 0;
+  margin-top: var(--space-md);
+  gap: var(--space-xs);
+}
+
+.actionIcon {
+  color: var(--color-primary);
+  margin-right: var(--space-xs);
+  font-size: 1rem;
+}
+
+.actionLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: normal;
+  font-size: 0.95rem;
+}
+.actionLink:hover {
+  text-decoration: underline;
+  color: var(--color-primary-dark);
+}
+
+.actionButtonsRow {
+  margin-top: var(--space-lg);
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+.button {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, box-shadow 0.2s ease;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  box-sizing: border-box;
+  text-align: center;
+  min-height: 40px;
+}
+
+.buttonIcon {
+  font-size: 1.1rem;
+}
+
+.buttonMyOrders {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+}
+.buttonMyOrders:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.buttonLogoutError {
+  background-color: var(--color-surface);
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+.buttonLogoutError:hover {
+  background-color: rgba(217, 83, 79, 0.05);
+  border-color: var(--color-error);
+  color: var(--color-error);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 600px) {
+  .mainContent {
+    padding: var(--space-md);
+    margin-top: var(--space-md);
+    text-align: left;
+  }
+  .backLink {
+    font-size: 0.85em;
+    margin-bottom: var(--space-sm);
+  }
+  .profileCard {
+    padding: var(--space-lg);
+  }
+  .userNameDisplay {
+    font-size: 2rem;
+  }
+  .sectionTitleCentered {
+    font-size: 1rem;
+  }
+  .infoItem {
+    font-size: 0.9rem;
+    padding: var(--space-sm) 0;
+  }
+  .infoLabel,
+  .infoValue {
+    word-break: break-word;
+  }
+  .editButton {
+    font-size: 0.85rem;
+  }
+  .actionLink {
+    font-size: 0.9rem;
+  }
+  .actionButtonsRow {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .button {
+    font-size: 0.9rem;
+    padding: var(--space-sm);
+    width: 100%;
+  }
+}
