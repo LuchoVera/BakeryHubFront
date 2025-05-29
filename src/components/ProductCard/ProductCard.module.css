@@ -131,6 +131,39 @@
   transform: none;
 }
 
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  justify-content: center;
+}
+
+.tagBadge {
+  background-color: var(--color-secondary);
+  color: var(--color-primary-dark);
+  padding: 2px var(--space-xs);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.7em;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+}
+
+.tagIcon {
+  margin-right: 3px;
+  font-size: 0.9em;
+}
+
+.description + .tagsContainer {
+  margin-top: var(--space-xs);
+}
+
+.category + .tagsContainer {
+  margin-top: var(--space-xs);
+}
+
 @media (max-width: 600px) {
   .image,
   .imagePlaceholder {

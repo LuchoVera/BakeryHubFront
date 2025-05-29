@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { useCart } from "../../hooks/useCart";
 import { useNotification } from "../../hooks/useNotification";
+import { LuTag } from "react-icons/lu";
 
 interface ProductCardProps {
   product: ProductDto;
@@ -23,7 +24,6 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
   const { addItemToCart } = useCart();
   const { user } = useAuth();
   const { showNotification } = useNotification();
-
   const isAdmin = user?.roles?.includes("Admin") ?? false;
   const isButtonDisabled = !product.isAvailable || isAdmin;
 
@@ -70,6 +70,17 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
         {product.description && (
           <p className={styles.description}>{product.description}</p>
         )}
+
+        {product.tagNames && product.tagNames.length > 0 && (
+          <div className={styles.tagsContainer}>
+            {product.tagNames.map((tagName) => (
+              <span key={tagName} className={styles.tagBadge}>
+                <LuTag className={styles.tagIcon} /> {tagName}
+              </span>
+            ))}
+          </div>
+        )}
+
         <p className={styles.leadTimeDisplay}>
           {leadTimeText ? `Antelación: ${leadTimeText}` : "\u00A0"}{" "}
         </p>
