@@ -291,7 +291,7 @@ const ProductListPage: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <h2>Gestiona tus Productos</h2>
+      <h2>Gestion de Productos</h2>
       <Link to="/admin/products/new">
         <button className={styles.addProductButton}>
           Añadir Nuevo Producto

@@ -309,7 +309,7 @@ const CategoryListPage: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <h2>Gestionar Categorías</h2>
+      <h2>Gestion de Categorías</h2>
       <AddCategoryForm onCategoryAdded={fetchCategories} />
 
       {loading && <p className={styles.loadingText}>Cargando categorías...</p>}
