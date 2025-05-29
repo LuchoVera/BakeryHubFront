@@ -4,6 +4,7 @@ import React, {
   ChangeEvent,
   FormEvent,
   DragEvent,
+  SyntheticEvent,
 } from "react";
 import axios, { AxiosError } from "axios";
 import {
@@ -12,6 +13,7 @@ import {
   UpdateProductDto,
   ApiErrorResponse,
   ProductDto,
+  TagDto,
 } from "../../types";
 import styles from "./ProductForm.module.css";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +23,11 @@ import {
   LuImagePlus,
   LuCircleX,
   LuSaveAll,
+  LuX as LuXIcon,
 } from "react-icons/lu";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
 import {
   validateRequired,
   validateMinLength,
@@ -41,13 +47,12 @@ interface ProductFormProps {
 
 type ProductFormData = Omit<
   CreateProductDto & Partial<UpdateProductDto>,
-  "isAvailable"
+  "isAvailable" | "tags"
 >;
 
 const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const isEditing = !!productId;
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     description: "",
@@ -56,6 +61,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     leadTimeInput: "",
     categoryId: "",
   });
+
+  const [currentTags, setCurrentTags] = useState<TagDto[]>([]);
+  const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
+  const [loadingTenantTags, setLoadingTenantTags] = useState<boolean>(true);
+
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingData, setLoadingData] = useState<boolean>(isEditing);
@@ -63,7 +73,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const [clientValidationErrors, setClientValidationErrors] = useState<
     Record<string, string>
   >({});
-
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -71,24 +80,44 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const MAX_IMAGES = 14;
+  const MAX_TAGS = 10;
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchInitialData = async () => {
+      setLoadingTenantTags(true);
       try {
-        const response = await axios.get<CategoryDto[]>(`${apiUrl}/categories`);
-        setCategories(response.data);
-        if (!isEditing && response.data.length > 0 && !formData.categoryId) {
-          setFormData((prev) => ({ ...prev, categoryId: response.data[0].id }));
+        const categoriesResponse = await axios.get<CategoryDto[]>(
+          `${apiUrl}/categories`
+        );
+        setCategories(categoriesResponse.data);
+        if (
+          !isEditing &&
+          categoriesResponse.data.length > 0 &&
+          !formData.categoryId
+        ) {
+          setFormData((prev) => ({
+            ...prev,
+            categoryId: categoriesResponse.data[0].id,
+          }));
         }
+
+        const tagsResponse = await axios.get<TagDto[]>(`${apiUrl}/tags`);
+        setAllTenantTags(tagsResponse.data);
       } catch {
-        setError("No se pudieron cargar las categorías.");
+        setError("No se pudieron cargar las categorías o etiquetas.");
+      } finally {
+        setLoadingTenantTags(false);
       }
     };
-    fetchCategories();
+    fetchInitialData();
   }, [isEditing, formData.categoryId]);
 
   useEffect(() => {
-    if (isEditing && productId) {
+    if (
+      isEditing &&
+      productId &&
+      (allTenantTags.length > 0 || !loadingTenantTags)
+    ) {
       setLoadingData(true);
       const fetchProduct = async () => {
         try {
@@ -105,6 +134,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
             leadTimeInput: product.leadTimeDisplay ?? "",
             categoryId: product.categoryId,
           });
+
+          const productTagObjects = (product.tagNames || []).map((name) => {
+            const existingTag = allTenantTags.find(
+              (t) => t.name.toLowerCase() === name.toLowerCase()
+            );
+            return (
+              existingTag || { id: `new_${name}_${Date.now()}`, name: name }
+            );
+          });
+          setCurrentTags(productTagObjects);
+
           setImagePreviews(existingUrls);
         } catch {
           setError("No se pudieron cargar los datos del producto.");
@@ -114,9 +154,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       };
       fetchProduct();
     }
-  }, [isEditing, productId]);
+  }, [isEditing, productId, allTenantTags, loadingTenantTags]);
 
-  const validateField = (name: keyof ProductFormData, value: any): string => {
+  const validateField = (
+    name: keyof ProductFormData | "tags",
+    value: any
+  ): string => {
     let errorMsg = "";
     switch (name) {
       case "name":
@@ -145,6 +188,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         return "";
       case "categoryId":
         return validateRequired(value) ? "Debe seleccionar una categoría." : "";
+      case "tags":
+        if (Array.isArray(value) && value.length > MAX_TAGS) {
+          return `Puedes añadir un máximo de ${MAX_TAGS} etiquetas.`;
+        }
+        return "";
       default:
         return "";
     }
@@ -157,12 +205,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       if (key === "description" || key === "images" || key === "leadTimeInput")
         return;
 
-      const errorMsg = validateField(key, formData[key]);
+      const errorMsg = validateField(
+        key,
+        formData[key as keyof ProductFormData]
+      );
       if (errorMsg) {
         errors[key] = errorMsg;
         isValid = false;
       }
     });
+    const tagsError = validateField("tags", currentTags);
+    if (tagsError) {
+      errors["tags"] = tagsError;
+      isValid = false;
+    }
     setClientValidationErrors(errors);
     return isValid;
   };
@@ -175,7 +231,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
 
     const newLocalPreviews: string[] = [];
     const newLocalFiles: File[] = [];
-
     let currentTotalInPreview = imagePreviews.length;
 
     for (const file of newFilesArray) {
@@ -183,32 +238,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         setUploadError(`No puedes subir más de ${MAX_IMAGES} imágenes.`);
         break;
       }
-
       const isDuplicateInSession = imageFiles.some(
         (f) =>
           f.name === file.name &&
           f.size === file.size &&
           f.lastModified === file.lastModified
       );
-      const isDuplicateInExistingPreviews = imagePreviews.some((p) => {
-        if (p.startsWith("blob:")) {
-          return false;
-        }
-        return false;
-      });
-
-      if (!isDuplicateInSession && !isDuplicateInExistingPreviews) {
+      if (!isDuplicateInSession) {
         newLocalFiles.push(file);
         newLocalPreviews.push(URL.createObjectURL(file));
         currentTotalInPreview++;
       }
     }
-
     if (newLocalFiles.length > 0) {
       setImageFiles((prev) => [...prev, ...newLocalFiles]);
       setImagePreviews((prev) => [...prev, ...newLocalPreviews]);
     }
-
     if (
       currentTotalInPreview >= MAX_IMAGES &&
       newLocalFiles.length < newFilesArray.length
@@ -235,18 +280,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       if (!isDragging) setIsDragging(true);
     }
   };
-
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
-
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       if (imagePreviews.length < MAX_IMAGES) {
         processFiles(e.dataTransfer.files);
@@ -256,10 +298,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       e.dataTransfer.clearData();
     }
   };
-
   const handleRemoveImage = (indexToRemove: number) => {
     const previewToRemove = imagePreviews[indexToRemove];
-
     if (!previewToRemove.startsWith("blob:")) {
       setFormData((prev) => ({
         ...prev,
@@ -283,7 +323,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setUploadError(null);
     }
   };
-
   const uploadSingleFile = async (file: File): Promise<string | null> => {
     if (!cloudName || !uploadPreset) {
       setUploadError("Falta configuración para subir imágenes.");
@@ -332,6 +371,46 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     if (error) setError(null);
   };
 
+  const handleTagsChange = (
+    _event: SyntheticEvent,
+    newValue: (string | TagDto)[]
+  ) => {
+    const newTagObjects = newValue
+      .map((option) => {
+        let tagName = "";
+        let tagId = "";
+
+        if (typeof option === "string") {
+          tagName = option.trim();
+          if (tagName.endsWith(",")) {
+            tagName = tagName.slice(0, -1).trim();
+          }
+          const existing = allTenantTags.find(
+            (t) => t.name.toLowerCase() === tagName.toLowerCase()
+          );
+          tagId = existing ? existing.id : `new_${tagName}_${Date.now()}`;
+        } else {
+          tagName = option.name.trim();
+          tagId = option.id;
+        }
+        return { id: tagId, name: tagName };
+      })
+      .filter((tag) => tag.name.length > 0 && tag.name.length <= 50);
+
+    if (newTagObjects.length <= MAX_TAGS) {
+      setCurrentTags(newTagObjects);
+      if (clientValidationErrors["tags"]) {
+        setClientValidationErrors((prev) => ({ ...prev, tags: "" }));
+      }
+    } else {
+      setCurrentTags(newTagObjects.slice(0, MAX_TAGS));
+      setClientValidationErrors((prev) => ({
+        ...prev,
+        tags: `Puedes añadir un máximo de ${MAX_TAGS} etiquetas.`,
+      }));
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -344,7 +423,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     }
 
     setLoading(true);
-
     let uploadedUrls: string[] = [];
     if (imageFiles.length > 0) {
       setIsUploading(true);
@@ -364,15 +442,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     const existingImageUrls = formData.images ?? [];
     const finalImageUrls = [...existingImageUrls, ...uploadedUrls];
 
-    const productPayload = {
+    const productPayload: CreateProductDto | UpdateProductDto = {
       name: formData.name || "",
-      description: formData.description || "",
+      description: formData.description || null,
       price: parseFloat(String(formData.price)),
-      images: finalImageUrls,
-      leadTimeInput: formData.leadTimeInput || "",
+      images: finalImageUrls.length > 0 ? finalImageUrls : null,
+      leadTimeInput: formData.leadTimeInput || null,
       categoryId: formData.categoryId || "",
+      tags:
+        currentTags.length > 0
+          ? currentTags
+              .map((tagDto) => tagDto.name.trim())
+              .filter((name) => name)
+          : null,
     };
-
     try {
       if (isEditing && productId) {
         await axios.put(`${apiUrl}/products/${productId}`, productPayload);
@@ -395,9 +478,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           }
         }
         setClientValidationErrors((prev) => ({ ...prev, ...formattedErrors }));
-        setError(
-          "Por favor corrige los errores de validación resaltados por el servidor."
-        );
+        setError("Por favor corrige los errores de validación del servidor.");
       } else {
         setError(
           axiosError.response?.data?.detail ||
@@ -409,18 +490,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setLoading(false);
     }
   };
-
   const getClientFieldError = (
-    fieldName: keyof ProductFormData
+    fieldName: keyof ProductFormData | "tags"
   ): string | undefined => {
     return clientValidationErrors[fieldName];
   };
+
+  const tagsErrorText =
+    (getClientFieldError("tags") as string) ||
+    (currentTags.length >= MAX_TAGS
+      ? `Máximo de ${MAX_TAGS} etiquetas alcanzado.`
+      : "");
 
   if (loadingData && isEditing)
     return (
       <div className={styles.formFeedback}>Cargando datos del producto...</div>
     );
-
   return (
     <div className={styles.formContainer}>
       <form onSubmit={handleSubmit} className={styles.productForm} noValidate>
@@ -555,11 +640,135 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
 
           <div className={styles.formRow}>
             <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-              <label htmlFor="leadTime" className={styles.label}>
+              <label htmlFor="tags-autocomplete" className={styles.label}>
+                Etiquetas (máx. {MAX_TAGS})
+              </label>
+              <Autocomplete
+                multiple
+                id="tags-autocomplete"
+                value={currentTags}
+                componentsProps={{
+                  clearIndicator: {
+                    title: "Limpiar",
+                  },
+                }}
+                onChange={handleTagsChange}
+                options={allTenantTags}
+                getOptionLabel={(option: string | TagDto) =>
+                  typeof option === "string" ? option : option.name
+                }
+                isOptionEqualToValue={(option: TagDto, value: TagDto) =>
+                  option.id === value.id ||
+                  option.name.toLowerCase() === value.name.toLowerCase()
+                }
+                freeSolo
+                filterSelectedOptions
+                disabled={loadingTenantTags}
+                loading={loadingTenantTags}
+                loadingText="Cargando etiquetas..."
+                noOptionsText="No hay etiquetas. Escribe para añadir."
+                renderTags={(value: readonly TagDto[], getTagProps) =>
+                  value.map((tag: TagDto, index: number) => (
+                    <Chip
+                      label={tag.name}
+                      {...getTagProps({ index })}
+                      key={tag.id || tag.name + index}
+                      deleteIcon={<LuXIcon />}
+                      sx={{
+                        backgroundColor: "var(--color-secondary)",
+                        color: "var(--color-primary-dark)",
+                        height: "28px",
+                        fontSize: "0.8rem",
+                        "& .MuiChip-deleteIcon": {
+                          color: "var(--color-primary-dark)",
+                          fontSize: "0.9rem",
+                          "&:hover": {
+                            color: "var(--color-error)",
+                          },
+                        },
+                      }}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder={
+                      currentTags.length >= MAX_TAGS
+                        ? ""
+                        : currentTags.length > 0
+                        ? "Añadir más etiquetas..."
+                        : "Añadir etiquetas..."
+                    }
+                    error={!!tagsErrorText}
+                    helperText={tagsErrorText}
+                    disabled={
+                      (currentTags.length >= MAX_TAGS &&
+                        params.inputProps?.value === "") ||
+                      loadingTenantTags
+                    }
+                    InputProps={{
+                      ...params.InputProps,
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        padding: "2px 9px !important",
+                        minHeight: "50px",
+                        display: "flex",
+                        flexWrap: "wrap",
+                        backgroundColor: "var(--color-surface)",
+                        fontFamily: "var(--font-primary)",
+                        fontSize: "1rem",
+                        "& .MuiAutocomplete-input": {
+                          display:
+                            currentTags.length >= MAX_TAGS ? "none" : "block",
+                          minHeight: "36px",
+                          padding:
+                            "calc(var(--space-xs) + 2px) var(--space-sm)",
+                          minWidth: "100px !important",
+                          flexGrow: 1,
+                          fontFamily: "var(--font-primary)",
+                          fontSize: "1rem",
+                          color: "var(--color-text-primary)",
+                        },
+                        "&.Mui-disabled": {
+                          backgroundColor: "#f0f0f0",
+                        },
+                      },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: tagsErrorText
+                          ? "var(--color-error)"
+                          : "var(--color-border) !important",
+                      },
+                      "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                        {
+                          borderColor: tagsErrorText
+                            ? "var(--color-error)"
+                            : "var(--color-primary-dark) !important",
+                        },
+                      "& .MuiFormHelperText-root": {
+                        color: tagsErrorText
+                          ? "var(--color-error)"
+                          : "var(--color-text-secondary)",
+                        fontSize: "0.8em",
+                        marginTop: "var(--space-xs)",
+                        marginLeft: "var(--space-xs)",
+                      },
+                    }}
+                  />
+                )}
+              />
+            </div>
+          </div>
+
+          <div className={styles.formRow}>
+            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+              <label htmlFor="leadTimeInput" className={styles.label}>
                 Antelación de Pedido (Días)
               </label>
               <select
-                id="leadTime"
+                id="leadTimeInput"
                 name="leadTimeInput"
                 onChange={handleInputChange}
                 value={formData.leadTimeInput ?? ""}
