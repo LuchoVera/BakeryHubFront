@@ -6,12 +6,16 @@ import {
   ProductDto,
   TenantPublicInfoDto,
   CategoryDto,
+  TagDto,
 } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategorySidebar from "../../components/CategorySidebar/CategorySidebar";
 import { useAuth } from "../../AuthContext";
 import { LuFilter, LuX } from "react-icons/lu";
+import Autocomplete from "@mui/material/Autocomplete";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
 
 const apiUrl = "/api";
 
@@ -57,6 +61,11 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   const [tempMinPrice, setTempMinPrice] = useState<string>("");
   const [tempMaxPrice, setTempMaxPrice] = useState<string>("");
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
+
+  const [appliedTags, setAppliedTags] = useState<string[]>([]);
+  const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
+  const [loadingTenantTags, setLoadingTenantTags] = useState<boolean>(true);
+  const [selectedTags, setSelectedTags] = useState<TagDto[]>([]);
 
   useEffect(() => {
     setIsLoadingTenant(true);
@@ -159,6 +168,9 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       if (appliedMaxPrice) {
         params.append("maxPrice", appliedMaxPrice);
       }
+      if (appliedTags.length > 0) {
+        appliedTags.forEach((tag) => params.append("tags", tag));
+      }
 
       const queryString = params.toString();
       const productUrl = `${apiUrl}/public/tenants/${
@@ -181,7 +193,14 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [tenantInfo, error, selectedCategoryId, appliedMinPrice, appliedMaxPrice]);
+  }, [
+    tenantInfo,
+    error,
+    selectedCategoryId,
+    appliedMinPrice,
+    appliedMaxPrice,
+    appliedTags,
+  ]);
 
   useEffect(() => {
     fetchProducts();
@@ -269,26 +288,49 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       return;
     }
 
+    const newAppliedTags = selectedTags.map((tag) => tag.name.trim());
+
     setAppliedMinPrice(tempMinPrice || null);
     setAppliedMaxPrice(tempMaxPrice || null);
+    setAppliedTags(newAppliedTags);
     setIsFilterPanelOpen(false);
   };
 
   const handleClearPanelFilters = () => {
     setTempMinPrice("");
     setTempMaxPrice("");
+    setSelectedTags([]);
+    setAppliedTags([]);
     setAppliedMinPrice(null);
     setAppliedMaxPrice(null);
   };
 
-  const areFiltersActive = useMemo(() => {
+  const areAnyPriceOrTagFiltersApplied = useMemo(() => {
     return (
-      selectedCategoryId !== null ||
       appliedMinPrice !== null ||
-      appliedMaxPrice !== null
+      appliedMaxPrice !== null ||
+      appliedTags.length > 0
     );
-  }, [selectedCategoryId, appliedMinPrice, appliedMaxPrice]);
+  }, [appliedMinPrice, appliedMaxPrice, appliedTags]);
 
+  const areFiltersActive = useMemo(() => {
+    return selectedCategoryId !== null || areAnyPriceOrTagFiltersApplied;
+  }, [selectedCategoryId, areAnyPriceOrTagFiltersApplied]);
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const tagsResponse = await axios.get<TagDto[]>(
+          `${apiUrl}/public/tenants/${subdomain}/tags`
+        );
+        setAllTenantTags(tagsResponse.data);
+      } catch {
+        console.error("No se pudieron cargar las etiquetas.");
+      } finally {
+        setLoadingTenantTags(false);
+      }
+    };
+    fetchTags();
+  }, []);
   if (isLoadingTenant) {
     return (
       <div className={styles.loadingOrError}>
@@ -320,10 +362,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
 
   return (
     <div className={styles.tenantView}>
-      {" "}
-      <TenantHeader tenantName={tenantInfo?.name ?? "Cargando..."} />{" "}
+      <TenantHeader tenantName={tenantInfo?.name ?? "Cargando..."} />
       <div className={styles.pageLayout}>
-        {" "}
         {!isLoadingCategories && categoryLinksForSidebar.length > 0 && (
           <CategorySidebar
             categories={categoryLinksForSidebar}
@@ -340,37 +380,30 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
           </div>
         )}
         <main className={styles.productsArea} id="product-area-start">
-          {" "}
           <div className={styles.productsAreaContent}>
-            {" "}
             {error &&
               products.length === 0 &&
               !isLoadingProducts &&
               tenantInfo && <p className={styles.loadingOrError}>{error}</p>}
             <div className={styles.filterControlsContainer}>
-              {" "}
               <div className={styles.filterButtonContainer}>
-                {" "}
                 <button
                   onClick={toggleFilterPanel}
                   className={`${styles.filterToggleButton} ${
-                    (appliedMinPrice || appliedMaxPrice) && !selectedCategoryId
+                    areAnyPriceOrTagFiltersApplied && !selectedCategoryId
                       ? styles.filterButtonActive
                       : ""
                   }`}
                   disabled={isLoadingProducts}
                 >
-                  <LuFilter /> Filtros de Precio
+                  <LuFilter /> Filtros
                   {isFilterPanelOpen ? <LuX /> : null}
                 </button>
               </div>
               {isFilterPanelOpen && (
                 <div className={styles.filterPanelHorizontal}>
-                  {" "}
                   <div className={styles.filterPriceGroup}>
-                    {" "}
                     <label htmlFor="minPrice" className={styles.filterLabel}>
-                      {" "}
                       Mín (Bs.):
                     </label>
                     <input
@@ -399,8 +432,134 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                       className={styles.filterInput}
                     />
                   </div>
+                  <div className={styles.filterPriceGroup}>
+                    <label htmlFor="tagsFilter" className={styles.filterLabel}>
+                      Etiquetas:
+                    </label>
+                    <Autocomplete
+                      multiple
+                      freeSolo
+                      loading={loadingTenantTags}
+                      id="tags-filter-autocomplete"
+                      value={selectedTags}
+                      onChange={(_, newValue) => {
+                        setSelectedTags(
+                          newValue.map((option) => {
+                            if (typeof option === "string") {
+                              const existing = allTenantTags.find(
+                                (t) =>
+                                  t.name.toLowerCase() === option.toLowerCase()
+                              );
+                              return (
+                                existing || {
+                                  id: `new_${option}_${Date.now()}`,
+                                  name: option,
+                                }
+                              );
+                            }
+                            return option;
+                          })
+                        );
+                      }}
+                      options={allTenantTags}
+                      getOptionLabel={(option) =>
+                        typeof option === "string" ? option : option.name
+                      }
+                      isOptionEqualToValue={(option, value) =>
+                        option.id === value.id ||
+                        option.name.toLowerCase() === value.name.toLowerCase()
+                      }
+                      renderTags={(value, getTagProps) =>
+                        value.map((tag, index) => (
+                          <Chip
+                            label={tag.name}
+                            {...getTagProps({ index })}
+                            key={tag.id || tag.name + index}
+                            sx={{
+                              backgroundColor: "var(--color-secondary)",
+                              color: "var(--color-primary-dark)",
+                              height: "25px",
+                              fontSize: "0.8rem",
+                              "& .MuiChip-deleteIcon": {
+                                color: "var(--color-primary-dark)",
+                                fontSize: "0.9rem",
+                                "&:hover": {
+                                  color: "var(--color-error)",
+                                },
+                              },
+                            }}
+                          />
+                        ))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          placeholder={
+                            selectedTags.length > 0
+                              ? "Añadir más etiquetas..."
+                              : "Añadir etiquetas..."
+                          }
+                          disabled={loadingTenantTags}
+                          sx={{
+                            width: "300px",
+                            fontSize: "0.8em",
+                            "& .MuiInputLabel-root": {
+                              fontSize: "0.8rem",
+                              marginBottom: "var(--space-xs)",
+                              color: "var(--color-text-secondary)",
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              padding:
+                                "calc(var(--space-xs) + 2px) var(--space-sm)",
+                              display: "flex",
+                              flexWrap: "wrap",
+                              alignItems: "center",
+
+                              maxHeight: "116px",
+
+                              overflowY: "auto",
+
+                              backgroundColor: "var(--color-surface)",
+                              borderRadius: "var(--border-radius-sm)",
+                              fontFamily: "var(--font-primary)",
+
+                              border: "1px solid var(--color-border)",
+
+                              "&:hover": {
+                                borderColor: "var(--color-text-secondary)",
+                              },
+                              "&.Mui-focused": {
+                                borderColor: "var(--color-primary)",
+                                boxShadow: "0 0 0 2px rgba(251, 111, 146, 0.2)",
+                              },
+                              "&.Mui-disabled": {
+                                backgroundColor: "#f0f0f0",
+                                borderColor: "var(--color-border-light)",
+                              },
+                            },
+                            "& .MuiAutocomplete-input": {
+                              minHeight: "28px",
+                              paddingTop: "1.5px !important",
+                              paddingBottom: "1.5px !important",
+                              paddingLeft: "4px !important",
+                              paddingRight: "6px !important",
+                              minWidth: "100px",
+                              flexGrow: 1,
+                              fontSize: "0.9em",
+                              lineHeight: "1.4em",
+                              color: "var(--color-text-primary)",
+                              fontFamily: "var(--font-primary)",
+                            },
+                            "& .MuiOutlinedInput-notchedOutline": {
+                              border: "none",
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
                   <div className={styles.filterActionButtonsHorizontal}>
-                    {" "}
                     <button
                       onClick={handleApplyFilters}
                       className={styles.applyButtonSmall}
@@ -425,9 +584,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                   className={styles.recommendationSection}
                   id="recommendations"
                 >
-                  <h2 className={styles.categoryTitle}>Recomendado para ti</h2>{" "}
+                  <h2 className={styles.categoryTitle}>Recomendado para ti</h2>
                   <div className={styles.productGrid}>
-                    {" "}
                     {displayedRecommendations.map((product) => (
                       <ProductCard
                         key={`rec-${product.id}`}
@@ -445,7 +603,6 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
             )}
             {!isLoadingProducts && products.length === 0 && !error && (
               <p className={styles.noProducts}>
-                {" "}
                 No se encontraron productos que coincidan con los filtros
                 seleccionados.
               </p>
@@ -468,14 +625,11 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                         className={styles.categorySection}
                         id={categoryId}
                       >
-                        {" "}
-                        <h2 className={styles.categoryTitle}>
-                          {categoryName}
-                        </h2>{" "}
+                        <h2 className={styles.categoryTitle}>{categoryName}</h2>
                         <p className={styles.noProducts}>
-                          No hay productos en esta categoría con los filtros de
-                          precio aplicados.
-                        </p>{" "}
+                          No hay productos en esta categoría con los filtros
+                          aplicados.
+                        </p>
                       </section>
                     );
                   }
@@ -488,9 +642,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                     id={categoryId}
                     className={styles.categorySection}
                   >
-                    <h2 className={styles.categoryTitle}>{categoryName}</h2>{" "}
+                    <h2 className={styles.categoryTitle}>{categoryName}</h2>
                     <div className={styles.productGrid}>
-                      {" "}
                       {productsInCategory.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}

@@ -6,12 +6,16 @@ import {
   TenantPublicInfoDto,
   ApiErrorResponse,
   CategoryDto,
+  TagDto,
   SearchResultsPageProps,
 } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import styles from "./SearchResultsPage.module.css";
 import { LuFilter, LuX } from "react-icons/lu";
+import Autocomplete from "@mui/material/Autocomplete";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
 
 const apiUrl = "/api";
 
@@ -19,6 +23,7 @@ interface AppliedFilters {
   categoryId: string | null;
   minPrice: string | null;
   maxPrice: string | null;
+  tags: string[];
 }
 
 const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
@@ -33,13 +38,19 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
   const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
+
   const [tempFilterCategoryId, setTempFilterCategoryId] = useState<string>("");
   const [tempFilterMinPrice, setTempFilterMinPrice] = useState<string>("");
   const [tempFilterMaxPrice, setTempFilterMaxPrice] = useState<string>("");
+  const [selectedTags, setSelectedTags] = useState<TagDto[]>([]);
+  const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
+  const [loadingTenantTags, setLoadingTenantTags] = useState<boolean>(true);
+
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
     categoryId: null,
     minPrice: null,
     maxPrice: null,
+    tags: [],
   });
 
   const searchTerm = useMemo(() => {
@@ -68,6 +79,25 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
       }
     };
     fetchTenantInfo();
+  }, [subdomain]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      if (!subdomain) return;
+      setLoadingTenantTags(true);
+      try {
+        const tagsResponse = await axios.get<TagDto[]>(
+          `${apiUrl}/public/tenants/${subdomain}/tags`
+        );
+        setAllTenantTags(tagsResponse.data || []);
+      } catch {
+        console.error("No se pudieron cargar las etiquetas.");
+        setAllTenantTags([]);
+      } finally {
+        setLoadingTenantTags(false);
+      }
+    };
+    fetchTags();
   }, [subdomain]);
 
   useEffect(() => {
@@ -108,16 +138,23 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
   }, [tenantInfo, error]);
 
   const fetchSearchResults = useCallback(async () => {
-    if (!searchTerm || !tenantInfo) {
+    if ((!searchTerm && appliedFilters.tags.length === 0) || !tenantInfo) {
       setSearchResults([]);
       setIsLoadingSearch(false);
-      if (!searchTerm && tenantInfo && !error)
-        setError("Por favor, ingresa un término de búsqueda.");
+      if (
+        !searchTerm &&
+        appliedFilters.tags.length === 0 &&
+        tenantInfo &&
+        !error
+      )
+        setError(
+          "Por favor, ingresa un término de búsqueda o selecciona tags para filtrar."
+        );
       return;
     }
 
     setIsLoadingSearch(true);
-    setError(null);
+
     try {
       const params = new URLSearchParams();
       params.append("q", searchTerm);
@@ -130,13 +167,27 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
       if (appliedFilters.maxPrice) {
         params.append("maxPrice", appliedFilters.maxPrice);
       }
+      appliedFilters.tags.forEach((tag) => params.append("tags", tag));
 
       const searchUrl = `${apiUrl}/public/tenants/${
         tenantInfo.subdomain
       }/search?${params.toString()}`;
       const response = await axios.get<ProductDto[]>(searchUrl);
       setSearchResults(response.data || []);
+      if (error && response.data) setError(null);
     } catch (err) {
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+
+      if (
+        !error ||
+        (axiosError.response && axiosError.response.status !== 404)
+      ) {
+        setError(
+          axiosError.response?.data?.detail ||
+            axiosError.message ||
+            "No se pudieron cargar los resultados de búsqueda."
+        );
+      }
       setSearchResults([]);
     } finally {
       setIsLoadingSearch(false);
@@ -152,23 +203,20 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
   const handleApplyFilters = () => {
     const min = parseFloat(tempFilterMinPrice);
     const max = parseFloat(tempFilterMaxPrice);
-    if (tempFilterMinPrice && (isNaN(min) || min < 0)) {
-      alert("Precio mínimo inválido.");
-      return;
-    }
-    if (tempFilterMaxPrice && (isNaN(max) || max < 0)) {
-      alert("Precio máximo inválido.");
-      return;
-    }
-    if (!isNaN(min) && !isNaN(max) && min > max) {
-      alert("El precio mínimo no puede ser mayor al máximo.");
-      return;
-    }
+    if (tempFilterMinPrice && (isNaN(min) || min < 0))
+      return alert("Precio mínimo inválido.");
+    if (tempFilterMaxPrice && (isNaN(max) || max < 0))
+      return alert("Precio máximo inválido.");
+    if (!isNaN(min) && !isNaN(max) && min > max)
+      return alert("El precio mínimo no puede ser mayor al máximo.");
+
+    const newAppliedTags = selectedTags.map((tag) => tag.name.trim());
 
     setAppliedFilters({
       categoryId: tempFilterCategoryId || null,
       minPrice: tempFilterMinPrice || null,
       maxPrice: tempFilterMaxPrice || null,
+      tags: newAppliedTags,
     });
     setIsFilterPanelOpen(false);
   };
@@ -177,7 +225,13 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
     setTempFilterCategoryId("");
     setTempFilterMinPrice("");
     setTempFilterMaxPrice("");
-    setAppliedFilters({ categoryId: null, minPrice: null, maxPrice: null });
+    setSelectedTags([]);
+    setAppliedFilters({
+      categoryId: null,
+      minPrice: null,
+      maxPrice: null,
+      tags: [],
+    });
     setIsFilterPanelOpen(false);
   };
 
@@ -186,6 +240,19 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
       setTempFilterCategoryId(appliedFilters.categoryId || "");
       setTempFilterMinPrice(appliedFilters.minPrice || "");
       setTempFilterMaxPrice(appliedFilters.maxPrice || "");
+
+      const rehydratedTags = appliedFilters.tags.map((tagName) => {
+        const existingTag = allTenantTags.find(
+          (t) => t.name.toLowerCase() === tagName.toLowerCase()
+        );
+        return (
+          existingTag || {
+            id: `applied_${tagName}_${Date.now()}`,
+            name: tagName,
+          }
+        );
+      });
+      setSelectedTags(rehydratedTags);
     }
     setIsFilterPanelOpen(!isFilterPanelOpen);
   };
@@ -194,7 +261,8 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
     return (
       appliedFilters.categoryId !== null ||
       appliedFilters.minPrice !== null ||
-      appliedFilters.maxPrice !== null
+      appliedFilters.maxPrice !== null ||
+      appliedFilters.tags.length > 0
     );
   }, [appliedFilters]);
 
@@ -210,7 +278,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
         {error && (
           <div className={styles.message}>
             <p className={styles.errorText}>{error}</p>
-            {searchTerm && (
+            {(searchTerm || appliedFilters.tags.length > 0) && (
               <Link to="/" className={styles.backLink}>
                 Volver al Catálogo
               </Link>
@@ -224,28 +292,32 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
               <h1 className={styles.resultsTitle}>
                 {searchTerm
                   ? `Resultados para: "${searchTerm}"`
+                  : appliedFilters.tags.length > 0
+                  ? `Resultados para etiquetas: "${appliedFilters.tags.join(
+                      '", "'
+                    )}"`
                   : "Búsqueda de Productos"}
-                {searchTerm && !isLoadingSearch && searchResults.length >= 0
+                {!isLoadingSearch && searchResults.length >= 0
                   ? ` (${searchResults.length})`
                   : ""}
               </h1>
-
-              {searchTerm && (
+              {(searchTerm ||
+                appliedFilters.tags.length > 0 ||
+                isFilterPanelOpen) && (
                 <button
                   onClick={handleToggleFilterPanel}
                   className={`${styles.filterToggleButton} ${
                     areAnyFiltersApplied ? styles.filterButtonActive : ""
                   }`}
-                  disabled={isLoadingCategories}
+                  disabled={isLoadingCategories || loadingTenantTags}
                 >
                   <LuFilter /> Filtros {isFilterPanelOpen ? <LuX /> : null}
                 </button>
               )}
             </div>
 
-            {isFilterPanelOpen && searchTerm && (
+            {isFilterPanelOpen && (
               <div className={styles.filterPanelHorizontal}>
-                {" "}
                 <div className={styles.filterGroupItem}>
                   <label
                     htmlFor="filterCategory"
@@ -307,6 +379,131 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                     className={styles.filterInput}
                   />
                 </div>
+                <div className={styles.filterGroupItem}>
+                  <label
+                    htmlFor="tags-filter-autocomplete"
+                    className={styles.filterLabel}
+                  >
+                    Etiquetas:
+                  </label>
+                  <Autocomplete
+                    multiple
+                    freeSolo
+                    loading={loadingTenantTags}
+                    id="tags-filter-autocomplete"
+                    value={selectedTags}
+                    onChange={(_, newValue) => {
+                      setSelectedTags(
+                        newValue.map((option) => {
+                          if (typeof option === "string") {
+                            const existing = allTenantTags.find(
+                              (t) =>
+                                t.name.toLowerCase() === option.toLowerCase()
+                            );
+                            return (
+                              existing || {
+                                id: `new_${option}_${Date.now()}`,
+                                name: option,
+                              }
+                            );
+                          }
+                          return option;
+                        })
+                      );
+                    }}
+                    options={allTenantTags}
+                    getOptionLabel={(option) =>
+                      typeof option === "string" ? option : option.name
+                    }
+                    isOptionEqualToValue={(option, value) =>
+                      option.id === value.id ||
+                      option.name.toLowerCase() === value.name.toLowerCase()
+                    }
+                    renderTags={(value, getTagProps) =>
+                      value.map((tag, index) => (
+                        <Chip
+                          label={tag.name}
+                          {...getTagProps({ index })}
+                          key={tag.id || `${tag.name}_${index}`}
+                          sx={{
+                            backgroundColor: "var(--color-secondary)",
+                            color: "var(--color-primary-dark)",
+                            height: "25px",
+                            fontSize: "0.8rem",
+                            "& .MuiChip-deleteIcon": {
+                              color: "var(--color-primary-dark)",
+                              fontSize: "0.9rem",
+                              "&:hover": {
+                                color: "var(--color-error)",
+                              },
+                            },
+                          }}
+                        />
+                      ))
+                    }
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        variant="outlined"
+                        placeholder={
+                          selectedTags.length > 0
+                            ? "Añadir más etiquetas..."
+                            : "Añadir etiquetas..."
+                        }
+                        disabled={loadingTenantTags}
+                        sx={{
+                          width: "300px",
+                          fontSize: "0.8em",
+                          "& .MuiInputLabel-root": {
+                            fontSize: "0.8rem",
+                            marginBottom: "var(--space-xs)",
+                            color: "var(--color-text-secondary)",
+                          },
+                          "& .MuiOutlinedInput-root": {
+                            padding:
+                              "calc(var(--space-xs) + 2px) var(--space-sm)",
+                            display: "flex",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                            maxHeight: "116px",
+                            overflowY: "auto",
+                            backgroundColor: "var(--color-surface)",
+                            borderRadius: "var(--border-radius-sm)",
+                            fontFamily: "var(--font-primary)",
+                            border: "1px solid var(--color-border)",
+                            "&:hover": {
+                              borderColor: "var(--color-text-secondary)",
+                            },
+                            "&.Mui-focused": {
+                              borderColor: "var(--color-primary)",
+                              boxShadow: "0 0 0 2px rgba(251, 111, 146, 0.2)",
+                            },
+                            "&.Mui-disabled": {
+                              backgroundColor: "#f0f0f0",
+                              borderColor: "var(--color-border-light)",
+                            },
+                          },
+                          "& .MuiAutocomplete-input": {
+                            minHeight: "28px",
+                            paddingTop: "1.5px !important",
+                            paddingBottom: "1.5px !important",
+                            paddingLeft: "4px !important",
+                            paddingRight: "6px !important",
+                            minWidth: "100px",
+                            flexGrow: 1,
+                            fontSize: "0.9em",
+                            lineHeight: "1.4em",
+                            color: "var(--color-text-primary)",
+                            fontFamily: "var(--font-primary)",
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            border: "none",
+                          },
+                        }}
+                      />
+                    )}
+                  />
+                </div>
                 <div className={styles.filterActionButtonsHorizontal}>
                   <button
                     onClick={handleApplyFilters}
@@ -324,32 +521,30 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
               </div>
             )}
 
-            {!searchTerm && !isLoading && (
-              <p className={styles.message}>
-                Ingresa un término en la barra superior para buscar productos.
-              </p>
-            )}
+            {(searchTerm || appliedFilters.tags.length > 0) &&
+              isLoadingSearch && <p className={styles.message}>Buscando...</p>}
 
-            {searchTerm && isLoadingSearch && (
-              <p className={styles.message}>Buscando...</p>
-            )}
+            {(searchTerm || appliedFilters.tags.length > 0) &&
+              !isLoadingSearch &&
+              searchResults.length === 0 && (
+                <p className={styles.message}>
+                  No se encontraron productos que coincidan con "
+                  {searchTerm || appliedFilters.tags.join('", "')}"
+                  {areAnyFiltersApplied ? " y los filtros aplicados" : ""}.
+                </p>
+              )}
 
-            {searchTerm && !isLoadingSearch && searchResults.length === 0 && (
-              <p className={styles.message}>
-                No se encontraron productos que coincidan con "{searchTerm}"{" "}
-                {areAnyFiltersApplied ? " y los filtros aplicados" : ""}.
-              </p>
-            )}
+            {(searchTerm || appliedFilters.tags.length > 0) &&
+              !isLoadingSearch &&
+              searchResults.length > 0 && (
+                <div className={styles.productGrid}>
+                  {searchResults.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
 
-            {searchTerm && !isLoadingSearch && searchResults.length > 0 && (
-              <div className={styles.productGrid}>
-                {searchResults.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            )}
-
-            {!isLoading && searchTerm && (
+            {!isLoading && (searchTerm || appliedFilters.tags.length > 0) && (
               <div className={styles.backButtonContainer}>
                 <Link to="/" className={styles.backLink}>
                   <button className={styles.backButton}>
