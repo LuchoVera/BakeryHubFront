@@ -28,6 +28,34 @@ const ProductTable: React.FC<ProductTableProps> = ({
   isUnavailableList = false,
   deletingProductId = null,
 }) => {
+  const formatLeadTime = (leadTime: string | null | undefined): string => {
+    if (leadTime === "N/A") {
+      return "N/A";
+    }
+
+    if (
+      leadTime === null ||
+      typeof leadTime === "undefined" ||
+      leadTime === ""
+    ) {
+      return "-";
+    }
+    const leadTimeString = String(leadTime).trim();
+    const num = parseInt(leadTimeString, 10);
+
+    if (!isNaN(num) && String(num) === leadTimeString) {
+      if (num === 1) {
+        return `${num} día`;
+      } else if (num > 1) {
+        return `${num} días`;
+      } else {
+        return String(num);
+      }
+    } else {
+      return leadTimeString;
+    }
+  };
+
   return (
     <div className={styles.tableContainer}>
       <h3>{title}</h3>
@@ -40,7 +68,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <th className={styles.tableHeaderCell}>Nombre</th>
               <th className={styles.tableHeaderCell}>Categoría</th>
               <th className={styles.tableHeaderCell}>Precio</th>
-              <th className={styles.tableHeaderCell}>Antelación (días)</th>
+              <th className={styles.tableHeaderCell}>Antelación</th>
               <th className={styles.tableHeaderCell}>Acciones</th>
             </tr>
           </thead>
@@ -61,7 +89,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     Bs. {prod.price.toFixed(2)}
                   </td>
                   <td className={styles.tableCell}>
-                    {prod.leadTimeDisplay || "-"}
+                    {formatLeadTime(prod.leadTimeDisplay)}
                   </td>
                   <td className={styles.actionsCell}>
                     <div className={styles.actionButtons}>

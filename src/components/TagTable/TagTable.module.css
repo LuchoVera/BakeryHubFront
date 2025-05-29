@@ -1,0 +1,219 @@
+.tagTable {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  border-collapse: collapse;
+  margin-top: var(--space-lg);
+  table-layout: fixed;
+}
+
+.tableHeaderRow {
+  border-bottom: 2px solid #ccc;
+  text-align: left;
+}
+
+.tableHeaderCell {
+  padding: var(--space-sm) var(--space-xs);
+  text-align: left;
+  font-weight: 600;
+}
+
+.tableHeaderCell:first-child {
+  width: 75%;
+}
+
+.tableHeaderCell:last-child {
+  width: 25%;
+  text-align: right;
+  padding-right: var(--space-md);
+}
+
+.tableRow {
+  border-bottom: 1px solid #ddd;
+}
+
+.tableCell {
+  padding: var(--space-sm) var(--space-xs);
+  text-align: left;
+  vertical-align: middle;
+  min-height: 48px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.actionsCell {
+  padding: var(--space-sm) var(--space-xs);
+  text-align: right;
+  vertical-align: middle;
+  min-height: 48px;
+  box-sizing: border-box;
+  width: 25%;
+  padding-right: var(--space-md);
+}
+
+.actionButtons {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.actionButton {
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9em;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    opacity 0.2s ease;
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.actionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancelButton {
+  background-color: var(--color-background);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+.cancelButton:hover:not(:disabled) {
+  background-color: #e9ecef;
+}
+
+.editButton {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+.editButton:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+}
+
+.editInput {
+  padding: var(--space-xs) var(--space-sm);
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+  height: 28px;
+}
+.editInput:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.3);
+}
+
+.saveButton {
+  background-color: var(--color-success);
+  color: var(--color-surface);
+  border: none;
+}
+.saveButton:hover:not(:disabled) {
+  background-color: #4cae4c;
+}
+
+.deleteButton {
+  background-color: var(--color-error);
+  color: var(--color-surface);
+  border: none;
+}
+.deleteButton:hover:not(:disabled) {
+  background-color: #c9302c;
+}
+
+.errorText {
+  color: var(--color-error);
+  font-size: 0.9em;
+  margin-top: var(--space-xs);
+}
+
+@media (max-width: 768px) {
+  .tagTable {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    border: none;
+    box-shadow: var(--shadow-md);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+  }
+
+  .tableHeaderRow {
+    display: none;
+  }
+
+  .tableRow {
+    display: block;
+    margin-bottom: var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    padding: var(--space-sm);
+    background-color: var(--color-surface);
+  }
+  .tableRow:last-child {
+    margin-bottom: 0;
+  }
+
+  .tableCell,
+  .actionsCell {
+    display: block;
+    width: 100%;
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+    border-bottom: 1px dashed var(--color-border-light);
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    min-height: auto;
+    padding-right: var(--space-xs);
+  }
+  .tableCell:last-child,
+  .actionsCell:last-child {
+    border-bottom: none;
+  }
+
+  .tableCell::before,
+  .actionsCell::before {
+    content: attr(data-label);
+    position: absolute;
+    left: var(--space-sm);
+    width: calc(50% - var(--space-md));
+    text-align: left;
+    font-weight: bold;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .editInput {
+    font-size: 0.9rem;
+    height: auto;
+    padding: var(--space-xs);
+  }
+
+  .actionButtons {
+    justify-content: flex-end;
+    margin-top: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .actionButton {
+    font-size: 0.85em;
+    min-width: 50px;
+    height: 26px;
+    padding: var(--space-xs);
+  }
+}

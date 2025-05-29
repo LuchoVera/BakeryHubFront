@@ -7,6 +7,7 @@ import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import { useAuth } from "../../AuthContext";
 import { useCart } from "../../hooks/useCart";
 import { useNotification } from "../../hooks/useNotification";
+import { LuTag } from "react-icons/lu";
 
 interface ProductDetailPageProps {
   subdomain: string;
@@ -109,7 +110,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
 
   const handleAddToCart = () => {
     if (!product) return;
-
     if (isAdmin) {
       showNotification(
         "Los administradores no pueden añadir productos al carrito.",
@@ -168,7 +168,6 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
     product.leadTimeDisplay && leadTimeNumber > 0
       ? `${leadTimeNumber} día${leadTimeNumber > 1 ? "s" : ""}`
       : null;
-
   return (
     <div>
       <TenantHeader tenantName={tenantInfo?.name ?? ""} />
@@ -218,6 +217,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
                 {product.categoryName}
               </Link>
             </p>
+            {product.tagNames && product.tagNames.length > 0 && (
+              <div className={styles.productTagsContainer}>
+                {product.tagNames.map((tagName) => (
+                  <span key={tagName} className={styles.tagBadge}>
+                    <LuTag className={styles.tagIcon} /> {tagName}
+                  </span>
+                ))}
+              </div>
+            )}
             <p className={styles.productPrice}>
               Bs. {product.price.toFixed(2)}
             </p>

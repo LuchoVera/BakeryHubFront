@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, ReactNode } from "react";
 import axios, { AxiosError } from "axios";
 import {
-  CategoryDto,
-  UpdateCategoryDto,
+  TagDto,
+  CreateTagDto,
+  UpdateTagDto,
   ApiErrorResponse,
 } from "../../../types";
-import styles from "./CategoryListPage.module.css";
-import CategoryTable from "../../../components/CategoryTable/CategoryTable";
+import styles from "./AdminTagsPage.module.css";
+import TagTable from "../../../components/TagTable/TagTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
 import { LuTriangleAlert, LuCircleX, LuCircleCheck } from "react-icons/lu";
 import {
@@ -17,17 +18,15 @@ import {
 
 const apiUrl = "/api";
 
-interface CategoryDeleteModalData {
+interface TagDeleteModalData {
   id: string;
   name: string;
 }
 
-interface AddCategoryFormProps {
-  onCategoryAdded: () => void;
+interface AddTagFormProps {
+  onTagAdded: () => void;
 }
-const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
-  onCategoryAdded,
-}) => {
+const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,51 +37,69 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
     const trimmedName = name.trim();
     let validationError =
       validateRequired(trimmedName) ||
-      validateMinLength(trimmedName, 3) ||
-      validateMaxLength(trimmedName, 30);
+      validateMinLength(trimmedName, 2) ||
+      validateMaxLength(trimmedName, 50);
     if (validationError) {
       if (validationError.includes("required")) {
-        validationError = "El nombre es requerido.";
-      } else if (validationError.includes("at least 3")) {
-        validationError = "El nombre debe tener al menos 3 caracteres.";
-      } else if (validationError.includes("no more than 30")) {
-        validationError = "El nombre no debe exceder los 30 caracteres.";
+        validationError = "El nombre de la etiqueta es requerido.";
+      } else if (validationError.includes("at least 2")) {
+        validationError =
+          "El nombre la etiqueta debe tener al menos 2 caracteres.";
+      } else if (validationError.includes("no more than 50")) {
+        validationError =
+          "El nombre de la etiqueta no debe exceder los 50 caracteres.";
       }
       setError(validationError);
       return;
     }
     setLoading(true);
     try {
-      await axios.post(`${apiUrl}/categories`, { name: trimmedName });
+      await axios.post<TagDto>(`${apiUrl}/tags`, {
+        name: trimmedName,
+      } as CreateTagDto);
       setName("");
-      onCategoryAdded();
+      onTagAdded();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
-      let errorMessage = "Ocurrió un error inesperado al añadir la categoría.";
-      if (response) {
-        if (response.status === 400) {
-          errorMessage = "Error: La categoría ya existe.";
-        } else if (response.status === 409) {
-          errorMessage =
-            "Conflicto: El recurso ya podría existir o hubo un problema.";
+      let errorMessage = "Ocurrió un error inesperado al añadir la etiqueta.";
+      if (response?.status === 400) {
+        if (
+          response.data?.errors?.Name?.includes(
+            "A tag with this name already exists for your business."
+          )
+        ) {
+          errorMessage = "Error: Una etiqueta con este nombre ya existe.";
+        } else if (
+          response.data?.detail?.includes(
+            "A tag with this name already exists for your business."
+          )
+        ) {
+          errorMessage = "Error: Una etiqueta con este nombre ya existe.";
+        } else if (
+          response.data?.title?.includes(
+            "A tag with this name already exists for your business."
+          )
+        ) {
+          errorMessage = "Error: Una etiqueta con este nombre ya existe.";
+        } else if (response?.data?.errors?.Name) {
+          errorMessage = response.data.errors.Name[0];
+        } else if (response?.data?.title) {
+          errorMessage = response.data.title;
+        } else if (response?.data?.detail) {
+          errorMessage = response.data.detail;
         } else {
-          const responseData = response.data;
-          const detail =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.detail
-              : undefined;
-          const message =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.message
-              : undefined;
           errorMessage =
-            (typeof detail === "string" ? detail : undefined) ||
-            (typeof message === "string" ? message : undefined) ||
-            `Error del servidor (${response.status})`;
+            "Error: La etiqueta ya existe o el nombre es inválido.";
         }
-      } else if (axiosError.message) {
-        errorMessage = `Error de red: ${axiosError.message}`;
+      } else if (response?.status) {
+        if (response.data?.errors?.Name) {
+          errorMessage = response.data.errors.Name[0];
+        } else if (response.data?.title) {
+          errorMessage = response.data.title;
+        } else if (response.data?.detail) {
+          errorMessage = response.data.detail;
+        }
       }
       setError(errorMessage);
     } finally {
@@ -92,46 +109,45 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className={styles.addForm}>
       <div className={styles.formGroup}>
-        <label htmlFor="new-category-name" className={styles.inputLabel}>
-          Nombre de Nueva Categoría:
+        <label htmlFor="new-tag-name" className={styles.inputLabel}>
+          Nombre de la Nueva Etiqueta:
         </label>
         <input
-          id="new-category-name"
+          id="new-tag-name"
           type="text"
-          placeholder="Ej: Tortas, Galletas..."
+          placeholder="Ej: Vegano, Popular, Sin Gluten..."
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
           disabled={loading}
           className={styles.textInput}
-          aria-describedby={error ? "add-cat-error" : undefined}
+          aria-describedby={error ? "add-tag-error" : undefined}
         />
         {error && (
-          <p id="add-cat-error" className={styles.errorText}>
+          <p id="add-tag-error" className={styles.errorText}>
             {error}
           </p>
         )}
       </div>
       <button type="submit" disabled={loading} className={styles.submitButton}>
-        {loading ? "Añadiendo..." : "Añadir Categoría"}
+        {loading ? "Añadiendo..." : "Añadir Etiqueta"}
       </button>
     </form>
   );
 };
 
-const CategoryListPage: React.FC = () => {
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
+const AdminTagsPage: React.FC = () => {
+  const [tags, setTags] = useState<TagDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
-    null
-  );
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>("");
   const [editLoading, setEditLoading] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [categoryToDelete, setCategoryToDelete] =
-    useState<CategoryDeleteModalData | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<TagDeleteModalData | null>(
+    null
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
@@ -142,11 +158,11 @@ const CategoryListPage: React.FC = () => {
     null
   );
 
-  const fetchCategories = useCallback(async () => {
+  const fetchTags = useCallback(async () => {
     setError(null);
     try {
-      const response = await axios.get<CategoryDto[]>(`${apiUrl}/categories`);
-      setCategories(response.data);
+      const response = await axios.get<TagDto[]>(`${apiUrl}/tags`);
+      setTags(response.data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       if (axiosError.response?.status === 401) {
@@ -155,7 +171,7 @@ const CategoryListPage: React.FC = () => {
         setError(
           axiosError.response?.data?.title ||
             axiosError.message ||
-            "Fallo al cargar categorías."
+            "Fallo al cargar las etiquetas."
         );
       }
     } finally {
@@ -165,17 +181,17 @@ const CategoryListPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchTags();
+  }, [fetchTags]);
 
-  const handleEditClick = (category: CategoryDto) => {
-    setEditingCategoryId(category.id);
-    setEditingName(category.name);
+  const handleEditClick = (tag: TagDto) => {
+    setEditingTagId(tag.id);
+    setEditingName(tag.name);
     setEditError(null);
   };
 
   const handleCancelEdit = () => {
-    setEditingCategoryId(null);
+    setEditingTagId(null);
     setEditingName("");
     setEditError(null);
   };
@@ -185,18 +201,18 @@ const CategoryListPage: React.FC = () => {
     if (editError) setEditError(null);
   };
 
-  const handleSaveEdit = async (categoryId: string) => {
+  const handleSaveEdit = async (tagId: string) => {
     let validationError =
       validateRequired(editingName.trim()) ||
-      validateMinLength(editingName.trim(), 3) ||
-      validateMaxLength(editingName.trim(), 30);
+      validateMinLength(editingName.trim(), 2) ||
+      validateMaxLength(editingName.trim(), 50);
     if (validationError) {
       if (validationError.includes("required")) {
         validationError = "El nombre es requerido.";
-      } else if (validationError.includes("at least 3")) {
-        validationError = "El nombre debe tener al menos 3 caracteres.";
-      } else if (validationError.includes("no more than 30")) {
-        validationError = "El nombre no debe exceder los 30 caracteres.";
+      } else if (validationError.includes("at least 2")) {
+        validationError = "El nombre debe tener al menos 2 caracteres.";
+      } else if (validationError.includes("no more than 50")) {
+        validationError = "El nombre no debe exceder los 50 caracteres.";
       }
       setEditError(validationError);
       return;
@@ -204,38 +220,23 @@ const CategoryListPage: React.FC = () => {
     setEditLoading(true);
     setEditError(null);
     try {
-      const updateData: UpdateCategoryDto = { name: editingName.trim() };
-      await axios.put(`${apiUrl}/categories/${categoryId}`, updateData);
-      setEditingCategoryId(null);
+      const updateData: UpdateTagDto = { name: editingName.trim() };
+      await axios.put(`${apiUrl}/tags/${tagId}`, updateData);
+      setEditingTagId(null);
       setEditingName("");
-      await fetchCategories();
+      await fetchTags();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
-      const responseData = response?.data;
       let errorMessage = "Ocurrió un error al guardar los cambios.";
-      if (response) {
-        if (response.status === 400) {
-          errorMessage = "Error: La categoría ya existe.";
-        } else if (response.status === 409) {
-          errorMessage =
-            "Conflicto: El recurso ya podría existir o hubo un problema.";
-        } else {
-          const detail =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.detail
-              : undefined;
-          const message =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.message
-              : undefined;
-          errorMessage =
-            (typeof detail === "string" ? detail : undefined) ||
-            (typeof message === "string" ? message : undefined) ||
-            `Error del servidor (${response.status})`;
-        }
-      } else if (axiosError.message) {
-        errorMessage = `Error de red: ${axiosError.message}`;
+      if (response?.data?.errors?.Name) {
+        errorMessage = response.data.errors.Name[0];
+      } else if (response?.data?.title) {
+        errorMessage = response.data.title;
+      } else if (response?.data?.detail) {
+        errorMessage = response.data.detail;
+      } else if (response?.status === 400) {
+        errorMessage = "Error: El nombre del tag ya existe o es inválido.";
       }
       setEditError(errorMessage);
     } finally {
@@ -243,10 +244,10 @@ const CategoryListPage: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = (categoryId: string) => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    if (category) {
-      setCategoryToDelete({ id: category.id, name: category.name });
+  const handleDeleteClick = (tagId: string) => {
+    const tag = tags.find((t) => t.id === tagId);
+    if (tag) {
+      setTagToDelete({ id: tag.id, name: tag.name });
       setIsDeleteModalOpen(true);
       setErrorModalMessage(null);
       setIsErrorModalOpen(false);
@@ -254,21 +255,30 @@ const CategoryListPage: React.FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!categoryToDelete) return;
-    setDeletingId(categoryToDelete.id);
+    if (!tagToDelete) return;
+    setDeletingId(tagToDelete.id);
     setIsDeleteModalOpen(false);
     try {
-      await axios.delete(`${apiUrl}/categories/${categoryToDelete.id}`);
+      await axios.delete(`${apiUrl}/tags/${tagToDelete.id}`);
       setSuccessModalMessage(
-        `Categoría "${categoryToDelete.name}" eliminada correctamente.`
+        `Etiqueta "${tagToDelete.name}" eliminada correctamente.`
       );
       setIsSuccessModalOpen(true);
-      setCategoryToDelete(null);
-      await fetchCategories();
+      setTagToDelete(null);
+      await fetchTags();
     } catch (err) {
-      let userErrorMessage =
-        "No se pudo borrar la categoría. Tiene productos asociados.";
-
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      const response = axiosError.response;
+      let userErrorMessage = `No se pudo borrar la etiqueta "${tagToDelete.name}".`;
+      if (response?.status === 400) {
+        userErrorMessage =
+          response.data?.detail ||
+          response.data?.title ||
+          "La etiqueta está en uso y no puede ser eliminado.";
+      } else {
+        userErrorMessage =
+          "Ocurrió un error inesperado al eliminar la etiqueta.";
+      }
       setErrorModalMessage(userErrorMessage);
       setIsErrorModalOpen(true);
     } finally {
@@ -278,23 +288,21 @@ const CategoryListPage: React.FC = () => {
 
   const handleCancelDelete = () => {
     setIsDeleteModalOpen(false);
-    setCategoryToDelete(null);
+    setTagToDelete(null);
   };
-
   const handleErrorModalClose = () => {
     setIsErrorModalOpen(false);
     setErrorModalMessage(null);
   };
-
   const handleSuccessModalClose = () => {
     setIsSuccessModalOpen(false);
     setSuccessModalMessage(null);
   };
 
-  const deleteModalMessage: ReactNode = categoryToDelete ? (
+  const deleteModalMessage: ReactNode = tagToDelete ? (
     <>
-      ¿Estás seguro de querer borrar la categoría{" "}
-      <strong>"{categoryToDelete.name}"</strong>?
+      ¿Estás seguro de querer borrar la etiqueta{" "}
+      <strong>"{tagToDelete.name}"</strong>?
     </>
   ) : (
     ""
@@ -302,23 +310,24 @@ const CategoryListPage: React.FC = () => {
 
   const deleteModalWarning: ReactNode = (
     <>
-      Esta acción no se puede deshacer. Si la categoría tiene productos
-      asociados, la eliminación podría fallar.
+      Esta acción no se puede deshacer. La etiqueta se eliminará permanentemente
+      y se quitará de todos los productos que la estén utilizando. ¿Estás seguro
+      de querer proceder?
     </>
   );
 
   return (
     <div className={styles.pageContainer}>
-      <h2>Gestion de Categorías</h2>
-      <AddCategoryForm onCategoryAdded={fetchCategories} />
+      <h2>Gestion de Etiquetas</h2>
+      <AddTagForm onTagAdded={fetchTags} />
 
-      {loading && <p className={styles.loadingText}>Cargando categorías...</p>}
+      {loading && <p className={styles.loadingText}>Cargando etiquetas...</p>}
       {error && <p className={styles.errorText}>{error}</p>}
 
-      {!loading && !error && categories.length > 0 && (
-        <CategoryTable
-          categories={categories}
-          editingCategoryId={editingCategoryId}
+      {!loading && !error && tags.length >= 0 && (
+        <TagTable
+          tags={tags}
+          editingTagId={editingTagId}
           editingName={editingName}
           editError={editError}
           editLoading={editLoading}
@@ -330,9 +339,9 @@ const CategoryListPage: React.FC = () => {
           onEditingNameChange={handleEditingNameChange}
         />
       )}
-      {!loading && !error && categories.length === 0 && (
+      {!loading && !error && tags.length === 0 && (
         <p className={styles.loadingText}>
-          No hay categorías creadas. ¡Añade una!
+          No hay etiquetas creadas. ¡Añade una!
         </p>
       )}
 
@@ -379,4 +388,4 @@ const CategoryListPage: React.FC = () => {
   );
 };
 
-export default CategoryListPage;
+export default AdminTagsPage;

@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./TenantHeader.module.css";
 import { useAuth } from "../../AuthContext";
@@ -18,6 +18,14 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const [localSearchTerm, setLocalSearchTerm] = useState("");
   const navigate = useNavigate();
   const shouldShowCart = !user?.roles?.includes("Admin");
+
+  useEffect(() => {
+    if (tenantName) {
+      document.title = `${tenantName} | BakeryHub`;
+    } else {
+      document.title = "BakeryHub";
+    }
+  }, [tenantName]);
 
   const handleLocalSearchChange = (
     event: React.ChangeEvent<HTMLInputElement>

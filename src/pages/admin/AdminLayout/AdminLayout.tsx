@@ -12,6 +12,7 @@ import {
   LuExternalLink,
   LuSettings,
   LuPackage,
+  LuTag,
 } from "react-icons/lu";
 
 const AdminLayout: React.FC = () => {
@@ -27,7 +28,6 @@ const AdminLayout: React.FC = () => {
   };
 
   const tenantSubdomain = user?.administeredTenantSubdomain;
-
   const tenantUrl = tenantSubdomain
     ? `${window.location.protocol}//${tenantSubdomain}.localhost:5173/`
     : null;
@@ -81,9 +81,17 @@ const AdminLayout: React.FC = () => {
               className={getNavLinkClass}
               title="Categorías"
             >
-              <LuTags className={styles.navIcon} />
+              <LuTag className={styles.navIcon} />
               {isSidebarOpen && (
                 <span className={styles.navText}>Categorías</span>
+              )}
+            </NavLink>
+          </li>
+          <li className={styles.navItem}>
+            <NavLink to="/admin/tags" className={getNavLinkClass} title="Tags">
+              <LuTags className={styles.navIcon} />
+              {isSidebarOpen && (
+                <span className={styles.navText}>Etiquetas</span>
               )}
             </NavLink>
           </li>
