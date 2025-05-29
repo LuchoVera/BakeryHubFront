@@ -10,6 +10,7 @@ export interface ProductDto {
   leadTimeDisplay: string;
   categoryId: string;
   categoryName: string;
+  tagNames?: string[];
 }
 
 export interface CreateProductDto {
@@ -19,16 +20,17 @@ export interface CreateProductDto {
   images?: string[] | null;
   leadTimeInput?: string | null;
   categoryId: string;
+  tags?: string[] | null;
 }
 
 export interface UpdateProductDto {
   name: string;
   description?: string | null;
   price: number;
-
   images?: string[] | null;
   leadTimeInput?: string | null;
   categoryId: string;
+  tags?: string[] | null;
 }
 
 export interface AdminRegisterDto {
@@ -215,4 +217,17 @@ export interface FeedbackModalData {
   iconType: "success" | "danger" | "info" | "warning";
   icon: ReactNode;
   onClose?: () => void;
+}
+
+export interface TagDto {
+  id: string;
+  name: string;
+}
+
+export interface CreateTagDto {
+  name: string;
+}
+
+export interface UpdateTagDto {
+  name: string;
 }
