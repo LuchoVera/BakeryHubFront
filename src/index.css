@@ -48,12 +48,22 @@
   background-color: var(--color-background);
 }
 
+  html {
+    overflow-y: scroll;
+    box-sizing: border-box;
+  }
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 body {
   margin: 0;
-
   min-width: 320px;
   min-height: 100vh;
   font-size: 16px;
+  overflow-x: hidden;
 }
 
 h1,

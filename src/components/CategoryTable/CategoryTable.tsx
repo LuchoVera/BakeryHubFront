@@ -53,19 +53,20 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
             <tr key={cat.id} className={styles.tableRow}>
               {editingCategoryId === cat.id ? (
                 <>
-                  <td className={styles.tableCell}>
+                  <td className={styles.tableCell} data-label="Nombre:">
                     <input
                       type="text"
                       value={editingName}
                       onChange={(e) => onEditingNameChange(e.target.value)}
                       disabled={editLoading}
                       className={styles.editInput}
+                      aria-label="Editar nombre de la categoría"
                     />
                     {editError && (
                       <p className={styles.errorText}>{editError}</p>
                     )}
                   </td>
-                  <td className={styles.actionsCell}>
+                  <td className={styles.actionsCell} data-label="Acciones:">
                     <div className={styles.actionButtons}>
                       <button
                         onClick={() => onSaveEdit(cat.id)}
@@ -86,8 +87,10 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                 </>
               ) : (
                 <>
-                  <td className={styles.tableCell}>{cat.name}</td>
-                  <td className={styles.actionsCell}>
+                  <td className={styles.tableCell} data-label="Nombre:">
+                    {cat.name}
+                  </td>
+                  <td className={styles.actionsCell} data-label="Acciones:">
                     <div className={styles.actionButtons}>
                       <button
                         onClick={() => onEditClick(cat)}

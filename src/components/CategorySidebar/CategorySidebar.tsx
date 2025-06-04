@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./CategorySidebar.module.css";
+import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 
 interface CategoryLinkData {
   id: string;
@@ -12,11 +13,26 @@ interface CategorySidebarProps {
   onSelectCategory: (categoryId: string | null) => void;
 }
 
+const MOBILE_BREAKPOINT = 768;
+const INITIAL_VISIBLE_CATEGORIES_MOBILE = 4;
+
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
   categories,
   selectedCategoryId,
   onSelectCategory,
 }) => {
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth <= MOBILE_BREAKPOINT);
+    };
+    checkMobileView();
+    window.addEventListener("resize", checkMobileView);
+    return () => window.removeEventListener("resize", checkMobileView);
+  }, []);
+
   const handleCategoryClick = (
     event: React.MouseEvent<HTMLAnchorElement>,
     categoryId: string | null
@@ -24,6 +40,18 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
     event.preventDefault();
     onSelectCategory(categoryId);
   };
+
+  const toggleMobileExpand = () => {
+    setIsMobileExpanded(!isMobileExpanded);
+  };
+
+  const categoriesToShow =
+    isMobileView && !isMobileExpanded
+      ? categories.slice(0, INITIAL_VISIBLE_CATEGORIES_MOBILE)
+      : categories;
+
+  const showToggleButton =
+    isMobileView && categories.length > INITIAL_VISIBLE_CATEGORIES_MOBILE;
 
   return (
     <aside
@@ -40,11 +68,11 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 selectedCategoryId === null ? styles.categoryLinkActive : ""
               }`}
             >
-              Todas las Categorías
+              Todas
             </a>
           </li>
 
-          {categories.map((category) => (
+          {categoriesToShow.map((category) => (
             <li key={category.id}>
               <a
                 href={`#${category.id}`}
@@ -63,6 +91,24 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             </li>
           ))}
         </ul>
+        {showToggleButton && (
+          <button
+            onClick={toggleMobileExpand}
+            className={styles.showMoreButton}
+            aria-expanded={isMobileExpanded}
+          >
+            {isMobileExpanded ? (
+              <>
+                Ver Menos <LuChevronUp />
+              </>
+            ) : (
+              <>
+                Ver Más ({categories.length - INITIAL_VISIBLE_CATEGORIES_MOBILE}{" "}
+                más) <LuChevronDown />
+              </>
+            )}
+          </button>
+        )}
       </nav>
     </aside>
   );

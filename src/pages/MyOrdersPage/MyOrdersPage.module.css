@@ -141,12 +141,14 @@
   background-color: var(--color-info, #5bc0de);
 }
 .statusPreparing {
-  background-color: #ffb3c1;
-  color: #a64d79;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary);
 }
 .statusReady {
-  background-color: #c3e6cb;
-  color: #155724;
+  background-color: var(--color-success-light, #dff0d8);
+  color: var(--color-success-dark, #3c763d);
+  border: 1px solid var(--color-success);
 }
 .statusReceived {
   background-color: var(--color-success);
@@ -156,13 +158,13 @@
   text-decoration: line-through;
 }
 .statusDefault {
-  background-color: var(--color-border);
-  color: var(--color-text-secondary);
+  background-color: gray;
+  color: var(--color-surface);
 }
 
 .orderDetails {
   text-align: left;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-sm);
 }
 .orderDetails p {
   margin: var(--space-xs) 0;
@@ -182,7 +184,7 @@
 }
 
 .orderItemsPreview {
-  margin-top: var(--space-md);
+  margin-top: 0;
   font-size: 0.9em;
   text-align: left;
 }
@@ -245,6 +247,9 @@
   .statusBadge {
     font-size: 0.75em;
   }
+  .orderDetails {
+    margin-bottom: 0;
+  }
   .orderDetails p {
     font-size: 0.9em;
     flex-direction: column;
@@ -252,6 +257,9 @@
   }
   .orderDetails p span {
     text-align: left;
+  }
+  .orderItemsPreview {
+    margin-top: var(--space-xs);
   }
   .orderItemsPreview ul {
     padding-left: var(--space-md);

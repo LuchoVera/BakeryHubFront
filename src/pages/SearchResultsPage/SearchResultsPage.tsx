@@ -336,7 +336,14 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                     min="0"
                     step="1"
                     value={tempFilterMinPrice}
-                    onChange={(e) => setTempFilterMinPrice(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || parseFloat(val) >= 0) {
+                        setTempFilterMinPrice(val);
+                      } else if (parseFloat(val) < 0) {
+                        setTempFilterMinPrice("0");
+                      }
+                    }}
                     className={styles.filterInput}
                   />
                 </div>
@@ -354,7 +361,14 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                     min="0"
                     step="1"
                     value={tempFilterMaxPrice}
-                    onChange={(e) => setTempFilterMaxPrice(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || parseFloat(val) >= 0) {
+                        setTempFilterMaxPrice(val);
+                      } else if (parseFloat(val) < 0) {
+                        setTempFilterMaxPrice("0");
+                      }
+                    }}
                     className={styles.filterInput}
                   />
                 </div>

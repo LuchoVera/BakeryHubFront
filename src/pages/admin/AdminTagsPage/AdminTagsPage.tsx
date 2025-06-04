@@ -71,19 +71,19 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
             "A tag with this name already exists for your business."
           )
         ) {
-          errorMessage = "Error: Una etiqueta con este nombre ya existe.";
+          errorMessage = "Una etiqueta con este nombre ya existe.";
         } else if (
           response.data?.detail?.includes(
             "A tag with this name already exists for your business."
           )
         ) {
-          errorMessage = "Error: Una etiqueta con este nombre ya existe.";
+          errorMessage = "Una etiqueta con este nombre ya existe.";
         } else if (
           response.data?.title?.includes(
             "A tag with this name already exists for your business."
           )
         ) {
-          errorMessage = "Error: Una etiqueta con este nombre ya existe.";
+          errorMessage = "Una etiqueta con este nombre ya existe.";
         } else if (response?.data?.errors?.Name) {
           errorMessage = response.data.errors.Name[0];
         } else if (response?.data?.title) {
@@ -92,7 +92,7 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
           errorMessage = response.data.detail;
         } else {
           errorMessage =
-            "Error: La etiqueta ya existe o el nombre es inválido.";
+            "La etiqueta ya existe o el nombre es inválido.";
         }
       } else if (response?.status) {
         if (response.data?.errors?.Name) {
@@ -240,7 +240,7 @@ const AdminTagsPage: React.FC = () => {
       } else if (response?.data?.detail) {
         errorMessage = response.data.detail;
       } else if (response?.status === 400) {
-        errorMessage = "Error: El nombre del tag ya existe o es inválido.";
+        errorMessage = "El nombre del tag ya existe.";
       }
       setEditError(errorMessage);
     } finally {

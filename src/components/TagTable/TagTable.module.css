@@ -178,9 +178,11 @@
     padding-bottom: var(--space-sm);
     min-height: auto;
     padding-right: var(--space-xs);
+    box-sizing: border-box;
   }
-  .tableCell:last-child,
-  .actionsCell:last-child {
+
+  .tableCell:last-of-type,
+  .actionsCell {
     border-bottom: none;
   }
 
@@ -202,6 +204,7 @@
     font-size: 0.9rem;
     height: auto;
     padding: var(--space-xs);
+    line-height: 1.4;
   }
 
   .actionButtons {
