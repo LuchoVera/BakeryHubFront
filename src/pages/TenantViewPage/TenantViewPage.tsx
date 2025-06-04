@@ -65,7 +65,6 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   const [tempMinPrice, setTempMinPrice] = useState<string>("");
   const [tempMaxPrice, setTempMaxPrice] = useState<string>("");
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
-
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
   const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
   const [selectedTagsInPanel, setSelectedTagsInPanel] = useState<TagDto[]>([]);
@@ -295,6 +294,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     setAppliedMinPrice(null);
     setAppliedMaxPrice(null);
     setAppliedTags([]);
+    setIsFilterPanelOpen(false);
   };
 
   const areAnyPriceOrTagFiltersApplied = useMemo(() => {
@@ -391,7 +391,14 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                       step="1"
                       placeholder="Ej: 10"
                       value={tempMinPrice}
-                      onChange={(e) => setTempMinPrice(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || parseFloat(val) >= 0) {
+                          setTempMinPrice(val);
+                        } else if (parseFloat(val) < 0) {
+                          setTempMinPrice("0");
+                        }
+                      }}
                       className={styles.filterInput}
                     />
                   </div>
@@ -406,7 +413,14 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                       step="1"
                       placeholder="Ej: 100"
                       value={tempMaxPrice}
-                      onChange={(e) => setTempMaxPrice(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || parseFloat(val) >= 0) {
+                          setTempMaxPrice(val);
+                        } else if (parseFloat(val) < 0) {
+                          setTempMaxPrice("0");
+                        }
+                      }}
                       className={styles.filterInput}
                     />
                   </div>

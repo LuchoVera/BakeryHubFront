@@ -146,6 +146,7 @@
     box-shadow: none;
     border-radius: 0;
     margin-top: var(--space-md);
+    background-color: transparent;
   }
 
   .tableHeaderRow {
@@ -159,7 +160,7 @@
     border-radius: var(--border-radius-md);
     padding: var(--space-md);
     background-color: var(--color-surface);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
   }
   .tableRow:last-child {
     margin-bottom: 0;
@@ -167,67 +168,80 @@
 
   .tableCell,
   .actionsCell {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     width: 100%;
-    text-align: center;
-    padding-left: 0;
-    position: relative;
-    border-bottom: 1px solid var(--color-border);
-    padding-top: var(--space-sm);
-    padding-bottom: var(--space-sm);
+    text-align: left;
+    padding: var(--space-xs) 0;
+    border-bottom: 1px dashed var(--color-border-light);
     min-height: auto;
-    padding-right: var(--space-xs);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .tableCell:last-child,
-  .actionsCell:last-child {
-    border-bottom: none;
+    white-space: normal;
+    box-sizing: border-box;
+    position: relative;
   }
 
-  .tableCell::before,
-  .actionsCell::before {
-    content: attr(data-label);
-    display: block;
-    font-weight: bold;
-    color: var(--color-text-primary);
-    font-size: 0.9em;
-    margin-bottom: var(--space-xs);
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .tableRow .tableCell:last-of-type {
+    border-bottom: none;
   }
 
   .actionsCell {
+    display: block;
     padding-top: var(--space-md);
     border-bottom: none;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
   }
-  .actionsCell::before {
+
+  .tableCell[data-label="Nombre:"] {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .tableCell[data-label="Nombre:"]::before {
     display: none;
+  }
+
+  .tableCell:not([data-label="Nombre:"])::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-right: var(--space-sm);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tableCell:not([data-label="Nombre:"]) > span.productInfoValue {
+    text-align: right;
+    color: var(--color-text-primary);
+    word-break: break-word;
+    flex-grow: 1;
+  }
+
+  .tableCell[data-label="Precio:"] > span.productInfoValue {
+    font-weight: 500;
   }
 
   .actionButtons {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    margin-top: var(--space-sm);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-md);
     gap: var(--space-sm);
     width: 100%;
   }
 
   .actionButton {
-    font-size: 0.9em;
-    min-width: auto;
-    width: 100%;
-    height: auto;
-    padding: var(--space-sm) var(--space-md);
-    flex-grow: 0;
-    box-sizing: border-box;
+    font-size: 0.85rem;
+    padding: var(--space-xs) var(--space-xs);
+    width: auto;
+    flex-grow: 1;
+    min-width: 70px;
+    text-align: center;
   }
 }

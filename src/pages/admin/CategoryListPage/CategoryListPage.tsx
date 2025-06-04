@@ -72,14 +72,14 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
               "A category with this name already exists for your business."
             )
           ) {
-            errorMessage = "Error: Una categoría con este nombre ya existe.";
+            errorMessage = "Una categoría con este nombre ya existe.";
           } else if (response.data?.errors?.Name) {
             errorMessage = response.data.errors.Name[0];
           } else {
             errorMessage =
               response.data?.title ||
               response.data?.detail ||
-              "Error: La categoría ya existe o el nombre es inválido.";
+              "La categoría ya existe.";
           }
         } else if (response.status === 409) {
           errorMessage =
@@ -235,14 +235,14 @@ const CategoryListPage: React.FC = () => {
               "A category with this name already exists for your business."
             )
           ) {
-            errorMessage = "Error: Una categoría con este nombre ya existe.";
+            errorMessage = "Una categoría con este nombre ya existe.";
           } else if (responseData?.errors?.Name) {
             errorMessage = responseData.errors.Name[0];
           } else {
             errorMessage =
               responseData?.title ||
               responseData?.detail ||
-              "Error: La categoría ya existe o el nombre es inválido.";
+              "La categoría ya existe o el nombre es inválido.";
           }
         } else if (response.status === 409) {
           errorMessage =

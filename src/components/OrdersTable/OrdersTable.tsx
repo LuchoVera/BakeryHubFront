@@ -103,15 +103,23 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               className={styles.clickableRow}
             >
               <td data-label="# Pedido:">
-                {order.orderNumber ?? order.id.substring(0, 8)}
+                <span>{order.orderNumber ?? order.id.substring(0, 8)}</span>
               </td>
-              <td data-label="Fecha Pedido:">{formatDate(order.orderDate)}</td>
+              <td data-label="Fecha Pedido:">
+                <span>{formatDate(order.orderDate)}</span>
+              </td>
               <td data-label="Fecha Entrega:">
-                {formatDate(order.deliveryDate)}
+                <span>{formatDate(order.deliveryDate)}</span>
               </td>
-              <td data-label="Cliente:">{order.customerName ?? "N/A"}</td>
-              <td data-label="Tipos Productos:">{order.items?.length ?? 0}</td>
-              <td data-label="Total (Bs.):">{order.totalAmount.toFixed(2)}</td>
+              <td data-label="Cliente:">
+                <span>{order.customerName ?? "N/A"}</span>
+              </td>
+              <td data-label="Tipos Productos:">
+                <span>{order.items?.length ?? 0}</span>
+              </td>
+              <td data-label="Total (Bs.):">
+                <span>{order.totalAmount.toFixed(2)}</span>
+              </td>
               <td data-label="Estado:" onClick={stopPropagation}>
                 <select
                   value={order.status}

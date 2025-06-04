@@ -53,7 +53,7 @@ const TagTable: React.FC<TagTableProps> = ({
             <tr key={tag.id} className={styles.tableRow}>
               {editingTagId === tag.id ? (
                 <>
-                  <td className={styles.tableCell}>
+                  <td className={styles.tableCell} data-label="Editando:">
                     <input
                       type="text"
                       value={editingName}
@@ -66,7 +66,7 @@ const TagTable: React.FC<TagTableProps> = ({
                       <p className={styles.errorText}>{editError}</p>
                     )}
                   </td>
-                  <td className={styles.actionsCell}>
+                  <td className={styles.actionsCell} data-label="Acciones:">
                     <div className={styles.actionButtons}>
                       <button
                         onClick={() => onSaveEdit(tag.id)}
@@ -87,10 +87,7 @@ const TagTable: React.FC<TagTableProps> = ({
                 </>
               ) : (
                 <>
-                  <td
-                    className={styles.tableCell}
-                    data-label="Nombre de la etiqueta:"
-                  >
+                  <td className={styles.tableCell} data-label="Nombre:">
                     {tag.name}
                   </td>
                   <td className={styles.actionsCell} data-label="Acciones:">

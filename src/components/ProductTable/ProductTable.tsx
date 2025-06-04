@@ -83,15 +83,25 @@ const ProductTable: React.FC<ProductTableProps> = ({
                     isCurrentRowLoading ? styles.tableRowLoading : ""
                   }`}
                 >
-                  <td className={styles.tableCell}>{prod.name}</td>
-                  <td className={styles.tableCell}>{prod.categoryName}</td>
-                  <td className={styles.tableCell}>
-                    Bs. {prod.price.toFixed(2)}
+                  <td className={styles.tableCell} data-label="Nombre:">
+                    {prod.name}
                   </td>
-                  <td className={styles.tableCell}>
-                    {formatLeadTime(prod.leadTimeDisplay)}
+                  <td className={styles.tableCell} data-label="Categoría:">
+                    <span className={styles.productInfoValue}>
+                      {prod.categoryName}
+                    </span>
                   </td>
-                  <td className={styles.actionsCell}>
+                  <td className={styles.tableCell} data-label="Precio:">
+                    <span className={styles.productInfoValue}>
+                      Bs. {prod.price.toFixed(2)}
+                    </span>
+                  </td>
+                  <td className={styles.tableCell} data-label="Antelación:">
+                    <span className={styles.productInfoValue}>
+                      {formatLeadTime(prod.leadTimeDisplay)}
+                    </span>
+                  </td>
+                  <td className={styles.actionsCell} data-label="Acciones:">
                     <div className={styles.actionButtons}>
                       <button
                         onClick={() => onEdit(prod.id)}

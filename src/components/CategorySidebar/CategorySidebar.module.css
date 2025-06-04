@@ -39,10 +39,23 @@
   border-radius: var(--border-radius-sm);
   transition: background-color 0.2s ease, color 0.2s ease;
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .categoryLink:hover {
   background-color: var(--color-secondary);
+  color: var(--color-primary-dark);
+}
+
+.categoryLinkActive {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.categoryLinkActive:hover {
+  background-color: var(--color-primary-light);
   color: var(--color-primary-dark);
 }
 
@@ -54,25 +67,25 @@
   font-size: 0.9em;
   font-weight: 600;
   color: var(--color-primary);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: transparent;
+  border: 1px solid var(--color-primary-light);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   text-align: center;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
 }
 .showMoreButton:hover {
   background-color: var(--color-secondary);
   border-color: var(--color-primary);
 }
-
-.categoryLinkActive {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  font-weight: 600;
-}
-.categoryLinkActive:hover {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
+.showMoreButton svg {
+  font-size: 1.1em;
+  margin-bottom: -2px;
 }
 
 @media (max-width: 768px) {
@@ -88,6 +101,7 @@
     overflow-y: visible;
     box-shadow: var(--shadow-md);
     border-radius: var(--border-radius-lg);
+    box-sizing: border-box;
   }
 
   .sidebarTitle {
@@ -100,7 +114,6 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--space-sm);
-
     max-height: none;
     overflow-y: visible;
   }
@@ -110,6 +123,8 @@
     font-size: 0.9rem;
     border: 1px solid var(--color-border);
     background-color: var(--color-surface);
+    flex-grow: 0;
+    flex-shrink: 1;
   }
 
   .categoryLink:hover {
@@ -117,11 +132,12 @@
     color: var(--color-primary-dark);
   }
 
-  .showMoreButton {
-    display: block;
-  }
   .categoryLinkActive {
     border-color: var(--color-primary);
     background-color: var(--color-secondary);
+  }
+
+  .showMoreButton {
+    display: inline-flex;
   }
 }
