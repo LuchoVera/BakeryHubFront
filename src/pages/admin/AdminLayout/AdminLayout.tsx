@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink } from "react-router-dom";
-import { useAuth } from "../../../AuthContext"; //
-import styles from "./AdminLayout.module.css"; //
+import { useAuth } from "../../../AuthContext";
+import styles from "./AdminLayout.module.css";
 import {
   LuPanelLeftClose,
   LuPanelRightClose,
@@ -15,10 +15,10 @@ import {
   LuTag,
   LuMenu,
   LuX,
-} from "react-icons/lu"; //
+} from "react-icons/lu";
 
 const AdminLayout: React.FC = () => {
-  const { user, logout } = useAuth(); //
+  const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
 
@@ -29,12 +29,12 @@ const AdminLayout: React.FC = () => {
       if (!mobile) {
         setIsSidebarOpen(true);
       } else {
-        setIsSidebarOpen(false); // Start closed on mobile
+        setIsSidebarOpen(false);
       }
     };
 
     window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
+    handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -44,13 +44,13 @@ const AdminLayout: React.FC = () => {
   };
 
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
-    return `${styles.navLink} ${isActive ? styles.navLinkActive : ""}`; //
+    return `${styles.navLink} ${isActive ? styles.navLinkActive : ""}`;
   };
 
-  const tenantSubdomain = user?.administeredTenantSubdomain; //
+  const tenantSubdomain = user?.administeredTenantSubdomain;
   const tenantUrl = tenantSubdomain
     ? `${window.location.protocol}//${tenantSubdomain}.localhost:5173/`
-    : null; //
+    : null;
 
   const layoutContainerClass = `${styles.layoutContainer} ${
     !isSidebarOpen && !isMobileView ? styles.layoutContainerCollapsed : ""
@@ -69,8 +69,6 @@ const AdminLayout: React.FC = () => {
           >
             {isSidebarOpen ? <LuX /> : <LuMenu />}
           </button>
-          {/* Opcional: Título en la barra móvil */}
-          {/* <span className={styles.mobileTopBarTitle}>Admin</span> */}
         </div>
       )}
 
@@ -102,7 +100,6 @@ const AdminLayout: React.FC = () => {
       >
         <div className={styles.sidebarHeaderContainer}>
           <h2 className={styles.sidebarHeader}>Menú Admin</h2>
-          {/* Desktop Toggle Button - hidden on mobile by CSS potentially */}
           <button
             onClick={toggleSidebar}
             className={`${styles.toggleButton} ${styles.desktopToggleButton}`}
