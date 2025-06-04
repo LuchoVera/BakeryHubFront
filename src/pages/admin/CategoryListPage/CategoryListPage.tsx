@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, ReactNode } from "react";
-import axios, { AxiosError } from "axios";
 import {
   CategoryDto,
   UpdateCategoryDto,
@@ -14,8 +13,13 @@ import {
   validateMinLength,
   validateMaxLength,
 } from "../../../utils/validationUtils";
-
-const apiUrl = "/api";
+import {
+  fetchAdminCategories,
+  createAdminCategory,
+  updateAdminCategory,
+  deleteAdminCategory,
+} from "../../../services/apiService";
+import { AxiosError } from "axios";
 
 interface CategoryDeleteModalData {
   id: string;
@@ -25,6 +29,7 @@ interface CategoryDeleteModalData {
 interface AddCategoryFormProps {
   onCategoryAdded: () => void;
 }
+
 const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
   onCategoryAdded,
 }) => {
@@ -53,7 +58,7 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
     }
     setLoading(true);
     try {
-      await axios.post(`${apiUrl}/categories`, { name: trimmedName });
+      await createAdminCategory({ name: trimmedName });
       setName("");
       onCategoryAdded();
     } catch (err) {
@@ -62,23 +67,30 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
       let errorMessage = "Ocurrió un error inesperado al añadir la categoría.";
       if (response) {
         if (response.status === 400) {
-          errorMessage = "Error: La categoría ya existe.";
+          if (
+            response.data?.errors?.Name?.includes(
+              "A category with this name already exists for your business."
+            )
+          ) {
+            errorMessage = "Error: Una categoría con este nombre ya existe.";
+          } else if (response.data?.errors?.Name) {
+            errorMessage = response.data.errors.Name[0];
+          } else {
+            errorMessage =
+              response.data?.title ||
+              response.data?.detail ||
+              "Error: La categoría ya existe o el nombre es inválido.";
+          }
         } else if (response.status === 409) {
           errorMessage =
+            response.data?.title ||
+            response.data?.detail ||
             "Conflicto: El recurso ya podría existir o hubo un problema.";
         } else {
           const responseData = response.data;
-          const detail =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.detail
-              : undefined;
-          const message =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.message
-              : undefined;
           errorMessage =
-            (typeof detail === "string" ? detail : undefined) ||
-            (typeof message === "string" ? message : undefined) ||
+            responseData?.detail ||
+            responseData?.message ||
             `Error del servidor (${response.status})`;
         }
       } else if (axiosError.message) {
@@ -89,6 +101,7 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
       setLoading(false);
     }
   };
+
   return (
     <form onSubmit={handleSubmit} className={styles.addForm}>
       <div className={styles.formGroup}>
@@ -145,8 +158,8 @@ const CategoryListPage: React.FC = () => {
   const fetchCategories = useCallback(async () => {
     setError(null);
     try {
-      const response = await axios.get<CategoryDto[]>(`${apiUrl}/categories`);
-      setCategories(response.data);
+      const data = await fetchAdminCategories();
+      setCategories(data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       if (axiosError.response?.status === 401) {
@@ -154,6 +167,7 @@ const CategoryListPage: React.FC = () => {
       } else {
         setError(
           axiosError.response?.data?.title ||
+            axiosError.response?.data?.detail ||
             axiosError.message ||
             "Fallo al cargar categorías."
         );
@@ -205,7 +219,7 @@ const CategoryListPage: React.FC = () => {
     setEditError(null);
     try {
       const updateData: UpdateCategoryDto = { name: editingName.trim() };
-      await axios.put(`${apiUrl}/categories/${categoryId}`, updateData);
+      await updateAdminCategory(categoryId, updateData);
       setEditingCategoryId(null);
       setEditingName("");
       await fetchCategories();
@@ -216,22 +230,29 @@ const CategoryListPage: React.FC = () => {
       let errorMessage = "Ocurrió un error al guardar los cambios.";
       if (response) {
         if (response.status === 400) {
-          errorMessage = "Error: La categoría ya existe.";
+          if (
+            responseData?.errors?.Name?.includes(
+              "A category with this name already exists for your business."
+            )
+          ) {
+            errorMessage = "Error: Una categoría con este nombre ya existe.";
+          } else if (responseData?.errors?.Name) {
+            errorMessage = responseData.errors.Name[0];
+          } else {
+            errorMessage =
+              responseData?.title ||
+              responseData?.detail ||
+              "Error: La categoría ya existe o el nombre es inválido.";
+          }
         } else if (response.status === 409) {
           errorMessage =
+            responseData?.title ||
+            responseData?.detail ||
             "Conflicto: El recurso ya podría existir o hubo un problema.";
         } else {
-          const detail =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.detail
-              : undefined;
-          const message =
-            typeof responseData === "object" && responseData !== null
-              ? responseData.message
-              : undefined;
           errorMessage =
-            (typeof detail === "string" ? detail : undefined) ||
-            (typeof message === "string" ? message : undefined) ||
+            responseData?.detail ||
+            responseData?.message ||
             `Error del servidor (${response.status})`;
         }
       } else if (axiosError.message) {
@@ -252,13 +273,25 @@ const CategoryListPage: React.FC = () => {
       setIsErrorModalOpen(false);
     }
   };
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setCategoryToDelete(null);
+  };
+  const handleErrorModalClose = () => {
+    setIsErrorModalOpen(false);
+    setErrorModalMessage(null);
+  };
+  const handleSuccessModalClose = () => {
+    setIsSuccessModalOpen(false);
+    setSuccessModalMessage(null);
+  };
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
     setDeletingId(categoryToDelete.id);
     setIsDeleteModalOpen(false);
     try {
-      await axios.delete(`${apiUrl}/categories/${categoryToDelete.id}`);
+      await deleteAdminCategory(categoryToDelete.id);
       setSuccessModalMessage(
         `Categoría "${categoryToDelete.name}" eliminada correctamente.`
       );
@@ -266,29 +299,22 @@ const CategoryListPage: React.FC = () => {
       setCategoryToDelete(null);
       await fetchCategories();
     } catch (err) {
-      let userErrorMessage =
-        "No se pudo borrar la categoría. Tiene productos asociados.";
-
+      const axiosError = err as AxiosError<ApiErrorResponse>;
+      let userErrorMessage = `No se pudo borrar la categoría "${categoryToDelete.name}".`;
+      if (axiosError.response?.status === 400) {
+        userErrorMessage =
+          axiosError.response.data?.detail ||
+          axiosError.response.data?.title ||
+          "La categoría tiene productos asociados y no puede ser eliminada.";
+      } else {
+        userErrorMessage =
+          "La categoría tiene productos asociados y no puede ser eliminada.";
+      }
       setErrorModalMessage(userErrorMessage);
       setIsErrorModalOpen(true);
     } finally {
       setDeletingId(null);
     }
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false);
-    setCategoryToDelete(null);
-  };
-
-  const handleErrorModalClose = () => {
-    setIsErrorModalOpen(false);
-    setErrorModalMessage(null);
-  };
-
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    setSuccessModalMessage(null);
   };
 
   const deleteModalMessage: ReactNode = categoryToDelete ? (
@@ -314,8 +340,7 @@ const CategoryListPage: React.FC = () => {
 
       {loading && <p className={styles.loadingText}>Cargando categorías...</p>}
       {error && <p className={styles.errorText}>{error}</p>}
-
-      {!loading && !error && categories.length > 0 && (
+      {!loading && !error && categories.length >= 0 && (
         <CategoryTable
           categories={categories}
           editingCategoryId={editingCategoryId}

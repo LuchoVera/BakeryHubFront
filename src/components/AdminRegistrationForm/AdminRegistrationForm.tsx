@@ -1,6 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent, FocusEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 import { AdminRegisterDto, ApiErrorResponse } from "../../types";
 import {
   validateRequired,
@@ -13,8 +12,8 @@ import {
 } from "../../utils/validationUtils";
 import styles from "./AdminRegistrationForm.module.css";
 import { LuCircleHelp, LuEye, LuEyeOff } from "react-icons/lu";
-
-const apiUrl = "/api";
+import { registerAdmin } from "../../services/apiService";
+import { AxiosError } from "axios";
 
 const AdminRegistrationForm: React.FC = () => {
   const navigate = useNavigate();
@@ -196,7 +195,7 @@ const AdminRegistrationForm: React.FC = () => {
     const registrationData: AdminRegisterDto = { ...formData };
 
     try {
-      await axios.post(`${apiUrl}/accounts/register-admin`, registrationData);
+      await registerAdmin(registrationData);
       setSuccessMessage(
         "¡Registro Exitoso! Redirigiendo al panel de administración..."
       );
@@ -212,20 +211,17 @@ const AdminRegistrationForm: React.FC = () => {
       setClientErrors({});
       setValidationErrors({});
 
-      setTimeout(() => {
-        navigate("/admin", { replace: true });
-      }, 1500);
+      navigate("/admin", { replace: true });
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
       const responseData = response?.data;
-      console.error("Fallo de Registro:", responseData || axiosError.message);
-
       let errorMessage = "Ocurrió un error desconocido durante el registro.";
 
       if (response) {
         if (response.status === 400) {
-          errorMessage = "Error: El subdominio elegido ya está en uso.";
+          errorMessage =
+            "Error: El subdominio elegido ya está en uso o hay errores de validación.";
 
           if (typeof responseData === "object" && responseData?.errors) {
             const backendErrors: Record<string, string[]> = responseData.errors;
@@ -242,11 +238,23 @@ const AdminRegistrationForm: React.FC = () => {
             }
             setValidationErrors(frontendValidationErrors);
 
-            if (!specificSubdomainMsgFound) {
+            if (
+              !specificSubdomainMsgFound &&
+              Object.keys(frontendValidationErrors).length > 0
+            ) {
+              const firstErrorKey = Object.keys(frontendValidationErrors)[0];
+              errorMessage =
+                frontendValidationErrors[firstErrorKey][0] ||
+                "Por favor, corrige los errores del formulario.";
+            } else if (!specificSubdomainMsgFound) {
               errorMessage =
                 "Error: El subdominio elegido ya está en uso o es inválido.";
             }
           }
+        } else if (responseData?.detail) {
+          errorMessage = responseData.detail;
+        } else if (responseData?.title) {
+          errorMessage = responseData.title;
         }
       } else if (axiosError.message) {
         errorMessage = `Error de red: ${axiosError.message}`;

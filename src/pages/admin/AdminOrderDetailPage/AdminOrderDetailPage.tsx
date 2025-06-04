@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 import {
   OrderDto,
   ApiErrorResponse,
@@ -22,8 +21,11 @@ import {
   getWhatsAppLink,
 } from "../../../utils/whatsappUtils";
 import { useAuth } from "../../../AuthContext";
-
-const apiUrl = "/api";
+import {
+  fetchAdminOrderById,
+  updateAdminOrderStatus,
+} from "../../../services/apiService";
+import { AxiosError } from "axios";
 
 const formatDate = (dateString: string | null | undefined): string => {
   if (!dateString) return "N/A";
@@ -106,16 +108,18 @@ const AdminOrderDetailPage: React.FC = () => {
     }
     setError(null);
     try {
-      const response = await axios.get<OrderDto>(
-        `${apiUrl}/admin/orders/${orderId}`
-      );
-      setOrderData(response.data);
+      const data = await fetchAdminOrderById(orderId);
+      setOrderData(data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       if (axiosError.response?.status === 404) {
         setError("Pedido no encontrado.");
       } else {
-        setError("Error al cargar los detalles del pedido.");
+        setError(
+          axiosError.response?.data?.detail ||
+            axiosError.message ||
+            "Error al cargar los detalles del pedido."
+        );
       }
       setOrderData(null);
     } finally {
@@ -134,12 +138,15 @@ const AdminOrderDetailPage: React.FC = () => {
   ) => {
     setIsUpdatingStatus(true);
     try {
-      await axios.put(`${apiUrl}/admin/orders/${orderIdToUpdate}/status`, {
-        NewStatus: newStatus,
-      });
+      await updateAdminOrderStatus(orderIdToUpdate, newStatus);
       await fetchOrderDetails();
     } catch (updateError) {
-      alert(`Error al actualizar estado del pedido ${orderIdToUpdate}`);
+      const axiosErr = updateError as AxiosError<ApiErrorResponse>;
+      alert(
+        `Error al actualizar estado del pedido ${orderIdToUpdate}: ${
+          axiosErr.response?.data?.detail || axiosErr.message
+        }`
+      );
       await fetchOrderDetails();
     } finally {
       setIsUpdatingStatus(false);
@@ -159,9 +166,6 @@ const AdminOrderDetailPage: React.FC = () => {
         newStatus,
       });
       setIsConfirmModalOpen(true);
-      setOrderData((prev) =>
-        prev ? { ...prev, status: currentStatus } : null
-      );
     } else {
       executeUpdateStatus(orderData.id, newStatus);
     }
@@ -169,29 +173,27 @@ const AdminOrderDetailPage: React.FC = () => {
 
   const handleModalConfirm = () => {
     if (confirmModalData) {
-      setOrderData((prev) =>
-        prev ? { ...prev, status: confirmModalData.newStatus } : null
-      );
       executeUpdateStatus(confirmModalData.orderId, confirmModalData.newStatus);
     }
     setIsConfirmModalOpen(false);
     setConfirmModalData(null);
   };
-
   const handleModalCancel = () => {
+    if (confirmModalData && orderData) {
+      setOrderData({ ...orderData, status: confirmModalData.currentStatus });
+    }
     setIsConfirmModalOpen(false);
     setConfirmModalData(null);
   };
 
   const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const newStatus = event.target.value;
-    const currentStatus = orderData?.status;
-    if (currentStatus && newStatus !== currentStatus) {
+    const currentStatusInState = orderData?.status;
+    if (currentStatusInState && newStatus !== currentStatusInState) {
       setOrderData((prev) => (prev ? { ...prev, status: newStatus } : null));
       requestStatusChange(newStatus);
     }
   };
-
   const handleWhatsAppClick = () => {
     if (!orderData || !orderData.customerPhoneNumber) {
       alert(

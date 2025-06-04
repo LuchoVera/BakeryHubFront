@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import axios, { AxiosError } from "axios";
 import styles from "./TenantViewPage.module.css";
 import {
   ApiErrorResponse,
@@ -16,8 +15,14 @@ import { LuFilter, LuX } from "react-icons/lu";
 import Autocomplete from "@mui/material/Autocomplete";
 import Chip from "@mui/material/Chip";
 import TextField from "@mui/material/TextField";
-
-const apiUrl = "/api";
+import {
+  fetchPublicTenantInfo,
+  fetchPublicTenantCategoriesPreferred,
+  fetchPublicTenantProducts,
+  fetchPublicTenantRecommendations,
+  fetchPublicTenantTags,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 type GroupedProductsRender = Record<string, ProductDto[]>;
 
@@ -40,9 +45,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   );
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
-  const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
-  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(true);
-  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
+  const [isLoadingPageData, setIsLoadingPageData] = useState<boolean>(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
   const [allRecommendations, setAllRecommendations] = useState<ProductDto[]>(
@@ -64,125 +68,103 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
 
   const [appliedTags, setAppliedTags] = useState<string[]>([]);
   const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
-  const [loadingTenantTags, setLoadingTenantTags] = useState<boolean>(true);
-  const [selectedTags, setSelectedTags] = useState<TagDto[]>([]);
+  const [selectedTagsInPanel, setSelectedTagsInPanel] = useState<TagDto[]>([]);
 
   useEffect(() => {
-    setIsLoadingTenant(true);
+    setIsLoadingPageData(true);
     setError(null);
     setTenantInfo(null);
     setProducts([]);
     setAllCategories([]);
-    const fetchTenantInfo = async () => {
+    setAllTenantTags([]);
+    setAllRecommendations([]);
+    const fetchInitialPageData = async () => {
       try {
-        const response = await axios.get<TenantPublicInfoDto>(
-          `${apiUrl}/public/tenants/${subdomain}`
-        );
-        setTenantInfo(response.data);
+        const tenantData = await fetchPublicTenantInfo(subdomain);
+        setTenantInfo(tenantData);
+        const [categoriesData, tagsData] = await Promise.all([
+          (async () => {
+            let cats: CategoryDto[] = [];
+            let fallbackNeeded = !isAuthenticated;
+            if (isAuthenticated) {
+              try {
+                const preferredCats =
+                  await fetchPublicTenantCategoriesPreferred(subdomain);
+                if (preferredCats && preferredCats.length > 0)
+                  cats = preferredCats;
+                else fallbackNeeded = true;
+              } catch {
+                fallbackNeeded = true;
+              }
+            }
+            if (fallbackNeeded) {
+              try {
+                const prodsForCats = await fetchPublicTenantProducts(subdomain);
+                const categoriesMap = new Map<string, string>();
+                (prodsForCats || []).forEach((p) => {
+                  if (
+                    p.categoryId &&
+                    p.categoryName &&
+                    !categoriesMap.has(p.categoryId)
+                  ) {
+                    categoriesMap.set(p.categoryId, p.categoryName);
+                  }
+                });
+                cats = Array.from(categoriesMap.entries()).map(
+                  ([id, name]) => ({ id, name })
+                );
+                cats.sort((a, b) => a.name.localeCompare(b.name));
+              } catch {}
+            }
+            return cats;
+          })(),
+          fetchPublicTenantTags(subdomain),
+        ]);
+        setAllCategories(categoriesData);
+        setAllTenantTags(tagsData || []);
       } catch (err) {
         const axiosError = err as AxiosError<ApiErrorResponse>;
         if (axiosError.response?.status === 404) {
           setError(`La tienda "${subdomain}" no fue encontrada.`);
         } else {
-          setError("Ocurrió un error cargando la información de la tienda.");
+          setError(
+            axiosError.response?.data?.detail ||
+              axiosError.message ||
+              "Ocurrió un error cargando datos de la tienda."
+          );
         }
         setTenantInfo(null);
+        setAllCategories([]);
+        setAllTenantTags([]);
       } finally {
-        setIsLoadingTenant(false);
+        setIsLoadingPageData(false);
       }
     };
-    fetchTenantInfo();
-  }, [subdomain]);
+    fetchInitialPageData();
+  }, [subdomain, isAuthenticated]);
 
-  useEffect(() => {
-    if (tenantInfo && !error) {
-      setIsLoadingCategories(true);
-      const fetchCategoriesForView = async () => {
-        let categoriesData: CategoryDto[] = [];
-        let fallbackNeeded = !isAuthenticated;
-
-        if (isAuthenticated) {
-          try {
-            const response = await axios.get<CategoryDto[]>(
-              `${apiUrl}/public/tenants/${subdomain}/categories/preferred`,
-              { withCredentials: true }
-            );
-            if (response.data && response.data.length > 0) {
-              categoriesData = response.data;
-            } else {
-              fallbackNeeded = true;
-            }
-          } catch (preferredErr) {
-            fallbackNeeded = true;
-          }
-        }
-
-        if (fallbackNeeded) {
-          try {
-            const productsResponse = await axios.get<ProductDto[]>(
-              `${apiUrl}/public/tenants/${tenantInfo.subdomain}/products`
-            );
-            const fetchedProducts = productsResponse.data || [];
-            const categoriesMap = new Map<string, string>();
-            fetchedProducts.forEach((p) => {
-              if (
-                p.categoryId &&
-                p.categoryName &&
-                !categoriesMap.has(p.categoryId)
-              ) {
-                categoriesMap.set(p.categoryId, p.categoryName);
-              }
-            });
-            categoriesData = Array.from(categoriesMap.entries()).map(
-              ([id, name]) => ({ id, name })
-            );
-            categoriesData.sort((a, b) => a.name.localeCompare(b.name));
-          } catch (fallbackErr) {
-            console.error("Fallback for categories failed:", fallbackErr);
-          }
-        }
-        setAllCategories(categoriesData);
-        setIsLoadingCategories(false);
-      };
-      fetchCategoriesForView();
-    } else if (!tenantInfo && !isLoadingTenant) {
-      setIsLoadingCategories(false);
-      setAllCategories([]);
-    }
-  }, [tenantInfo, error, isAuthenticated, subdomain]);
-
-  const fetchProducts = useCallback(async () => {
+  const performProductFetch = useCallback(async () => {
     if (!tenantInfo || error) {
       setIsLoadingProducts(false);
+      setProducts([]);
       return;
     }
     setIsLoadingProducts(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
-      if (selectedCategoryId) {
-        params.append("categoryId", selectedCategoryId);
-      }
-      if (appliedMinPrice) {
-        params.append("minPrice", appliedMinPrice);
-      }
-      if (appliedMaxPrice) {
-        params.append("maxPrice", appliedMaxPrice);
-      }
-      if (appliedTags.length > 0) {
-        appliedTags.forEach((tag) => params.append("tags", tag));
-      }
-
-      const queryString = params.toString();
-      const productUrl = `${apiUrl}/public/tenants/${
-        tenantInfo.subdomain
-      }/products${queryString ? `?${queryString}` : ""}`;
-
-      const response = await axios.get<ProductDto[]>(productUrl);
-      setProducts(response.data || []);
-      if (error && response.data) setError(null);
+      if (selectedCategoryId) params.append("categoryId", selectedCategoryId);
+      if (appliedMinPrice) params.append("minPrice", appliedMinPrice);
+      if (appliedMaxPrice) params.append("maxPrice", appliedMaxPrice);
+      appliedTags.forEach((tag) => params.append("tags", tag));
+      const productData = await fetchPublicTenantProducts(
+        tenantInfo.subdomain,
+        params
+      );
+      setProducts(productData || []);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      if (!error) {
+      if (axiosError.response?.status !== 404) {
         setError(
           axiosError.response?.data?.detail ||
             axiosError.message ||
@@ -195,42 +177,41 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     }
   }, [
     tenantInfo,
-    error,
     selectedCategoryId,
     appliedMinPrice,
     appliedMaxPrice,
     appliedTags,
+    error,
   ]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (!isLoadingPageData) {
+      performProductFetch();
+    }
+  }, [performProductFetch, isLoadingPageData]);
 
   useEffect(() => {
-    if (isAuthenticated && subdomain && tenantInfo) {
+    if (isAuthenticated && subdomain && tenantInfo && !isLoadingPageData) {
       setLoadingRecommendations(true);
       setAllRecommendations([]);
       setDisplayedRecommendations([]);
-      const fetchRecommendations = async () => {
+      const fetchRecs = async () => {
         try {
-          const response = await axios.get<ProductDto[]>(
-            `${apiUrl}/public/tenants/${subdomain}/recommendations`,
-            { withCredentials: true }
-          );
-          setAllRecommendations(response.data || []);
+          const recData = await fetchPublicTenantRecommendations(subdomain);
+          setAllRecommendations(recData || []);
         } catch (err) {
           setAllRecommendations([]);
         } finally {
           setLoadingRecommendations(false);
         }
       };
-      fetchRecommendations();
+      fetchRecs();
     } else {
       setAllRecommendations([]);
       setDisplayedRecommendations([]);
       setLoadingRecommendations(false);
     }
-  }, [isAuthenticated, subdomain, tenantInfo]);
+  }, [isAuthenticated, subdomain, tenantInfo, isLoadingPageData]);
 
   useEffect(() => {
     if (allRecommendations.length > 0) {
@@ -267,6 +248,18 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     if (!isFilterPanelOpen) {
       setTempMinPrice(appliedMinPrice || "");
       setTempMaxPrice(appliedMaxPrice || "");
+      const rehydratedTags = appliedTags.map((tagName) => {
+        const existingTag = allTenantTags.find(
+          (t) => t.name.toLowerCase() === tagName.toLowerCase()
+        );
+        return (
+          existingTag || {
+            id: `applied_${tagName}_${Date.now()}`,
+            name: tagName,
+          }
+        );
+      });
+      setSelectedTagsInPanel(rehydratedTags);
     }
     setIsFilterPanelOpen(!isFilterPanelOpen);
   };
@@ -288,8 +281,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       return;
     }
 
-    const newAppliedTags = selectedTags.map((tag) => tag.name.trim());
-
+    const newAppliedTags = selectedTagsInPanel.map((tag) => tag.name.trim());
     setAppliedMinPrice(tempMinPrice || null);
     setAppliedMaxPrice(tempMaxPrice || null);
     setAppliedTags(newAppliedTags);
@@ -299,10 +291,10 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   const handleClearPanelFilters = () => {
     setTempMinPrice("");
     setTempMaxPrice("");
-    setSelectedTags([]);
-    setAppliedTags([]);
+    setSelectedTagsInPanel([]);
     setAppliedMinPrice(null);
     setAppliedMaxPrice(null);
+    setAppliedTags([]);
   };
 
   const areAnyPriceOrTagFiltersApplied = useMemo(() => {
@@ -316,22 +308,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
   const areFiltersActive = useMemo(() => {
     return selectedCategoryId !== null || areAnyPriceOrTagFiltersApplied;
   }, [selectedCategoryId, areAnyPriceOrTagFiltersApplied]);
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const tagsResponse = await axios.get<TagDto[]>(
-          `${apiUrl}/public/tenants/${subdomain}/tags`
-        );
-        setAllTenantTags(tagsResponse.data);
-      } catch {
-        console.error("No se pudieron cargar las etiquetas.");
-      } finally {
-        setLoadingTenantTags(false);
-      }
-    };
-    fetchTags();
-  }, []);
-  if (isLoadingTenant) {
+
+  if (isLoadingPageData) {
     return (
       <div className={styles.loadingOrError}>
         Cargando Información de la Tienda...
@@ -352,7 +330,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       </div>
     );
   }
-  if (!tenantInfo && !isLoadingTenant) {
+  if (!tenantInfo && !isLoadingPageData) {
     return (
       <div className={styles.loadingOrError}>
         No se pudo cargar la información de la tienda.
@@ -364,19 +342,19 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
     <div className={styles.tenantView}>
       <TenantHeader tenantName={tenantInfo?.name ?? "Cargando..."} />
       <div className={styles.pageLayout}>
-        {!isLoadingCategories && categoryLinksForSidebar.length > 0 && (
+        {!isLoadingPageData && categoryLinksForSidebar.length > 0 && (
           <CategorySidebar
             categories={categoryLinksForSidebar}
             selectedCategoryId={selectedCategoryId}
             onSelectCategory={handleSelectCategory}
           />
         )}
-        {isLoadingCategories && !error && tenantInfo && (
+        {isLoadingPageData && tenantInfo && (
           <div
             className={styles.productsArea}
             style={{ textAlign: "center", paddingTop: "50px" }}
           >
-            Cargando categorías...
+            Cargando categorías y filtros...
           </div>
         )}
         <main className={styles.productsArea} id="product-area-start">
@@ -394,7 +372,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                       ? styles.filterButtonActive
                       : ""
                   }`}
-                  disabled={isLoadingProducts}
+                  disabled={isLoadingProducts || isLoadingPageData}
                 >
                   <LuFilter /> Filtros
                   {isFilterPanelOpen ? <LuX /> : null}
@@ -439,11 +417,11 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                     <Autocomplete
                       multiple
                       freeSolo
-                      loading={loadingTenantTags}
+                      loading={isLoadingPageData && allTenantTags.length === 0}
                       id="tags-filter-autocomplete"
-                      value={selectedTags}
+                      value={selectedTagsInPanel}
                       onChange={(_, newValue) => {
-                        setSelectedTags(
+                        setSelectedTagsInPanel(
                           newValue.map((option) => {
                             if (typeof option === "string") {
                               const existing = allTenantTags.find(
@@ -483,9 +461,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                               "& .MuiChip-deleteIcon": {
                                 color: "var(--color-primary-dark)",
                                 fontSize: "0.9rem",
-                                "&:hover": {
-                                  color: "var(--color-error)",
-                                },
+                                "&:hover": { color: "var(--color-error)" },
                               },
                             }}
                           />
@@ -496,11 +472,13 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                           {...params}
                           variant="outlined"
                           placeholder={
-                            selectedTags.length > 0
-                              ? "Añadir más etiquetas..."
-                              : "Añadir etiquetas..."
+                            selectedTagsInPanel.length > 0
+                              ? "Añadir más..."
+                              : "Etiquetas..."
                           }
-                          disabled={loadingTenantTags}
+                          disabled={
+                            isLoadingPageData && allTenantTags.length === 0
+                          }
                           sx={{
                             width: "300px",
                             fontSize: "0.8em",
@@ -515,17 +493,12 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                               display: "flex",
                               flexWrap: "wrap",
                               alignItems: "center",
-
                               maxHeight: "116px",
-
                               overflowY: "auto",
-
                               backgroundColor: "var(--color-surface)",
                               borderRadius: "var(--border-radius-sm)",
                               fontFamily: "var(--font-primary)",
-
                               border: "1px solid var(--color-border)",
-
                               "&:hover": {
                                 borderColor: "var(--color-text-secondary)",
                               },
@@ -576,6 +549,7 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
                 </div>
               )}
             </div>
+
             {isAuthenticated &&
               !loadingRecommendations &&
               displayedRecommendations.length > 0 &&
@@ -610,46 +584,47 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
             {!isLoadingProducts &&
               !error &&
               products.length > 0 &&
-              allCategories.map(({ name: categoryName, id: categoryId }) => {
+              (selectedCategoryId
+                ? allCategories.filter((c) => c.id === selectedCategoryId)
+                : allCategories
+              ).map(({ name: categoryName, id: categoryId }) => {
                 const productsInCategory =
                   groupedProductsRender[categoryName] || [];
 
-                if (selectedCategoryId && selectedCategoryId !== categoryId) {
-                  return null;
+                if (productsInCategory.length > 0) {
+                  return (
+                    <section
+                      key={categoryId}
+                      id={categoryId}
+                      className={styles.categorySection}
+                    >
+                      <h2 className={styles.categoryTitle}>{categoryName}</h2>
+                      <div className={styles.productGrid}>
+                        {productsInCategory.map((product) => (
+                          <ProductCard key={product.id} product={product} />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                } else if (
+                  selectedCategoryId === categoryId &&
+                  productsInCategory.length === 0
+                ) {
+                  return (
+                    <section
+                      key={categoryId}
+                      className={styles.categorySection}
+                      id={categoryId}
+                    >
+                      <h2 className={styles.categoryTitle}>{categoryName}</h2>
+                      <p className={styles.noProducts}>
+                        No hay productos en esta categoría con los filtros
+                        aplicados.
+                      </p>
+                    </section>
+                  );
                 }
-                if (productsInCategory.length === 0) {
-                  if (selectedCategoryId === categoryId) {
-                    return (
-                      <section
-                        key={categoryId}
-                        className={styles.categorySection}
-                        id={categoryId}
-                      >
-                        <h2 className={styles.categoryTitle}>{categoryName}</h2>
-                        <p className={styles.noProducts}>
-                          No hay productos en esta categoría con los filtros
-                          aplicados.
-                        </p>
-                      </section>
-                    );
-                  }
-                  return null;
-                }
-
-                return (
-                  <section
-                    key={categoryId}
-                    id={categoryId}
-                    className={styles.categorySection}
-                  >
-                    <h2 className={styles.categoryTitle}>{categoryName}</h2>
-                    <div className={styles.productGrid}>
-                      {productsInCategory.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                      ))}
-                    </div>
-                  </section>
-                );
+                return null;
               })}
           </div>
         </main>

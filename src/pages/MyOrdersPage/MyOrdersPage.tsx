@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { OrderDto, TenantPublicInfoDto, ApiErrorResponse } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
@@ -11,8 +10,11 @@ import {
   LuShoppingBag,
   LuPackageSearch,
 } from "react-icons/lu";
-
-const apiUrl = "/api";
+import {
+  fetchPublicTenantInfo,
+  fetchTenantOrders,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return "N/A";
@@ -68,12 +70,13 @@ interface MyOrdersPageProps {
 const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
   );
-  const [isLoadingTenant, setIsLoadingTenant] = useState(true);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const handleCardClick = (orderId: string) => {
@@ -83,89 +86,85 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
-      navigate("/login", { state: { from: `/my-orders` } });
+      navigate("/login", { state: { from: location.pathname } });
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, location.pathname]);
 
   useEffect(() => {
-    if (!subdomain || !isAuthenticated) {
-      setIsLoadingTenant(false);
-      if (!isAuthenticated && !authLoading)
+    if (!subdomain || !isAuthenticated || authLoading) {
+      setIsLoadingPage(false);
+      if (!isAuthenticated && !authLoading) {
         setError("Debes iniciar sesión para ver esta página.");
-      return;
-    }
-
-    const fetchTenantInfo = async () => {
-      setIsLoadingTenant(true);
-      setError(null);
-      try {
-        const response = await axios.get<TenantPublicInfoDto>(
-          `${apiUrl}/public/tenants/${subdomain}`
-        );
-        setTenantInfo(response.data);
-      } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        if (axiosError.response?.status === 404) {
-          setError(`La tienda "${subdomain}" no fue encontrada.`);
-        } else {
-          setError("Error al cargar la información de la tienda.");
-        }
-        setTenantInfo(null);
-      } finally {
-        setIsLoadingTenant(false);
       }
-    };
-
-    if (isAuthenticated) {
-      fetchTenantInfo();
-    }
-  }, [subdomain, isAuthenticated, authLoading]);
-
-  useEffect(() => {
-    if (!tenantInfo || !isAuthenticated || !user || authLoading) {
-      setIsLoadingOrders(false);
-      if (tenantInfo && !isAuthenticated && !authLoading)
-        setError("Debes iniciar sesión para ver tus pedidos.");
       return;
     }
 
-    const fetchOrders = async () => {
-      setIsLoadingOrders(true);
+    const fetchPageData = async () => {
+      setIsLoadingPage(true);
       setError(null);
       try {
-        const ordersResponse = await axios.get<OrderDto[]>(
-          `${apiUrl}/public/tenants/${subdomain}/orders`,
-          { withCredentials: true }
+        const [tenantData, ordersData] = await Promise.all([
+          fetchPublicTenantInfo(subdomain),
+          fetchTenantOrders(subdomain),
+        ]);
+        setTenantInfo(tenantData);
+
+        ordersData.sort(
+          (a, b) =>
+            new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
         );
-        setOrders(ordersResponse.data);
+        setOrders(ordersData);
       } catch (err) {
         const axiosError = err as AxiosError<ApiErrorResponse>;
         if (axiosError.response?.status === 401) {
           setError(
             "Tu sesión ha expirado o no tienes permiso. Por favor, inicia sesión de nuevo."
           );
-          navigate("/login", { state: { from: `/my-orders` } });
+          navigate("/login", { state: { from: location.pathname } });
         } else if (axiosError.response?.status === 404) {
-          setError(`No se encontraron pedidos para la tienda "${subdomain}".`);
+          if (
+            axiosError.config?.url?.includes(
+              `/public/tenants/${subdomain}/orders`
+            )
+          ) {
+            setOrders([]);
+
+            if (!tenantInfo) {
+              const tenantInfoError = await fetchPublicTenantInfo(
+                subdomain
+              ).catch(() => null);
+              if (tenantInfoError) setTenantInfo(tenantInfoError);
+              else
+                setError(
+                  `La tienda "${subdomain}" no fue encontrada o no tienes pedidos.`
+                );
+            }
+          } else {
+            setError(`La tienda "${subdomain}" no fue encontrada.`);
+          }
         } else {
           setError(
             axiosError.response?.data?.detail ||
               axiosError.message ||
-              "Error al cargar tus pedidos."
+              "Error al cargar tus pedidos o la información de la tienda."
           );
         }
-        setOrders([]);
       } finally {
-        setIsLoadingOrders(false);
+        setIsLoadingPage(false);
       }
     };
 
-    fetchOrders();
-  }, [tenantInfo, subdomain, isAuthenticated, user, authLoading, navigate]);
+    fetchPageData();
+  }, [
+    subdomain,
+    isAuthenticated,
+    user,
+    authLoading,
+    navigate,
+    location.pathname,
+  ]);
 
-  const pageIsLoading = authLoading || isLoadingTenant || isLoadingOrders;
-
-  if (pageIsLoading) {
+  if (isLoadingPage) {
     return (
       <div className={styles.loadingOrError}>
         <LuShoppingBag /> Cargando tus pedidos...
@@ -176,8 +175,12 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
   return (
     <div className={styles.pageContainer}>
       {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
-      {!tenantInfo && error && !isLoadingTenant && (
-        <div className={styles.errorLoadingHeader}>{error}</div>
+      {!tenantInfo && error && !isLoadingPage && (
+        <div className={styles.errorLoadingHeader}>
+          {error.includes("tienda")
+            ? error
+            : "Error al cargar la información de la tienda."}
+        </div>
       )}
 
       <main className={styles.ordersContent}>
@@ -188,14 +191,14 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
         </div>
         <h1>Mis Pedidos en {tenantInfo?.name || subdomain}</h1>
 
-        {error && !pageIsLoading && (
+        {error && !isLoadingPage && (
           <div className={`${styles.loadingOrError} ${styles.error}`}>
             <LuCircleAlert size={48} />
             <p>{error}</p>
           </div>
         )}
 
-        {!error && !pageIsLoading && orders.length === 0 && (
+        {!error && !isLoadingPage && orders.length === 0 && (
           <div className={`${styles.loadingOrError} ${styles.noOrders}`}>
             <LuPackageSearch size={48} />
             <p>Aún no tienes pedidos en esta tienda.</p>
@@ -203,13 +206,19 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
           </div>
         )}
 
-        {!error && !pageIsLoading && orders.length > 0 && (
+        {!error && !isLoadingPage && orders.length > 0 && (
           <div className={styles.ordersList}>
             {orders.map((order) => (
               <div
                 key={order.id}
                 className={styles.orderCard}
                 onClick={() => handleCardClick(order.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ")
+                    handleCardClick(order.id);
+                }}
               >
                 <div className={styles.orderHeader}>
                   <h3>
@@ -226,17 +235,18 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
                 <div className={styles.orderDetails}>
                   <p>
                     <strong>Fecha del Pedido:</strong>{" "}
-                    {formatDate(order.orderDate)}
+                    <span>{formatDate(order.orderDate)}</span>
                   </p>
                   <p>
                     <strong>Fecha de Entrega:</strong>{" "}
-                    {formatDate(order.deliveryDate)}
+                    <span>{formatDate(order.deliveryDate)}</span>
                   </p>
                   <p>
-                    <strong>Total:</strong> {formatCurrency(order.totalAmount)}
+                    <strong>Total:</strong>{" "}
+                    <span>{formatCurrency(order.totalAmount)}</span>
                   </p>
                   <p>
-                    <strong>Items:</strong> {order.items.length}
+                    <strong>Items:</strong> <span>{order.items.length}</span>
                   </p>
                 </div>
                 <div className={styles.orderItemsPreview}>
@@ -250,7 +260,7 @@ const MyOrdersPage: React.FC<MyOrdersPageProps> = ({ subdomain }) => {
                       </li>
                     ))}
                     {order.items.length > 3 && (
-                      <li>{order.items.length - 3} más...</li>
+                      <li>y {order.items.length - 3} más...</li>
                     )}
                   </ul>
                 </div>

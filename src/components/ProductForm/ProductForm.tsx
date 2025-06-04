@@ -6,13 +6,12 @@ import React, {
   DragEvent,
   SyntheticEvent,
 } from "react";
-import axios, { AxiosError } from "axios";
+
 import {
   CategoryDto,
   CreateProductDto,
   UpdateProductDto,
   ApiErrorResponse,
-  ProductDto,
   TagDto,
 } from "../../types";
 import styles from "./ProductForm.module.css";
@@ -33,12 +32,18 @@ import {
   validateMinLength,
   validateMaxLength,
 } from "../../utils/validationUtils";
-
-const apiUrl = "/api";
+import {
+  fetchAdminCategories,
+  fetchAdminTags,
+  fetchAdminProductById,
+  createAdminProduct,
+  updateAdminProduct,
+  uploadImageToCloudinary,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-const cloudinaryUploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
 interface ProductFormProps {
   productId?: string;
@@ -86,31 +91,29 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     const fetchInitialData = async () => {
       setLoadingTenantTags(true);
       try {
-        const categoriesResponse = await axios.get<CategoryDto[]>(
-          `${apiUrl}/categories`
-        );
-        setCategories(categoriesResponse.data);
+        const fetchedCategories = await fetchAdminCategories();
+        setCategories(fetchedCategories);
         if (
           !isEditing &&
-          categoriesResponse.data.length > 0 &&
+          fetchedCategories.length > 0 &&
           !formData.categoryId
         ) {
           setFormData((prev) => ({
             ...prev,
-            categoryId: categoriesResponse.data[0].id,
+            categoryId: fetchedCategories[0].id,
           }));
         }
 
-        const tagsResponse = await axios.get<TagDto[]>(`${apiUrl}/tags`);
-        setAllTenantTags(tagsResponse.data);
-      } catch {
+        const fetchedTags = await fetchAdminTags();
+        setAllTenantTags(fetchedTags);
+      } catch (fetchError) {
         setError("No se pudieron cargar las categorías o etiquetas.");
       } finally {
         setLoadingTenantTags(false);
       }
     };
     fetchInitialData();
-  }, [isEditing, formData.categoryId]);
+  }, [isEditing]);
 
   useEffect(() => {
     if (
@@ -121,10 +124,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setLoadingData(true);
       const fetchProduct = async () => {
         try {
-          const response = await axios.get<ProductDto>(
-            `${apiUrl}/products/${productId}`
-          );
-          const product = response.data;
+          const product = await fetchAdminProductById(productId);
+
           const existingUrls = product.images ?? [];
           setFormData({
             name: product.name,
@@ -146,7 +147,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           setCurrentTags(productTagObjects);
 
           setImagePreviews(existingUrls);
-        } catch {
+        } catch (fetchProductError) {
           setError("No se pudieron cargar los datos del producto.");
         } finally {
           setLoadingData(false);
@@ -298,6 +299,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       e.dataTransfer.clearData();
     }
   };
+
   const handleRemoveImage = (indexToRemove: number) => {
     const previewToRemove = imagePreviews[indexToRemove];
     if (!previewToRemove.startsWith("blob:")) {
@@ -323,26 +325,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setUploadError(null);
     }
   };
-  const uploadSingleFile = async (file: File): Promise<string | null> => {
-    if (!cloudName || !uploadPreset) {
-      setUploadError("Falta configuración para subir imágenes.");
-      return null;
-    }
-    const formDataCloudinary = new FormData();
-    formDataCloudinary.append("file", file);
-    formDataCloudinary.append("upload_preset", uploadPreset);
+
+  const uploadSingleFileToCloudinary = async (
+    file: File
+  ): Promise<string | null> => {
     try {
-      const response = await axios.post(
-        cloudinaryUploadUrl,
-        formDataCloudinary,
-        { headers: { "Content-Type": "multipart/form-data" } }
+      if (!cloudName || !uploadPreset) {
+        setUploadError("Falta configuración para subir imágenes.");
+        return null;
+      }
+      const imageUrl = await uploadImageToCloudinary(
+        file,
+        cloudName,
+        uploadPreset
       );
-      return response.data.secure_url;
+      return imageUrl;
     } catch (err) {
       const axiosError = err as AxiosError;
       const errorData = axiosError.response?.data as {
         error?: { message?: string };
       };
+
       setUploadError(
         (prev) =>
           prev ||
@@ -426,19 +429,23 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     let uploadedUrls: string[] = [];
     if (imageFiles.length > 0) {
       setIsUploading(true);
-      const uploadPromises = imageFiles.map((file) => uploadSingleFile(file));
+      const uploadPromises = imageFiles.map((file) =>
+        uploadSingleFileToCloudinary(file)
+      );
       const results = await Promise.all(uploadPromises);
       setIsUploading(false);
       uploadedUrls = results.filter((url): url is string => url !== null);
       if (uploadedUrls.length !== imageFiles.length) {
         setError(
-          "Algunas imágenes no se pudieron subir. Revisa los mensajes de error e intenta de nuevo."
+          uploadError ||
+            "Algunas imágenes no se pudieron subir. Intenta de nuevo."
         );
         setLoading(false);
         return;
       }
       setImageFiles([]);
     }
+
     const existingImageUrls = formData.images ?? [];
     const finalImageUrls = [...existingImageUrls, ...uploadedUrls];
 
@@ -456,11 +463,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
               .filter((name) => name)
           : null,
     };
+
     try {
       if (isEditing && productId) {
-        await axios.put(`${apiUrl}/products/${productId}`, productPayload);
+        await updateAdminProduct(productId, productPayload as UpdateProductDto);
       } else {
-        await axios.post(`${apiUrl}/products`, productPayload);
+        await createAdminProduct(productPayload as CreateProductDto);
       }
       onSuccess();
     } catch (err) {
@@ -490,6 +498,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       setLoading(false);
     }
   };
+
   const getClientFieldError = (
     fieldName: keyof ProductFormData | "tags"
   ): string | undefined => {
@@ -515,6 +524,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
 
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Información Básica</legend>
+
           <div className={styles.formRow}>
             <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
               <label htmlFor="name" className={styles.label}>
@@ -571,7 +581,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
                 </span>
               )}
             </div>
-
             <div className={`${styles.formGroup} ${styles.formGroupHalf}`}>
               <label htmlFor="categoryId" className={styles.label}>
                 Categoría
@@ -647,11 +656,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
                 multiple
                 id="tags-autocomplete"
                 value={currentTags}
-                componentsProps={{
-                  clearIndicator: {
-                    title: "Limpiar",
-                  },
-                }}
+                componentsProps={{ clearIndicator: { title: "Limpiar" } }}
                 onChange={handleTagsChange}
                 options={allTenantTags}
                 getOptionLabel={(option: string | TagDto) =>

@@ -1,16 +1,13 @@
 import React, { useState, ChangeEvent, FormEvent, FocusEvent } from "react";
-import axios, { AxiosError } from "axios";
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
-import {
-  LoginDto,
-  AuthResponseDto,
-  ApiErrorResponse,
-  AuthUser,
-} from "../../types";
+import { LoginDto, ApiErrorResponse, AuthUser } from "../../types";
 import { validateRequired, validateEmail } from "../../utils/validationUtils";
 import styles from "./LoginForm.module.css";
 import { LuEye, LuEyeOff } from "react-icons/lu";
+import { login as apiLoginUser } from "../../services/apiService";
+import { AxiosError } from "axios";
 
 interface LoginFormProps {
   subdomainContext?: string | null;
@@ -27,7 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const { login } = useAuth();
+  const { login: authContextLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -102,11 +99,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
       subdomainContext,
     };
     try {
-      const response = await axios.post<AuthResponseDto>(
-        "/api/accounts/login",
-        loginPayload
-      );
-      const data = response.data;
+      const data = await apiLoginUser(loginPayload);
       const user: AuthUser = {
         userId: data.userId,
         email: data.email,
@@ -116,7 +109,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
         administeredTenantSubdomain: data.administeredTenantSubdomain,
         phoneNumber: data.phoneNumber,
       };
-      login(user);
+      authContextLogin(user);
       setClientErrors({});
       const destination =
         (location.state as { from?: Location | string })?.from || null;

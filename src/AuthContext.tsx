@@ -6,8 +6,9 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import axios, { AxiosError } from "axios";
-import { AuthUser } from "./types";
+import { AuthUser, ApiErrorResponse } from "./types";
+import { getCurrentUser, logout as apiLogout } from "./services/apiService";
+import { AxiosError } from "axios";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -19,8 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const apiUrl = "/api";
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -31,28 +30,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = useCallback((userData: AuthUser) => {
     setUser(userData);
     setIsAuthenticated(true);
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     let isMounted = true;
-
     const checkUserSession = async () => {
+      setIsLoading(true);
       try {
-        const response = await axios.get<AuthUser>(`${apiUrl}/accounts/me`);
-
+        const userData = await getCurrentUser();
         if (isMounted) {
-          const userData = response.data;
           login(userData);
         }
       } catch (err) {
         if (isMounted) {
-          const axiosError = err as AxiosError;
+          const axiosError = err as AxiosError<ApiErrorResponse>;
           if (axiosError.response?.status !== 401) {
             console.error(
-              "API Error:",
+              "Error checking user session:",
               axiosError.response?.status,
-              axiosError.message
+              axiosError.response?.data?.detail || axiosError.message
             );
           }
           setUser(null);
@@ -71,23 +67,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       isMounted = false;
     };
   }, [login]);
-
-  const logout = useCallback(async () => {
+  const logoutContext = useCallback(async () => {
     setUser(null);
     setIsAuthenticated(false);
+    setIsLoading(false);
 
     try {
-      await axios.post(`${apiUrl}/accounts/logout`, {});
+      await apiLogout();
     } catch (error) {
-      console.error("Backend logout failed.", error);
+      console.error(
+        "Backend logout failed, but client session is cleared.",
+        error
+      );
     } finally {
-      window.location.href = "/";
+      if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
     }
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, isLoading, login, logout }}
+      value={{ isAuthenticated, user, isLoading, login, logout: logoutContext }}
     >
       {isLoading ? <div>Loading Session...</div> : children}
     </AuthContext.Provider>

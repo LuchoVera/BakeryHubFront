@@ -5,19 +5,18 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
-import axios, { AxiosError } from "axios";
 import { ProductDto, ApiErrorResponse } from "../../../types";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./ProductListPage.module.css";
 import ProductTable from "../../../components/ProductTable/ProductTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
+import { LuTriangleAlert, LuCircleCheck, LuCircleX } from "react-icons/lu";
 import {
-  LuTriangleAlert,
-  LuCircleCheck,
-  LuCircleX,
-} from "react-icons/lu";
-
-const apiUrl = "/api";
+  fetchAdminProducts,
+  updateAdminProductAvailability,
+  deleteAdminProduct,
+} from "../../../services/apiService";
+import { AxiosError } from "axios";
 
 interface ProductActionModalData {
   action: "delete" | "deactivate";
@@ -48,8 +47,7 @@ const ProductListPage: React.FC = () => {
   const fetchProducts = useCallback(async () => {
     setError(null);
     try {
-      const response = await axios.get<ProductDto[]>(`${apiUrl}/products`);
-      const fetchedProducts = response.data || [];
+      const fetchedProducts = await fetchAdminProducts();
       fetchedProducts.sort((a, b) =>
         a.name.localeCompare(b.name, "es", { sensitivity: "base" })
       );
@@ -66,6 +64,7 @@ const ProductListPage: React.FC = () => {
       } else {
         setError(
           axiosError.response?.data?.title ||
+            axiosError.response?.data?.detail ||
             axiosError.message ||
             "Fallo al cargar productos."
         );
@@ -108,24 +107,20 @@ const ProductListPage: React.FC = () => {
   ) => {
     setIsProcessingAction(true);
     try {
-      await axios.patch(
-        `${apiUrl}/products/${productId}/availability`,
-        newAvailability,
-        { headers: { "Content-Type": "application/json" } }
-      );
+      await updateAdminProductAvailability(productId, newAvailability);
       await fetchProducts();
-      if (newAvailability && productName) {
-        setSuccessModalTitle("Producto Activado");
-        setSuccessModalMessage(
-          `Producto "${productName}" activado y ahora visible para clientes.`
-        );
-        setIsSuccessModalOpen(true);
-      }
-      if (!newAvailability && productName) {
-        setSuccessModalTitle("Producto Desactivado");
-        setSuccessModalMessage(
-          `Producto "${productName}" desactivado y ya no será visible.`
-        );
+      if (productName) {
+        if (newAvailability) {
+          setSuccessModalTitle("Producto Activado");
+          setSuccessModalMessage(
+            `Producto "${productName}" activado y ahora visible para clientes.`
+          );
+        } else {
+          setSuccessModalTitle("Producto Desactivado");
+          setSuccessModalMessage(
+            `Producto "${productName}" desactivado y ya no será visible.`
+          );
+        }
         setIsSuccessModalOpen(true);
       }
     } catch (err) {
@@ -134,6 +129,7 @@ const ProductListPage: React.FC = () => {
       setErrorModalMessage(
         `Fallo al actualizar disponibilidad. ${
           axiosError.response?.data?.detail ||
+          axiosError.response?.data?.title ||
           axiosError.message ||
           "Error desconocido"
         }`
@@ -150,7 +146,7 @@ const ProductListPage: React.FC = () => {
   ) => {
     setIsProcessingAction(true);
     try {
-      await axios.delete(`${apiUrl}/products/${productId}`);
+      await deleteAdminProduct(productId);
       await fetchProducts();
       setSuccessModalTitle("Producto Eliminado");
       setSuccessModalMessage(
@@ -166,7 +162,9 @@ const ProductListPage: React.FC = () => {
         axiosError.response?.status === 409
       ) {
         userErrorMessage +=
-          " Es probable que esté asociado a pedidos registrados.";
+          " Es probable que esté asociado a pedidos registrados o alguna otra restricción.";
+      } else if (axiosError.response?.data?.detail) {
+        userErrorMessage = axiosError.response.data.detail;
       } else {
         userErrorMessage += " Ocurrió un error inesperado.";
       }
@@ -283,7 +281,6 @@ const ProductListPage: React.FC = () => {
       };
     }
   };
-
   const modalInfo = getModalInfo();
   const getToggleButtonLabel = (isAvailable: boolean): string => {
     return isAvailable ? "Desactivar" : "Activar";
@@ -319,19 +316,12 @@ const ProductListPage: React.FC = () => {
             actionButtonLabel={getToggleButtonLabel}
             onToggleAvailability={handleToggleAvailability}
             onEdit={handleEdit}
-            onDelete={handleDeleteProduct}
             isLoading={
               isProcessingAction &&
               productActionData?.action === "deactivate" &&
               productActionData?.product.isAvailable
             }
-            deletingProductId={
-              isProcessingAction &&
-              productActionData?.action === "delete" &&
-              productActionData?.product.isAvailable
-                ? productActionData.product.id
-                : null
-            }
+            deletingProductId={null}
             isUnavailableList={false}
           />
           <ProductTable
