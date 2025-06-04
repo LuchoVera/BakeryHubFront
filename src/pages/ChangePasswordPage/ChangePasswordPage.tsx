@@ -7,7 +7,6 @@ import React, {
   FocusEvent,
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 import { useAuth } from "../../AuthContext";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
@@ -32,6 +31,11 @@ import {
   validateComparison,
   validateMaxLength,
 } from "../../utils/validationUtils";
+import {
+  fetchPublicTenantInfo,
+  changePassword as apiChangePassword,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 interface ChangePasswordPageProps {
   subdomain: string;
@@ -57,7 +61,7 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
   const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
   const [errorTenant, setErrorTenant] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ChangePasswordDto>({
     currentPassword: "",
     newPassword: "",
     confirmNewPassword: "",
@@ -71,7 +75,6 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
     Record<string, string | string[]>
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] =
     useState<boolean>(false);
   const [feedbackModalData, setFeedbackModalData] =
@@ -85,31 +88,31 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
   }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
-    const fetchTenantInfo = async () => {
+    const fetchTenantData = async () => {
       setIsLoadingTenant(true);
       try {
-        const response = await axios.get<TenantPublicInfoDto>(
-          `/api/public/tenants/${subdomain}`
-        );
-        setTenantInfo(response.data);
+        const data = await fetchPublicTenantInfo(subdomain);
+        setTenantInfo(data);
         setErrorTenant(null);
       } catch (err) {
+        const axiosError = err as AxiosError<ApiErrorResponse>;
         setErrorTenant(
-          `No se pudo cargar la información de la tienda "${subdomain}".`
+          axiosError.response?.data?.detail ||
+            `No se pudo cargar la información de la tienda "${subdomain}".`
         );
         setTenantInfo(null);
       } finally {
         setIsLoadingTenant(false);
       }
     };
-    fetchTenantInfo();
+    fetchTenantData();
   }, [subdomain]);
 
   const validateField = (
     name: keyof typeof formData,
     value: string
   ): string | string[] => {
-    let errorMsg = "";
+    let errorMsg: string | string[] = "";
     switch (name) {
       case "currentPassword":
         errorMsg = validateRequired(value);
@@ -233,14 +236,10 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
 
     setIsSubmitting(true);
 
-    const payload: ChangePasswordDto = {
-      currentPassword: formData.currentPassword,
-      newPassword: formData.newPassword,
-      confirmNewPassword: formData.confirmNewPassword,
-    };
+    const payload: ChangePasswordDto = { ...formData };
 
     try {
-      await axios.post("/api/accounts/change-password", payload);
+      await apiChangePassword(payload);
       showAppFeedbackModal(
         "Contraseña Cambiada",
         "Tu contraseña ha sido actualizada exitosamente. Serás redirigido a la página de login para mayor seguridad.",
@@ -259,41 +258,51 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       let errorTitle = "Error al Cambiar Contraseña";
-      let errorMessage: ReactNode = "La contraseña actual es incorrecta.";
+      let errorMessage: ReactNode =
+        "Ocurrió un error al procesar tu solicitud.";
 
       if (axiosError.response) {
         const status = axiosError.response.status;
-        if (status !== 400) {
-          if (axiosError.response.data?.detail) {
-            errorMessage = axiosError.response.data.detail;
-          } else if (status === 401) {
-            errorTitle = "Error de Autenticación";
-            errorMessage = "No autorizado. Por favor, inicia sesión de nuevo.";
-            return showAppFeedbackModal(
-              errorTitle,
-              errorMessage,
-              "danger",
-              () => navigate("/login")
-            );
-          } else if (axiosError.message && !axiosError.response.data) {
-            errorTitle = "Error de Red";
-            errorMessage =
-              "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.";
-          } else {
-            errorMessage = "Ocurrió un error al procesar tu solicitud.";
-          }
-        }
-
+        const responseData = axiosError.response.data;
         if (status === 400) {
-          errorMessage = "La contraseña actual es incorrecta.";
+          if (responseData?.errors) {
+            const errorMessages = Object.values(responseData.errors).flat();
+            errorMessage = errorMessages.map((msg, idx) => (
+              <div key={idx}>{msg}</div>
+            ));
+          } else if (
+            responseData?.detail
+              ?.toLowerCase()
+              .includes("current password is incorrect")
+          ) {
+            errorMessage = "La contraseña actual es incorrecta.";
+          } else {
+            errorMessage =
+              responseData?.detail ||
+              responseData?.title ||
+              "La contraseña actual es incorrecta.";
+          }
+        } else if (status === 401) {
+          errorTitle = "Error de Autenticación";
+          errorMessage = "No autorizado. Por favor, inicia sesión de nuevo.";
+
+          return showAppFeedbackModal(errorTitle, errorMessage, "danger", () =>
+            navigate("/login")
+          );
+        } else if (axiosError.message && !responseData) {
+          errorTitle = "Error de Red";
+          errorMessage =
+            "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.";
+        } else {
+          errorMessage =
+            responseData?.detail ||
+            responseData?.title ||
+            "Ocurrió un error al procesar tu solicitud.";
         }
       } else if (axiosError.request) {
         errorTitle = "Error de Red";
         errorMessage =
           "No se recibió respuesta del servidor. Revisa tu conexión e intenta de nuevo.";
-      } else {
-        errorTitle = "Error Inesperado";
-        errorMessage = "Ocurrió un error al procesar tu solicitud.";
       }
 
       showAppFeedbackModal(errorTitle, errorMessage, "danger");

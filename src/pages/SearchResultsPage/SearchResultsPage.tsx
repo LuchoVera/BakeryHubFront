@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 import {
   ProductDto,
   TenantPublicInfoDto,
@@ -16,8 +15,13 @@ import { LuFilter, LuX } from "react-icons/lu";
 import Autocomplete from "@mui/material/Autocomplete";
 import Chip from "@mui/material/Chip";
 import TextField from "@mui/material/TextField";
-
-const apiUrl = "/api";
+import {
+  fetchPublicTenantInfo,
+  fetchPublicTenantTags,
+  fetchPublicTenantProducts,
+  searchPublicTenantProducts,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 interface AppliedFilters {
   categoryId: string | null;
@@ -31,20 +35,17 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
     null
   );
   const [searchResults, setSearchResults] = useState<ProductDto[]>([]);
-  const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
-  const [isLoadingSearch, setIsLoadingSearch] = useState<boolean>(true);
+  const [isLoadingPageData, setIsLoadingPageData] = useState<boolean>(true);
+  const [isLoadingSearch, setIsLoadingSearch] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const location = useLocation();
   const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
-
   const [tempFilterCategoryId, setTempFilterCategoryId] = useState<string>("");
   const [tempFilterMinPrice, setTempFilterMinPrice] = useState<string>("");
   const [tempFilterMaxPrice, setTempFilterMaxPrice] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<TagDto[]>([]);
   const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
-  const [loadingTenantTags, setLoadingTenantTags] = useState<boolean>(true);
 
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
     categoryId: null,
@@ -58,106 +59,80 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
   }, [location.search]);
 
   useEffect(() => {
-    setIsLoadingTenant(true);
+    setIsLoadingPageData(true);
     setError(null);
-    const fetchTenantInfo = async () => {
+
+    const fetchInitialData = async () => {
       try {
-        const response = await axios.get<TenantPublicInfoDto>(
-          `${apiUrl}/public/tenants/${subdomain}`
+        const tenantData = await fetchPublicTenantInfo(subdomain);
+        setTenantInfo(tenantData);
+
+        const [tagsData, productsForCategories] = await Promise.all([
+          fetchPublicTenantTags(subdomain),
+          fetchPublicTenantProducts(subdomain),
+        ]);
+        setAllTenantTags(tagsData || []);
+
+        const categoriesMap = new Map<string, string>();
+        (productsForCategories || []).forEach((p) => {
+          if (
+            p.categoryId &&
+            p.categoryName &&
+            !categoriesMap.has(p.categoryId)
+          ) {
+            categoriesMap.set(p.categoryId, p.categoryName);
+          }
+        });
+        const derivedCategories = Array.from(categoriesMap.entries()).map(
+          ([id, name]) => ({ id, name })
         );
-        setTenantInfo(response.data);
+        derivedCategories.sort((a, b) => a.name.localeCompare(b.name));
+        setAllCategories(derivedCategories);
       } catch (err) {
         const axiosError = err as AxiosError<ApiErrorResponse>;
         if (axiosError.response?.status === 404) {
           setError(`La tienda "${subdomain}" no fue encontrada.`);
         } else {
-          setError("Ocurrió un error cargando la información de la tienda.");
+          setError(
+            axiosError.response?.data?.detail ||
+              axiosError.message ||
+              "Ocurrió un error cargando datos iniciales."
+          );
         }
         setTenantInfo(null);
-      } finally {
-        setIsLoadingTenant(false);
-      }
-    };
-    fetchTenantInfo();
-  }, [subdomain]);
-
-  useEffect(() => {
-    const fetchTags = async () => {
-      if (!subdomain) return;
-      setLoadingTenantTags(true);
-      try {
-        const tagsResponse = await axios.get<TagDto[]>(
-          `${apiUrl}/public/tenants/${subdomain}/tags`
-        );
-        setAllTenantTags(tagsResponse.data || []);
-      } catch {
-        console.error("No se pudieron cargar las etiquetas.");
         setAllTenantTags([]);
+        setAllCategories([]);
       } finally {
-        setLoadingTenantTags(false);
+        setIsLoadingPageData(false);
       }
     };
-    fetchTags();
+    fetchInitialData();
   }, [subdomain]);
 
-  useEffect(() => {
-    if (tenantInfo && !error) {
-      setIsLoadingCategories(true);
-      const fetchCats = async () => {
-        try {
-          const response = await axios.get<ProductDto[]>(
-            `/api/public/tenants/${tenantInfo.subdomain}/products`
-          );
-          const fetchedProducts = response.data || [];
-          const categoriesMap = new Map<string, string>();
-          fetchedProducts.forEach((p) => {
-            if (
-              p.categoryId &&
-              p.categoryName &&
-              !categoriesMap.has(p.categoryId)
-            ) {
-              categoriesMap.set(p.categoryId, p.categoryName);
-            }
-          });
-          const derivedCategories = Array.from(categoriesMap.entries()).map(
-            ([id, name]) => ({ id, name })
-          );
-          derivedCategories.sort((a, b) => a.name.localeCompare(b.name));
-          setAllCategories(derivedCategories);
-        } catch (catErr) {
-          setAllCategories([]);
-        } finally {
-          setIsLoadingCategories(false);
-        }
-      };
-      fetchCats();
-    } else {
-      setIsLoadingCategories(false);
-      setAllCategories([]);
-    }
-  }, [tenantInfo, error]);
-
-  const fetchSearchResults = useCallback(async () => {
-    if ((!searchTerm && appliedFilters.tags.length === 0) || !tenantInfo) {
+  const performSearch = useCallback(async () => {
+    if (!tenantInfo) {
       setSearchResults([]);
       setIsLoadingSearch(false);
-      if (
-        !searchTerm &&
-        appliedFilters.tags.length === 0 &&
-        tenantInfo &&
-        !error
-      )
+      return;
+    }
+
+    if (!searchTerm && appliedFilters.tags.length === 0) {
+      setSearchResults([]);
+      setIsLoadingSearch(false);
+      if (tenantInfo && !error) {
         setError(
-          "Por favor, ingresa un término de búsqueda o selecciona tags para filtrar."
+          "Por favor, ingresa un término de búsqueda o selecciona etiquetas para filtrar."
         );
+      }
       return;
     }
 
     setIsLoadingSearch(true);
+    setError(null);
 
     try {
       const params = new URLSearchParams();
-      params.append("q", searchTerm);
+      if (searchTerm) params.append("q", searchTerm);
       if (appliedFilters.categoryId) {
         params.append("categoryId", appliedFilters.categoryId);
       }
@@ -169,19 +144,15 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
       }
       appliedFilters.tags.forEach((tag) => params.append("tags", tag));
 
-      const searchUrl = `${apiUrl}/public/tenants/${
-        tenantInfo.subdomain
-      }/search?${params.toString()}`;
-      const response = await axios.get<ProductDto[]>(searchUrl);
-      setSearchResults(response.data || []);
-      if (error && response.data) setError(null);
+      const results = await searchPublicTenantProducts(
+        tenantInfo.subdomain,
+        params
+      );
+      setSearchResults(results || []);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
 
-      if (
-        !error ||
-        (axiosError.response && axiosError.response.status !== 404)
-      ) {
+      if (axiosError.response?.status !== 404) {
         setError(
           axiosError.response?.data?.detail ||
             axiosError.message ||
@@ -195,10 +166,10 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
   }, [searchTerm, tenantInfo, appliedFilters, error]);
 
   useEffect(() => {
-    if (tenantInfo) {
-      fetchSearchResults();
+    if (tenantInfo && !isLoadingPageData) {
+      performSearch();
     }
-  }, [fetchSearchResults, tenantInfo]);
+  }, [performSearch, tenantInfo, isLoadingPageData]);
 
   const handleApplyFilters = () => {
     const min = parseFloat(tempFilterMinPrice);
@@ -266,19 +237,22 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
     );
   }, [appliedFilters]);
 
-  const isLoading = isLoadingTenant || isLoadingSearch || isLoadingCategories;
-
   return (
     <div className={styles.pageContainer}>
       {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
 
       <main className={styles.resultsContent}>
-        {isLoading && !error && <p className={styles.message}>Cargando...</p>}
+        {isLoadingPageData && !error && (
+          <p className={styles.message}>Cargando...</p>
+        )}
 
         {error && (
           <div className={styles.message}>
             <p className={styles.errorText}>{error}</p>
-            {(searchTerm || appliedFilters.tags.length > 0) && (
+
+            {(searchTerm ||
+              appliedFilters.tags.length > 0 ||
+              areAnyFiltersApplied) && (
               <Link to="/" className={styles.backLink}>
                 Volver al Catálogo
               </Link>
@@ -286,7 +260,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
           </div>
         )}
 
-        {!isLoading && !error && (
+        {!isLoadingPageData && !error && tenantInfo && (
           <>
             <div className={styles.titleAndFilter}>
               <h1 className={styles.resultsTitle}>
@@ -309,7 +283,10 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                   className={`${styles.filterToggleButton} ${
                     areAnyFiltersApplied ? styles.filterButtonActive : ""
                   }`}
-                  disabled={isLoadingCategories || loadingTenantTags}
+                  disabled={
+                    isLoadingPageData ||
+                    (allCategories.length === 0 && allTenantTags.length === 0)
+                  }
                 >
                   <LuFilter /> Filtros {isFilterPanelOpen ? <LuX /> : null}
                 </button>
@@ -329,7 +306,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                     id="filterCategory"
                     value={tempFilterCategoryId}
                     onChange={(e) => setTempFilterCategoryId(e.target.value)}
-                    disabled={isLoadingCategories}
+                    disabled={isLoadingPageData}
                     className={styles.filterSelect}
                   >
                     <option value="">Todas</option>
@@ -339,8 +316,10 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                       </option>
                     ))}
                   </select>
-                  {isLoadingCategories && (
-                    <small className={styles.loadingSmall}>Cargando...</small>
+                  {isLoadingPageData && allCategories.length === 0 && (
+                    <small className={styles.loadingSmall}>
+                      Cargando categorías...
+                    </small>
                   )}
                 </div>
                 <div className={styles.filterGroupItem}>
@@ -389,7 +368,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                   <Autocomplete
                     multiple
                     freeSolo
-                    loading={loadingTenantTags}
+                    loading={isLoadingPageData && allTenantTags.length === 0}
                     id="tags-filter-autocomplete"
                     value={selectedTags}
                     onChange={(_, newValue) => {
@@ -433,9 +412,7 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                             "& .MuiChip-deleteIcon": {
                               color: "var(--color-primary-dark)",
                               fontSize: "0.9rem",
-                              "&:hover": {
-                                color: "var(--color-error)",
-                              },
+                              "&:hover": { color: "var(--color-error)" },
                             },
                           }}
                         />
@@ -450,7 +427,9 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                             ? "Añadir más etiquetas..."
                             : "Añadir etiquetas..."
                         }
-                        disabled={loadingTenantTags}
+                        disabled={
+                          isLoadingPageData && allTenantTags.length === 0
+                        }
                         sx={{
                           width: "300px",
                           fontSize: "0.8em",
@@ -544,15 +523,18 @@ const SearchResultsPage: React.FC<SearchResultsPageProps> = ({ subdomain }) => {
                 </div>
               )}
 
-            {!isLoading && (searchTerm || appliedFilters.tags.length > 0) && (
-              <div className={styles.backButtonContainer}>
-                <Link to="/" className={styles.backLink}>
-                  <button className={styles.backButton}>
-                    &larr; Volver al Catálogo Principal
-                  </button>
-                </Link>
-              </div>
-            )}
+            {!isLoadingPageData &&
+              (searchTerm ||
+                appliedFilters.tags.length > 0 ||
+                areAnyFiltersApplied) && (
+                <div className={styles.backButtonContainer}>
+                  <Link to="/" className={styles.backLink}>
+                    <button className={styles.backButton}>
+                      &larr; Volver al Catálogo Principal
+                    </button>
+                  </Link>
+                </div>
+              )}
           </>
         )}
       </main>

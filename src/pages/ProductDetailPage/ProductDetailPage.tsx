@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 import { ProductDto, TenantPublicInfoDto, ApiErrorResponse } from "../../types";
 import styles from "./ProductDetailPage.module.css";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
@@ -8,12 +7,15 @@ import { useAuth } from "../../AuthContext";
 import { useCart } from "../../hooks/useCart";
 import { useNotification } from "../../hooks/useNotification";
 import { LuTag } from "react-icons/lu";
+import {
+  fetchPublicTenantInfo,
+  fetchPublicProductDetail,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 interface ProductDetailPageProps {
   subdomain: string;
 }
-
-const apiUrl = "/api";
 
 const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
   const { productId } = useParams<{ productId: string }>();
@@ -21,8 +23,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
   );
-  const [loadingProduct, setLoadingProduct] = useState<boolean>(true);
-  const [loadingTenant, setLoadingTenant] = useState<boolean>(true);
+  const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -31,81 +32,59 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
   const { showNotification } = useNotification();
 
   useEffect(() => {
-    if (!subdomain) {
-      setError("No se puede cargar información: falta subdominio.");
-      setLoadingTenant(false);
-      return;
-    }
-    setLoadingTenant(true);
-    setError(null);
-    setTenantInfo(null);
-    const fetchTenantInfo = async () => {
-      const requestUrl = `${apiUrl}/public/tenants/${subdomain}`;
-      try {
-        const response = await axios.get<TenantPublicInfoDto>(requestUrl);
-        setTenantInfo(response.data);
-      } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        if (axiosError.response?.status === 404) {
-          setError(`La tienda "${subdomain}" no fue encontrada.`);
-        } else {
-          setError("Ocurrió un error cargando la información de la tienda.");
-        }
-        setTenantInfo(null);
-      } finally {
-        setLoadingTenant(false);
-      }
-    };
-    fetchTenantInfo();
-  }, [subdomain]);
-
-  useEffect(() => {
-    if (!productId || !subdomain) {
-      setError("Falta ID de Producto o Subdominio en la solicitud.");
-      setLoadingProduct(false);
-      return;
-    }
-    if (error && !product) {
-      setLoadingProduct(false);
+    if (!subdomain || !productId) {
+      setError(
+        "Falta información para cargar la página (subdominio o ID de producto)."
+      );
+      setIsLoadingPage(false);
       return;
     }
 
-    setLoadingProduct(true);
+    setIsLoadingPage(true);
     setError(null);
     setProduct(null);
-    const fetchProductDetails = async () => {
-      const requestUrl = `${apiUrl}/Products/${subdomain}/products/${productId}`;
+    setTenantInfo(null);
+
+    const fetchPageData = async () => {
       try {
-        const response = await axios.get<ProductDto>(requestUrl);
-        setProduct(response.data);
-        if (response.data.images && response.data.images.length > 0) {
-          setSelectedImage(response.data.images[0]);
+        const [tenantData, productData] = await Promise.all([
+          fetchPublicTenantInfo(subdomain),
+          fetchPublicProductDetail(subdomain, productId),
+        ]);
+
+        setTenantInfo(tenantData);
+        setProduct(productData);
+
+        if (productData.images && productData.images.length > 0) {
+          setSelectedImage(productData.images[0]);
         } else {
           setSelectedImage(null);
         }
       } catch (err) {
         const axiosError = err as AxiosError<ApiErrorResponse>;
         if (axiosError.response?.status === 404) {
-          setError("Producto no encontrado o no disponible.");
+          setError(
+            axiosError.response.data?.detail ||
+              "Producto o tienda no encontrada."
+          );
         } else {
           setError(
-            (prev) =>
-              prev || "Ocurrió un error cargando los detalles del producto."
+            axiosError.response?.data?.detail ||
+              axiosError.message ||
+              "Ocurrió un error cargando la página del producto."
           );
         }
         setProduct(null);
       } finally {
-        setLoadingProduct(false);
+        setIsLoadingPage(false);
       }
     };
-    if (tenantInfo || !error) {
-      fetchProductDetails();
-    } else {
-      setLoadingProduct(false);
-    }
-  }, [productId, subdomain, tenantInfo, error]);
+
+    fetchPageData();
+  }, [productId, subdomain]);
 
   const isAdmin = user?.roles?.includes("Admin") ?? false;
+
   const isButtonDisabled = !product || !product.isAvailable || isAdmin;
 
   const handleAddToCart = () => {
@@ -130,12 +109,11 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
     setSelectedImage(imageUrl);
   };
 
-  const isLoading = loadingProduct || loadingTenant;
-
-  if (isLoading) {
+  if (isLoadingPage) {
     return <div className={styles.message}>Cargando...</div>;
   }
-  if (error && !product) {
+
+  if (error && (!tenantInfo || !product)) {
     return (
       <div className={styles.pageContainerWithError}>
         {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
@@ -148,7 +126,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
       </div>
     );
   }
-  if (!product && !isLoading) {
+
+  if (!product && !isLoadingPage) {
     return (
       <div className={styles.pageContainerWithError}>
         {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
@@ -170,7 +149,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
       : null;
   return (
     <div>
-      <TenantHeader tenantName={tenantInfo?.name ?? ""} />
+      <TenantHeader tenantName={tenantInfo?.name ?? subdomain} />{" "}
       <div className={styles.pageContainer}>
         <div className={styles.productDetailLayout}>
           <div className={styles.imageSection}>

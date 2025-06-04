@@ -6,7 +6,7 @@ import React, {
   useEffect,
   FocusEvent,
 } from "react";
-import axios, { AxiosError } from "axios";
+
 import { Link, useNavigate } from "react-router-dom";
 import {
   CustomerRegisterDto,
@@ -25,6 +25,12 @@ import {
 } from "../../utils/validationUtils";
 import styles from "./TenantCustomerSignUpForm.module.css";
 import { LuEye, LuEyeOff } from "react-icons/lu";
+import {
+  checkEmail as apiCheckEmail,
+  registerTenantCustomer,
+  linkTenantCustomer,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 interface TenantCustomerSignUpFormProps {
   subdomain: string;
@@ -48,9 +54,6 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     phoneNumber: "",
   });
   const [loading, setLoading] = useState<boolean>(false);
-  const [checkingEmail, setCheckingEmail] = useState<boolean>(false);
-  const [linkingAccount, setLinkingAccount] = useState<boolean>(false);
-  const [registering, setRegistering] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -126,7 +129,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     }
   };
 
-  const checkEmailExists = useCallback(async () => {
+  const performEmailCheck = useCallback(async () => {
     let emailValidationError = validateRequired(email) || validateEmail(email);
     if (emailValidationError) {
       if (emailValidationError.includes("required"))
@@ -141,31 +144,26 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     setClientErrors((prev) => ({ ...prev, email: "" }));
     setError(null);
     setSuccessMessage(null);
-    setCheckingEmail(true);
+    setLoading(true);
     setEmailCheckState("checking");
 
     try {
-      const response = await axios.get<EmailCheckResultDto>(
-        `/api/accounts/check-email?email=${encodeURIComponent(email)}`
-      );
-      setEmailCheckResult(response.data);
-      if (response.data.exists && response.data.isAdmin) {
-        setError(
-          "Este email pertenece a un administrador y no puede ser registrado como cliente."
-        );
-      } else if (response.data.exists && !response.data.isCustomer) {
+      const result = await apiCheckEmail(email);
+      setEmailCheckResult(result);
+      if (result.exists && result.isAdmin) {
+        setError("No se pudo registrar como cliente.");
+      } else if (result.exists && !result.isCustomer) {
         setError(
           "Ya existe una cuenta con este email, pero no está marcada como cliente."
         );
       }
     } catch (err) {
-      console.error("Error checking email:", err);
       setError(
         "No se pudo verificar la dirección de email. Por favor, inténtalo de nuevo."
       );
       setEmailCheckResult(null);
     } finally {
-      setCheckingEmail(false);
+      setLoading(false);
       setEmailCheckState("checked");
     }
   }, [email]);
@@ -174,7 +172,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     if (isFormDisabled || emailCheckState !== "idle" || !email) {
       return;
     }
-    checkEmailExists();
+    performEmailCheck();
   };
 
   const handleDetailInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -265,7 +263,6 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       return;
     }
 
-    setRegistering(true);
     setLoading(true);
     const registrationData: CustomerRegisterDto = {
       email,
@@ -276,14 +273,12 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     };
 
     try {
-      const apiUrl = `/api/public/tenants/${subdomain}/register-customer`;
-      const response = await axios.post<{
-        message: string;
-        status: string;
-        userId?: string;
-      }>(apiUrl, registrationData);
-      const status = response.data?.status;
-      const message = response.data?.message || "Operación exitosa.";
+      const response = await registerTenantCustomer(
+        subdomain,
+        registrationData
+      );
+      const status = response?.status;
+      const message = response?.message || "Operación exitosa.";
 
       if (status === "UserCreated" || status === "MembershipCreated") {
         setSuccessMessage(message + " Redirigiendo al login...");
@@ -297,9 +292,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
         setEmailCheckState("idle");
         setEmailCheckResult(null);
         setClientErrors({});
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
+        navigate("/login");
       } else {
         setError(message || "Registro completado con un estado inesperado.");
       }
@@ -318,7 +311,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           errorMessage =
             responseData?.errors?.["AlreadyMember"]?.[0] ||
             "Ya estás registrado en esta tienda.";
-          if (!emailCheckResult?.exists) checkEmailExists();
+          if (!emailCheckResult?.exists) performEmailCheck();
         } else if (
           conflictTitle.includes("AdminConflict") ||
           conflictTitle.includes("Forbidden")
@@ -359,7 +352,6 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       }
       setError(errorMessage);
     } finally {
-      setRegistering(false);
       setLoading(false);
     }
   };
@@ -370,25 +362,19 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       !emailCheckResult?.exists ||
       !emailCheckResult.isCustomer ||
       emailCheckResult.isAdmin ||
-      linkingAccount ||
       loading
     ) {
       return;
     }
-    setLinkingAccount(true);
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
     const linkData: Pick<LinkCustomerDto, "email"> = { email };
     try {
-      const apiUrl = `/api/public/tenants/${subdomain}/link-customer`;
-      const response = await axios.post<{
-        message: string;
-        status: string;
-        userId?: string;
-      }>(apiUrl, linkData);
-      const status = response.data?.status;
-      const message = response.data?.message || "Operación exitosa.";
+      const response = await linkTenantCustomer(subdomain, linkData);
+
+      const status = response?.status;
+      const message = response?.message || "Operación exitosa.";
 
       if (status === "Linked" || status === "AlreadyMember") {
         setSuccessMessage(message + " Redirigiendo al login...");
@@ -402,9 +388,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
         setEmailCheckState("idle");
         setEmailCheckResult(null);
         setClientErrors({});
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
+        navigate("/login");
       } else {
         setError(
           message ||
@@ -416,7 +400,6 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
       const response = axiosError.response;
       const responseData = response?.data;
       const statusCode = response?.status;
-      console.error("Linking error:", responseData || axiosError.message);
 
       let errorMessage = "Ocurrió un error desconocido durante la vinculación.";
 
@@ -437,7 +420,6 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           typeof responseData === "object" && responseData !== null
             ? responseData.message
             : undefined;
-
         const responseText =
           typeof responseData === "string" ? responseData : "";
 
@@ -465,14 +447,14 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
             "Los administradores no pueden vincularse como clientes.";
         } else if (statusCode === 400) {
           errorMessage =
-            errors?.["UserNotCustomer"]?.[0] ??
-            errors?.["LinkingFailed"]?.[0] ??
-            (typeof title === "string" ? title : undefined) ??
-            (typeof detail === "string" ? detail : undefined) ??
+            errors?.["UserNotCustomer"]?.[0] ||
+            errors?.["LinkingFailed"]?.[0] ||
+            (typeof title === "string" ? title : undefined) ||
+            (typeof detail === "string" ? detail : undefined) ||
             "No se pudo completar la vinculación (Error 400).";
         } else if (statusCode === 404) {
           errorMessage =
-            (typeof message === "string" ? message : undefined) ??
+            (typeof message === "string" ? message : undefined) ||
             "Email o tienda no encontrada.";
         } else if (typeof detail === "string") {
           errorMessage = detail;
@@ -493,7 +475,6 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
 
       setError(errorMessage);
     } finally {
-      setLinkingAccount(false);
       setLoading(false);
     }
   };
@@ -507,8 +488,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
     emailCheckResult?.exists &&
     emailCheckResult.isCustomer &&
     !emailCheckResult.isAdmin;
-  const isEmailInputDisabled =
-    checkingEmail || linkingAccount || registering || !!successMessage;
+  const isEmailInputDisabled = loading || !!successMessage;
   const isFormDisabled = loading || !!successMessage;
 
   const getClientError = (
@@ -538,7 +518,7 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           }
           aria-describedby={getClientError("email") ? "email-error" : undefined}
         />
-        {checkingEmail && (
+        {emailCheckState === "checking" && (
           <span className={styles.info}>Verificando correo...</span>
         )}
         {getClientError("email") && (
@@ -557,10 +537,10 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           <button
             type="button"
             onClick={handleLinkAccount}
-            disabled={linkingAccount || isFormDisabled}
+            disabled={loading || isFormDisabled}
             className={styles.submitButton}
           >
-            {linkingAccount ? "Vinculando..." : `Vincular Cuenta`}
+            {loading ? "Vinculando..." : `Vincular Cuenta`}
           </button>
           <p className={styles.orSeparator}>O</p>
           <button
@@ -695,9 +675,9 @@ const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
           <button
             type="submit"
             className={styles.submitButton}
-            disabled={registering || isFormDisabled}
+            disabled={loading || isFormDisabled}
           >
-            {registering ? "Registrando..." : "Completar Registro"}
+            {loading ? "Registrando..." : "Completar Registro"}
           </button>
         </>
       )}

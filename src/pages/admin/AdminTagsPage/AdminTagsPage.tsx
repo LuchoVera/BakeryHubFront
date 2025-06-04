@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, ReactNode } from "react";
-import axios, { AxiosError } from "axios";
 import {
   TagDto,
   CreateTagDto,
@@ -15,8 +14,13 @@ import {
   validateMinLength,
   validateMaxLength,
 } from "../../../utils/validationUtils";
-
-const apiUrl = "/api";
+import {
+  createAdminTag,
+  fetchAdminTags,
+  updateAdminTag,
+  deleteAdminTag,
+} from "../../../services/apiService";
+import { AxiosError } from "axios";
 
 interface TagDeleteModalData {
   id: string;
@@ -54,9 +58,7 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
     }
     setLoading(true);
     try {
-      await axios.post<TagDto>(`${apiUrl}/tags`, {
-        name: trimmedName,
-      } as CreateTagDto);
+      await createAdminTag({ name: trimmedName } as CreateTagDto);
       setName("");
       onTagAdded();
     } catch (err) {
@@ -106,6 +108,7 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
       setLoading(false);
     }
   };
+
   return (
     <form onSubmit={handleSubmit} className={styles.addForm}>
       <div className={styles.formGroup}>
@@ -161,8 +164,8 @@ const AdminTagsPage: React.FC = () => {
   const fetchTags = useCallback(async () => {
     setError(null);
     try {
-      const response = await axios.get<TagDto[]>(`${apiUrl}/tags`);
-      setTags(response.data);
+      const data = await fetchAdminTags();
+      setTags(data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       if (axiosError.response?.status === 401) {
@@ -170,6 +173,7 @@ const AdminTagsPage: React.FC = () => {
       } else {
         setError(
           axiosError.response?.data?.title ||
+            axiosError.response?.data?.detail ||
             axiosError.message ||
             "Fallo al cargar las etiquetas."
         );
@@ -221,7 +225,7 @@ const AdminTagsPage: React.FC = () => {
     setEditError(null);
     try {
       const updateData: UpdateTagDto = { name: editingName.trim() };
-      await axios.put(`${apiUrl}/tags/${tagId}`, updateData);
+      await updateAdminTag(tagId, updateData);
       setEditingTagId(null);
       setEditingName("");
       await fetchTags();
@@ -253,13 +257,25 @@ const AdminTagsPage: React.FC = () => {
       setIsErrorModalOpen(false);
     }
   };
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setTagToDelete(null);
+  };
+  const handleErrorModalClose = () => {
+    setIsErrorModalOpen(false);
+    setErrorModalMessage(null);
+  };
+  const handleSuccessModalClose = () => {
+    setIsSuccessModalOpen(false);
+    setSuccessModalMessage(null);
+  };
 
   const handleConfirmDelete = async () => {
     if (!tagToDelete) return;
     setDeletingId(tagToDelete.id);
     setIsDeleteModalOpen(false);
     try {
-      await axios.delete(`${apiUrl}/tags/${tagToDelete.id}`);
+      await deleteAdminTag(tagToDelete.id);
       setSuccessModalMessage(
         `Etiqueta "${tagToDelete.name}" eliminada correctamente.`
       );
@@ -274,7 +290,7 @@ const AdminTagsPage: React.FC = () => {
         userErrorMessage =
           response.data?.detail ||
           response.data?.title ||
-          "La etiqueta está en uso y no puede ser eliminado.";
+          "La etiqueta está en uso y no puede ser eliminada.";
       } else {
         userErrorMessage =
           "Ocurrió un error inesperado al eliminar la etiqueta.";
@@ -284,19 +300,6 @@ const AdminTagsPage: React.FC = () => {
     } finally {
       setDeletingId(null);
     }
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false);
-    setTagToDelete(null);
-  };
-  const handleErrorModalClose = () => {
-    setIsErrorModalOpen(false);
-    setErrorModalMessage(null);
-  };
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    setSuccessModalMessage(null);
   };
 
   const deleteModalMessage: ReactNode = tagToDelete ? (

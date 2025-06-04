@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import styles from "./UserProfilePage.module.css";
@@ -17,11 +17,14 @@ import { PiReceiptLight, PiUserCircle } from "react-icons/pi";
 import {
   TenantPublicInfoDto,
   UpdateUserProfileDto,
-  AuthUser,
   ApiErrorResponse,
 } from "../../types";
-import axios, { AxiosError } from "axios";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
+import {
+  fetchPublicTenantInfo,
+  updateUserProfile as apiUpdateUserProfile,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 interface UserProfilePageProps {
   subdomain: string;
@@ -55,21 +58,19 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     login: updateUserAuthContext,
   } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
   );
-  const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
+  const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
   const [errorTenant, setErrorTenant] = useState<string | null>(null);
-
   const [editingField, setEditingField] = useState<EditableField>(null);
   const [tempValue, setTempValue] = useState<string>("");
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
-
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] =
     useState<boolean>(false);
   const [feedbackModalData, setFeedbackModalData] =
     useState<FeedbackModalData | null>(null);
-
   useEffect(() => {
     if (editingField === "name" && user) {
       setTempValue(user.name);
@@ -84,30 +85,34 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
-      navigate(`/login?redirect=/user-profile`);
+      navigate(`/login?redirect=${location.pathname}`);
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, location.pathname]);
 
   useEffect(() => {
-    const fetchTenantInfo = async () => {
-      setIsLoadingTenant(true);
+    const fetchTenantData = async () => {
+      setIsLoadingPage(true);
       try {
-        const response = await axios.get<TenantPublicInfoDto>(
-          `/api/public/tenants/${subdomain}`
-        );
-        setTenantInfo(response.data);
+        const data = await fetchPublicTenantInfo(subdomain);
+        setTenantInfo(data);
         setErrorTenant(null);
       } catch (err) {
+        const axiosError = err as AxiosError<ApiErrorResponse>;
         setErrorTenant(
-          `No se pudo cargar la información de la tienda "${subdomain}".`
+          axiosError.response?.data?.detail ||
+            `No se pudo cargar la información de la tienda "${subdomain}".`
         );
         setTenantInfo(null);
       } finally {
-        setIsLoadingTenant(false);
+        setIsLoadingPage(false);
       }
     };
-    fetchTenantInfo();
-  }, [subdomain]);
+    if (isAuthenticated) {
+      fetchTenantData();
+    } else if (!authLoading) {
+      setIsLoadingPage(false);
+    }
+  }, [subdomain, isAuthenticated, authLoading]);
 
   const handleLogout = async () => {
     await logout();
@@ -115,14 +120,6 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
 
   const handleEditClick = (field: EditableField) => {
     setEditingField(field);
-    if (field === "name" && user) {
-      setTempValue(user.name);
-    } else if (field === "phone" && user) {
-      const currentPhone = (user as any).phoneNumber;
-      setTempValue(
-        currentPhone && currentPhone !== "No disponible" ? currentPhone : ""
-      );
-    }
   };
 
   const handleCancelEdit = () => {
@@ -141,7 +138,6 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
       case "success":
         iconComponent = <LuCircleCheck />;
         break;
-      case "danger":
       default:
         iconComponent = <LuTriangleAlert />;
         break;
@@ -172,11 +168,12 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
       }
     } else if (editingField === "phone") {
       fieldDisplay = "Teléfono";
-      if (payloadValue === "") {
-        validationErrorMsg = "El número de teléfono es requerido.";
-      } else if (!/^\d{8}$/.test(payloadValue)) {
+      if (payloadValue !== "" && !/^\d{8}$/.test(payloadValue)) {
         validationErrorMsg =
           "El número de teléfono debe contener exactamente 8 dígitos.";
+      }
+      if (payloadValue === "") {
+        validationErrorMsg = "El teléfono no puede estar vacío.";
       }
     }
 
@@ -195,25 +192,14 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     const profileDataForBackend: UpdateUserProfileDto = {
       name: editingField === "name" ? payloadValue : user.name,
       phoneNumber:
-        editingField === "phone" ? payloadValue : currentPhoneNumberInContext,
+        editingField === "phone"
+          ? payloadValue || null
+          : currentPhoneNumberInContext || null,
     };
 
-    if (editingField !== "phone" && profileDataForBackend.phoneNumber === "") {
-      showAppFeedbackModal(
-        "Error de Validación",
-        "El número de teléfono es requerido y no puede estar vacío.",
-        "danger"
-      );
-      setIsSavingProfile(false);
-      return;
-    }
-
     try {
-      const response = await axios.put<AuthUser>(
-        "/api/accounts/me/update-profile",
-        profileDataForBackend
-      );
-      updateUserAuthContext(response.data);
+      const updatedUser = await apiUpdateUserProfile(profileDataForBackend);
+      updateUserAuthContext(updatedUser);
 
       showAppFeedbackModal(
         "Actualización Exitosa",
@@ -244,7 +230,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     }
   };
 
-  if (authLoading || isLoadingTenant) {
+  if (authLoading || isLoadingPage) {
     return <div className={styles.loadingMessage}>Cargando perfil...</div>;
   }
 

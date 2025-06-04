@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { OrderDto, TenantPublicInfoDto, ApiErrorResponse } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
@@ -12,8 +11,11 @@ import {
   LuHash,
   LuCircleAlert,
 } from "react-icons/lu";
-
-const apiUrl = "/api";
+import {
+  fetchPublicTenantInfo,
+  fetchTenantOrderById,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return "N/A";
@@ -72,7 +74,7 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
   const { orderId } = useParams<{ orderId: string }>();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
     null
@@ -86,8 +88,7 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
       navigate("/login", { state: { from: location.pathname } });
     }
   }, [isAuthenticated, authLoading, navigate, location.pathname]);
-
-  const fetchOrderDetails = useCallback(async () => {
+  const fetchPageData = useCallback(async () => {
     if (!isAuthenticated || !orderId || authLoading) {
       setIsLoading(false);
       return;
@@ -97,23 +98,17 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
 
     try {
       if (!tenantInfo) {
-        const tenantResponse = await axios.get<TenantPublicInfoDto>(
-          `${apiUrl}/public/tenants/${subdomain}`
-        );
-        setTenantInfo(tenantResponse.data);
+        const fetchedTenantInfo = await fetchPublicTenantInfo(subdomain);
+        setTenantInfo(fetchedTenantInfo);
       }
-
-      const orderResponse = await axios.get<OrderDto>(
-        `${apiUrl}/public/tenants/${subdomain}/orders/${orderId}`,
-        { withCredentials: true }
-      );
-      setOrder(orderResponse.data);
+      const orderData = await fetchTenantOrderById(subdomain, orderId);
+      setOrder(orderData);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       if (axiosError.response?.status === 401) {
         navigate("/login", { state: { from: location.pathname } });
       } else if (axiosError.response?.status === 404) {
-        setError(`Pedido no encontrado.`);
+        setError(`Pedido no encontrado o la tienda '${subdomain}' no existe.`);
       } else {
         setError(
           axiosError.response?.data?.detail ||
@@ -125,11 +120,19 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [subdomain, orderId, isAuthenticated, authLoading, navigate, tenantInfo]);
+  }, [
+    subdomain,
+    orderId,
+    isAuthenticated,
+    authLoading,
+    navigate,
+    location.pathname,
+    tenantInfo,
+  ]);
 
   useEffect(() => {
-    fetchOrderDetails();
-  }, [fetchOrderDetails]);
+    fetchPageData();
+  }, [fetchPageData]);
 
   if (authLoading || isLoading) {
     return (
@@ -143,7 +146,11 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
     <div className={styles.pageContainer}>
       {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
       {!tenantInfo && error && !isLoading && (
-        <div className={styles.errorLoadingHeader}>{error}</div>
+        <div className={styles.errorLoadingHeader}>
+          {error.includes("tienda")
+            ? error
+            : "Error al cargar información de la tienda."}
+        </div>
       )}
 
       <main className={styles.detailContent}>
@@ -153,7 +160,7 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
           </Link>
         </div>
 
-        {error && (
+        {error && !order && (
           <div className={`${styles.messageCenter} ${styles.error}`}>
             <LuCircleAlert size={48} />
             <p>{error}</p>

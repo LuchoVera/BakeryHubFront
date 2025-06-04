@@ -5,7 +5,7 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
-import axios, { AxiosError } from "axios";
+
 import styles from "./AdminOrdersPage.module.css";
 import {
   OrderDto,
@@ -21,8 +21,11 @@ import {
   getWhatsAppLink,
 } from "../../../utils/whatsappUtils";
 import { useAuth } from "../../../AuthContext";
-
-const apiUrl = "/api";
+import {
+  fetchAdminOrders,
+  updateAdminOrderStatus,
+} from "../../../services/apiService";
+import { AxiosError } from "axios";
 
 const STATUS_ORDER: OrderStatus[] = [
   "Pending",
@@ -58,12 +61,13 @@ const AdminOrdersPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get<OrderDto[]>(`${apiUrl}/admin/orders/my`);
-      setAllOrders(response.data || []);
+      const data = await fetchAdminOrders();
+      setAllOrders(data || []);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       setError(
         axiosError.response?.data?.title ||
+          axiosError.response?.data?.detail ||
           axiosError.message ||
           "Error al cargar los pedidos."
       );
@@ -84,18 +88,27 @@ const AdminOrdersPage: React.FC = () => {
       if (!groups[statusKey]) groups[statusKey] = [];
       groups[statusKey].push(order);
     });
+    for (const key in groups) {
+      groups[key].sort(
+        (a, b) =>
+          new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+      );
+    }
     return groups;
   }, [allOrders]);
 
   const executeUpdateStatus = async (orderId: string, newStatus: string) => {
     setIsUpdatingStatus(true);
     try {
-      await axios.put(`${apiUrl}/admin/orders/${orderId}/status`, {
-        NewStatus: newStatus,
-      });
+      await updateAdminOrderStatus(orderId, newStatus);
       await fetchOrders();
     } catch (updateError) {
-      alert(`Error al actualizar estado del pedido ${orderId}`);
+      const axiosErr = updateError as AxiosError<ApiErrorResponse>;
+      alert(
+        `Error al actualizar estado del pedido ${orderId}: ${
+          axiosErr.response?.data?.detail || axiosErr.message
+        }`
+      );
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -135,10 +148,6 @@ const AdminOrdersPage: React.FC = () => {
     setIsConfirmModalOpen(false);
     setConfirmModalData(null);
   };
-
-  const statusesToRender = useMemo(() => {
-    return groupedOrders[activeFilter]?.length > 0 ? [activeFilter] : [];
-  }, [activeFilter, groupedOrders]);
 
   const getModalMessage = (): ReactNode => {
     if (!confirmModalData) return "";
@@ -190,6 +199,10 @@ const AdminOrdersPage: React.FC = () => {
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   };
 
+  const statusesToRender = useMemo(() => {
+    return groupedOrders[activeFilter]?.length > 0 ? [activeFilter] : [];
+  }, [activeFilter, groupedOrders]);
+
   return (
     <div className={styles.pageContainer}>
       <h2>Gestión de Pedidos</h2>
@@ -227,9 +240,6 @@ const AdminOrdersPage: React.FC = () => {
           )}
           {statusesToRender.map((statusKey) => (
             <section key={statusKey} className={styles.orderGroup}>
-              <h3 className={styles.groupTitle}>
-                {STATUS_LABELS[statusKey] ?? statusKey}
-              </h3>
               <OrdersTable
                 orders={groupedOrders[statusKey] || []}
                 onStatusChange={requestStatusChange}

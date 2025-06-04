@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import styles from "./CartPage.module.css";
@@ -24,15 +23,21 @@ import {
   CartItem,
   CreateOrderDto,
   OrderItemDto,
-  OrderDto,
 } from "../../types";
-
-const apiUrl = "/api";
+import {
+  fetchPublicTenantInfo,
+  createTenantOrder,
+} from "../../services/apiService";
+import { AxiosError } from "axios";
 
 const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
   let maxLeadTime = 0;
   cartItems.forEach((item) => {
-    const leadTime = parseInt(item.product.leadTimeDisplay, 10);
+    const leadTimeValue =
+      typeof item.product.leadTimeDisplay === "string"
+        ? item.product.leadTimeDisplay
+        : "0";
+    const leadTime = parseInt(leadTimeValue, 10);
     if (!isNaN(leadTime) && leadTime > maxLeadTime) {
       maxLeadTime = leadTime;
     }
@@ -46,6 +51,10 @@ const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
   const day = String(minDate.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
+
+interface CartPageProps {
+  subdomain: string;
+}
 
 const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   const {
@@ -74,7 +83,6 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   const [isConfirmOrderModalOpen, setIsConfirmOrderModalOpen] =
     useState<boolean>(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
-
   const [confirmingRemoveProductId, setConfirmingRemoveProductId] = useState<
     string | null
   >(null);
@@ -82,40 +90,55 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   useEffect(() => {
     setIsLoadingTenant(true);
     setError(null);
-    const fetchTenantInfo = async () => {
+    const fetchTenantData = async () => {
       try {
-        const response = await axios.get<TenantPublicInfoDto>(
-          `${apiUrl}/public/tenants/${subdomain}`
-        );
-        setTenantInfo(response.data);
+        const data = await fetchPublicTenantInfo(subdomain);
+        setTenantInfo(data);
       } catch (err) {
         const axiosError = err as AxiosError<ApiErrorResponse>;
         setError(
           axiosError.response?.status === 404
             ? `La tienda "${subdomain}" no fue encontrada.`
-            : "Ocurrió un error cargando la información de la tienda."
+            : axiosError.response?.data?.detail ||
+                axiosError.message ||
+                "Ocurrió un error cargando la información de la tienda."
         );
         setTenantInfo(null);
       } finally {
         setIsLoadingTenant(false);
       }
     };
-    fetchTenantInfo();
+    fetchTenantData();
   }, [subdomain]);
 
   useEffect(() => {
     if (cartItems.length > 0) {
       const minDate = getMinDeliveryDateISO(cartItems);
       setMinDeliveryDateISO(minDate);
-      if (!finalSelectedDate && !tempSelectedDate) {
+      if (
+        !finalSelectedDate ||
+        new Date(finalSelectedDate) < new Date(minDate)
+      ) {
         setTempSelectedDate(minDate);
-      } else if (finalSelectedDate && !tempSelectedDate) {
-        setTempSelectedDate(finalSelectedDate);
-      } else if (!tempSelectedDate) {
-        setTempSelectedDate(minDate);
+        if (
+          finalSelectedDate &&
+          new Date(finalSelectedDate) < new Date(minDate)
+        ) {
+          setFinalSelectedDate(null);
+          showNotification(
+            "La fecha de entrega anterior ya no es válida debido a cambios en el carrito. Por favor, selecciona una nueva.",
+            "info",
+            5000
+          );
+        }
+      } else {
       }
+    } else {
+      setMinDeliveryDateISO("");
+      setTempSelectedDate("");
+      setFinalSelectedDate(null);
     }
-  }, [cartItems, finalSelectedDate, tempSelectedDate]);
+  }, [cartItems, finalSelectedDate]);
 
   const distinctProductCount = cartItems.length;
   const totalItemQuantity = getCartTotalQuantity ? getCartTotalQuantity() : 0;
@@ -217,6 +240,38 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
     setIsConfirmOrderModalOpen(false);
   };
 
+  const getFinalConfirmModalMessage = (): ReactNode => {
+    if (!finalSelectedDate) return null;
+    return (
+      <p>
+        Has seleccionado la fecha de entrega para el{" "}
+        <strong>
+          {new Date(finalSelectedDate + "T00:00:00").toLocaleDateString(
+            "es-ES",
+            { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+          )}
+        </strong>
+        .
+        <br />
+        <button
+          onClick={handleChangeDateFromConfirmation}
+          className={styles.changeDateButton}
+          disabled={isPlacingOrder}
+        >
+          <LuPencil /> Cambiar Fecha
+        </button>
+      </p>
+    );
+  };
+
+  const finalConfirmWarning: ReactNode = (
+    <>
+      Una vez confirmado, no podrás cambiar este pedido.
+      <br />
+      Si deseas añadir más productos o cambiar la fecha, regresa al carrito.
+    </>
+  );
+
   const handleFinalOrderConfirm = async () => {
     if (!finalSelectedDate || cartItems.length === 0 || !tenantInfo || !user) {
       showNotification(
@@ -233,16 +288,20 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       productId: item.product.id,
       quantity: item.quantity,
       unitPrice: item.product.price,
+      productName: item.product.name,
     }));
+
     const createOrderPayload: CreateOrderDto = {
       deliveryDate: new Date(finalSelectedDate + "T00:00:00Z"),
       items: orderItemsDto,
       totalAmount: cartTotal,
     };
+
     try {
-      const orderUrl = `${apiUrl}/public/tenants/${tenantInfo.subdomain}/orders`;
-      const response = await axios.post<OrderDto>(orderUrl, createOrderPayload);
-      const createdOrder = response.data;
+      const createdOrder = await createTenantOrder(
+        tenantInfo.subdomain,
+        createOrderPayload
+      );
 
       showNotification(
         `¡Pedido #${
@@ -281,7 +340,9 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       },\n¡Tienes un nuevo pedido!\n-----------------------------\nPedido #: ${
         createdOrder?.orderNumber ||
         createdOrder.id.substring(0, 8).toUpperCase()
-      }\nCliente: ${customerName}\nFecha de Entrega: ${deliveryDateFormatted}\n-----------------------------\nDetalle:\n${messageItems}\n-----------------------------\nTotal: Bs. ${cartTotal.toFixed(
+      }\nCliente: ${customerName}\nFecha de Entrega: ${deliveryDateFormatted}\n
+      -----------------------------\nDetalle:\n${messageItems}\n-----------------------------\n
+      Total: Bs. ${cartTotal.toFixed(
         2
       )}\n-----------------------------\n¡Gracias!`;
       const whatsappUrl = `https://wa.me/${adminPhoneNumber.replace(
@@ -308,38 +369,6 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       setIsPlacingOrder(false);
     }
   };
-
-  const getFinalConfirmModalMessage = (): ReactNode => {
-    if (!finalSelectedDate) return null;
-    return (
-      <p>
-        Has seleccionado la fecha de entrega para el{" "}
-        <strong>
-          {new Date(finalSelectedDate + "T00:00:00").toLocaleDateString(
-            "es-ES",
-            { weekday: "long", year: "numeric", month: "long", day: "numeric" }
-          )}
-        </strong>
-        .
-        <br />
-        <button
-          onClick={handleChangeDateFromConfirmation}
-          className={styles.changeDateButton}
-          disabled={isPlacingOrder}
-        >
-          <LuPencil /> Cambiar Fecha
-        </button>
-      </p>
-    );
-  };
-
-  const finalConfirmWarning: ReactNode = (
-    <>
-      Una vez confirmado, no podrás cambiar este pedido.
-      <br />
-      Si deseas añadir más productos o cambiar la fecha, regresa al carrito.
-    </>
-  );
 
   if (isLoadingTenant) {
     return <div>Cargando...</div>;
@@ -580,9 +609,5 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
     </div>
   );
 };
-
-interface CartPageProps {
-  subdomain: string;
-}
 
 export default CartPage;
