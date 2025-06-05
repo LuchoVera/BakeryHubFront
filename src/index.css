@@ -48,10 +48,10 @@
   background-color: var(--color-background);
 }
 
-  html {
-    overflow-y: scroll;
-    box-sizing: border-box;
-  }
+html {
+  box-sizing: border-box;
+}
+
 *,
 *::before,
 *::after {

@@ -5,13 +5,13 @@ import React, {
   useMemo,
   ReactNode,
 } from "react";
-
 import styles from "./AdminOrdersPage.module.css";
 import {
   OrderDto,
   ApiErrorResponse,
   OrderStatus,
   StatusConfirmModalData,
+  TenantPublicInfoDto,
 } from "../../../types";
 import OrdersTable from "../../../components/OrdersTable/OrdersTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
@@ -24,6 +24,7 @@ import { useAuth } from "../../../AuthContext";
 import {
   fetchAdminOrders,
   updateAdminOrderStatus,
+  fetchPublicTenantInfo,
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
 
@@ -56,6 +57,8 @@ const AdminOrdersPage: React.FC = () => {
     useState<StatusConfirmModalData | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const { user } = useAuth();
+  const [tenantBusinessInfo, setTenantBusinessInfo] =
+    useState<TenantPublicInfoDto | null>(null);
 
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
@@ -80,6 +83,25 @@ const AdminOrdersPage: React.FC = () => {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  useEffect(() => {
+    if (user?.administeredTenantSubdomain) {
+      const fetchTenantInfo = async () => {
+        try {
+          const info = await fetchPublicTenantInfo(
+            user.administeredTenantSubdomain!
+          );
+          setTenantBusinessInfo(info);
+        } catch (error) {
+          console.error(
+            "Failed to fetch tenant business name for WhatsApp:",
+            error
+          );
+        }
+      };
+      fetchTenantInfo();
+    }
+  }, [user?.administeredTenantSubdomain]);
 
   const groupedOrders = useMemo(() => {
     const groups: Record<string, OrderDto[]> = {};
@@ -193,7 +215,11 @@ const AdminOrdersPage: React.FC = () => {
       return;
     }
     const tenantDisplayName =
-      user?.administeredTenantSubdomain || user?.name || "tu tienda";
+      tenantBusinessInfo?.name ||
+      user?.administeredTenantSubdomain ||
+      user?.name ||
+      "tu tienda";
+
     const message = generateWhatsAppMessageForOrder(order, tenantDisplayName);
     const whatsappUrl = getWhatsAppLink(order.customerPhoneNumber, message);
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
