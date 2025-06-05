@@ -31,21 +31,60 @@ import {
 import { AxiosError } from "axios";
 
 const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
-  let maxLeadTime = 0;
+  let maxItemSpecificDays = 0;
+
+  if (cartItems.length === 0) {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const day = String(tomorrow.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   cartItems.forEach((item) => {
-    const leadTimeValue =
-      typeof item.product.leadTimeDisplay === "string"
-        ? item.product.leadTimeDisplay
-        : "0";
-    const leadTime = parseInt(leadTimeValue, 10);
-    if (!isNaN(leadTime) && leadTime > maxLeadTime) {
-      maxLeadTime = leadTime;
+    let currentItemDays = 0;
+    const leadTimeDisplay = item.product.leadTimeDisplay;
+
+    if (typeof leadTimeDisplay === "string") {
+      const leadTimeStr = leadTimeDisplay.trim().toLowerCase();
+      if (leadTimeStr === "n/a" || leadTimeStr === "" || leadTimeStr === "0") {
+        currentItemDays = 0;
+      } else {
+        const parsedLeadTime = parseInt(leadTimeStr, 10);
+        if (!isNaN(parsedLeadTime) && parsedLeadTime > 0) {
+          currentItemDays = parsedLeadTime + 1;
+        } else {
+          currentItemDays = 1;
+        }
+      }
+    } else if (
+      leadTimeDisplay === null ||
+      typeof leadTimeDisplay === "undefined"
+    ) {
+      currentItemDays = 0;
+    } else if (typeof leadTimeDisplay === "number") {
+      if (leadTimeDisplay === 0) {
+        currentItemDays = 0;
+      } else if (leadTimeDisplay > 0) {
+        currentItemDays = leadTimeDisplay + 1;
+      } else {
+        currentItemDays = 1;
+      }
+    } else {
+      currentItemDays = 1;
+    }
+
+    if (currentItemDays > maxItemSpecificDays) {
+      maxItemSpecificDays = currentItemDays;
     }
   });
+
   const today = new Date();
-  const minDate = new Date(
-    today.setDate(today.getDate() + (maxLeadTime > 0 ? maxLeadTime + 1 : 1))
-  );
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() + maxItemSpecificDays);
+
   const year = minDate.getFullYear();
   const month = String(minDate.getMonth() + 1).padStart(2, "0");
   const day = String(minDate.getDate()).padStart(2, "0");
@@ -132,13 +171,18 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
           );
         }
       } else {
+        setTempSelectedDate(finalSelectedDate || minDate);
       }
     } else {
-      setMinDeliveryDateISO("");
-      setTempSelectedDate("");
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const defaultEmptyCartMinDate = tomorrow.toISOString().split("T")[0];
+      setMinDeliveryDateISO(defaultEmptyCartMinDate);
+      setTempSelectedDate(defaultEmptyCartMinDate);
       setFinalSelectedDate(null);
     }
-  }, [cartItems, finalSelectedDate]);
+  }, [cartItems, finalSelectedDate, showNotification]);
 
   const distinctProductCount = cartItems.length;
   const totalItemQuantity = getCartTotalQuantity ? getCartTotalQuantity() : 0;
@@ -210,11 +254,16 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       );
       return;
     }
-    if (new Date(tempSelectedDate) < new Date(minDeliveryDateISO)) {
+
+    const tempD = new Date(tempSelectedDate + "T00:00:00");
+    const minD = new Date(minDeliveryDateISO + "T00:00:00");
+
+    if (tempD < minD) {
       showNotification(
-        `La fecha seleccionada no puede ser anterior al ${new Date(
-          minDeliveryDateISO
-        ).toLocaleDateString("es-ES")}.`,
+        `La fecha seleccionada no puede ser anterior al ${minD.toLocaleDateString(
+          "es-ES",
+          { day: "2-digit", month: "2-digit", year: "numeric" }
+        )}.`,
         "error",
         0
       );
@@ -242,14 +291,24 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
 
   const getFinalConfirmModalMessage = (): ReactNode => {
     if (!finalSelectedDate) return null;
+
+    const dateParts = finalSelectedDate.split("-");
+    const localDisplayDate = new Date(
+      Number(dateParts[0]),
+      Number(dateParts[1]) - 1,
+      Number(dateParts[2])
+    );
+
     return (
       <p>
         Has seleccionado la fecha de entrega para el{" "}
         <strong>
-          {new Date(finalSelectedDate + "T00:00:00").toLocaleDateString(
-            "es-ES",
-            { weekday: "long", year: "numeric", month: "long", day: "numeric" }
-          )}
+          {localDisplayDate.toLocaleDateString("es-ES", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
         </strong>
         .
         <br />
@@ -303,12 +362,19 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
         createOrderPayload
       );
 
+      const localNotificationDateParts = finalSelectedDate.split("-");
+      const localNotificationDate = new Date(
+        Number(localNotificationDateParts[0]),
+        Number(localNotificationDateParts[1]) - 1,
+        Number(localNotificationDateParts[2])
+      );
+
       showNotification(
         `¡Pedido #${
           createdOrder?.orderNumber || createdOrder.id.substring(0, 6)
-        } confirmado para el ${new Date(
-          finalSelectedDate + "T00:00:00Z"
-        ).toLocaleDateString("es-ES")}!`,
+        } confirmado para el ${localNotificationDate.toLocaleDateString(
+          "es-ES"
+        )}!`,
         "success",
         8000
       );
@@ -320,13 +386,20 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
 
       const adminPhoneNumber = tenantInfo.phoneNumber || "59100000000";
       const customerName = user.name || "Cliente";
-      const deliveryDateFormatted = new Date(
-        finalSelectedDate + "T00:00:00Z"
-      ).toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+
+      const datePartsForWhatsApp = finalSelectedDate.split("-");
+      const yearW = parseInt(datePartsForWhatsApp[0]);
+      const monthW = parseInt(datePartsForWhatsApp[1]) - 1;
+      const dayW = parseInt(datePartsForWhatsApp[2]);
+      const localDeliveryDateForWhatsApp = new Date(yearW, monthW, dayW);
+
+      const deliveryDateFormattedForWhatsApp =
+        localDeliveryDateForWhatsApp.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+
       const messageItems = cartItems
         .map(
           (item) =>
@@ -335,16 +408,21 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
             } (Bs. ${item.product.price.toFixed(2)})`
         )
         .join("\n");
-      const fullMessage = `Hola ${
-        tenantInfo.name
-      },\n¡Tienes un nuevo pedido!\n-----------------------------\nPedido #: ${
+      const fullMessage = `Hola ${tenantInfo.name},\n
+      ¡Tienes un nuevo pedido!\n
+      -----------------------------\n
+      Pedido #: ${
         createdOrder?.orderNumber ||
         createdOrder.id.substring(0, 8).toUpperCase()
-      }\nCliente: ${customerName}\nFecha de Entrega: ${deliveryDateFormatted}\n
-      -----------------------------\nDetalle:\n${messageItems}\n-----------------------------\n
-      Total: Bs. ${cartTotal.toFixed(
-        2
-      )}\n-----------------------------\n¡Gracias!`;
+      }\n
+      Cliente: ${customerName}\n
+      Fecha de Entrega: ${deliveryDateFormattedForWhatsApp}\n
+      -----------------------------\n
+      Detalle:\n${messageItems}\n
+      -----------------------------\n
+      Total: Bs. ${cartTotal.toFixed(2)}\n
+      -----------------------------\n
+      ¡Gracias!`;
       const whatsappUrl = `https://wa.me/${adminPhoneNumber.replace(
         /\D/g,
         ""

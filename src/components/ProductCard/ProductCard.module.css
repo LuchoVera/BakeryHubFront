@@ -7,6 +7,8 @@
   flex-direction: column;
   transition: box-shadow var(--transition-speed) var(--transition-ease),
     transform var(--transition-speed) var(--transition-ease);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .card:hover {
@@ -21,7 +23,10 @@
   background-color: var(--color-secondary);
   border-top-left-radius: var(--border-radius-md);
   border-top-right-radius: var(--border-radius-md);
+
+  box-sizing: border-box;
 }
+
 .imagePlaceholder {
   display: flex;
   justify-content: center;
@@ -34,10 +39,14 @@
   width: 100%;
   border-top-left-radius: var(--border-radius-md);
   border-top-right-radius: var(--border-radius-md);
+  box-sizing: border-box;
 }
 
 .imagePlaceholder span {
   padding: var(--space-sm);
+
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
 .content {
@@ -45,6 +54,8 @@
   display: flex;
   flex-direction: column;
   min-height: 140px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .name {
@@ -59,6 +70,9 @@
   text-overflow: ellipsis;
   text-align: center;
   padding: 0 var(--space-md);
+
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .description {
@@ -73,13 +87,19 @@
   -webkit-line-clamp: 3;
   line-clamp: 3;
   overflow-wrap: break-word;
+  word-wrap: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
+
 .category,
 .leadTime {
   font-size: 0.75em;
   color: var(--color-text-subtle);
   margin-bottom: var(--space-xs);
   text-align: center;
+  word-wrap: break-word;
+  max-width: 100%;
 }
 
 .footer {
@@ -88,6 +108,10 @@
   justify-content: space-between;
   align-items: center;
   padding-top: var(--space-md);
+  box-sizing: border-box;
+  width: 100%;
+
+  min-width: 0;
 }
 
 .price {
@@ -100,6 +124,7 @@
   flex-shrink: 1;
   min-width: 0;
   padding-right: var(--space-sm);
+  box-sizing: border-box;
 }
 
 .addButton {
@@ -114,6 +139,9 @@
     box-shadow var(--transition-speed) var(--transition-ease),
     transform var(--transition-speed) var(--transition-ease);
   flex-shrink: 0;
+  box-sizing: border-box;
+
+  max-width: 50%;
 }
 
 .addButton:hover:not(:disabled) {
@@ -137,6 +165,8 @@
   gap: var(--space-xs);
   margin-bottom: var(--space-sm);
   justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .tagBadge {
@@ -149,11 +179,16 @@
   display: inline-flex;
   align-items: center;
   line-height: 1.2;
+  box-sizing: border-box;
+
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .tagIcon {
   margin-right: 3px;
   font-size: 0.9em;
+  flex-shrink: 0;
 }
 
 .description + .tagsContainer {
@@ -165,36 +200,68 @@
 }
 
 @media (max-width: 600px) {
+  .card {
+    margin-bottom: 12px;
+  }
+
   .image,
   .imagePlaceholder {
-    height: 160px;
+    height: 120px;
   }
 
   .content {
-    padding: var(--space-sm) var(--space-md);
-    min-height: 120px;
+    padding: 8px 12px;
+    min-height: 80px;
   }
 
   .name {
-    font-size: 1em;
+    font-size: 0.9em;
+    padding: 0 4px;
+    margin-bottom: 4px;
   }
 
   .description {
-    font-size: 0.8em;
-    min-height: calc(1.5em * 3 * 0.8);
-    margin-bottom: var(--space-sm);
+    font-size: 0.75em;
+    min-height: calc(1.4em * 2 * 0.75);
+    margin-bottom: 6px;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .category,
+  .leadTime {
+    font-size: 0.7em;
+    margin-bottom: 4px;
+  }
+
+  .tagsContainer {
+    margin-bottom: 6px;
+    gap: 3px;
+  }
+
+  .tagBadge {
+    font-size: 0.65em;
+    padding: 1px 4px;
   }
 
   .price {
-    font-size: 1em;
+    font-size: 0.9em;
+    padding-right: 4px;
   }
 
   .addButton {
-    padding: var(--space-xs) var(--space-xs);
-    font-size: 0.85em;
+    padding: 4px 8px;
+    font-size: 0.75em;
+    max-width: 35%;
   }
 
   .footer {
-    padding-top: var(--space-sm);
+    padding-top: 6px;
+    gap: 4px;
+  }
+
+  .imagePlaceholder span {
+    padding: 4px;
+    font-size: 0.8em;
   }
 }
