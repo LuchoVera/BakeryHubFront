@@ -1,0 +1,103 @@
+.kpiContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-lg);
+}
+
+.kpiCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-surface);
+  border-radius: var(--border-radius-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.iconWrapper {
+  font-size: 2rem;
+  padding: var(--space-sm);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background-color: var(--color-secondary);
+}
+
+.textWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardTitle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0 0 4px 0;
+}
+
+.cardValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.errorState {
+  color: var(--color-error);
+  font-weight: 500;
+  text-align: center;
+  padding: var(--space-lg);
+  background-color: rgba(217, 83, 79, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--border-radius-md);
+  grid-column: 1 / -1;
+}
+
+.loadingSpinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--color-secondary);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .kpiContainer {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+
+  .kpiCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+  }
+
+  .iconWrapper {
+    font-size: 1.5rem;
+    padding: var(--space-xs);
+  }
+
+  .cardTitle {
+    font-size: 0.75rem;
+  }
+
+  .cardValue {
+    font-size: 1.1rem;
+  }
+}

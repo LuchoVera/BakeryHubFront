@@ -11,6 +11,8 @@ import {
   CreateProductDto,
   CreateTagDto,
   CustomerRegisterDto,
+  DashboardQueryParametersDto,
+  DashboardResponseDto,
   EmailCheckResultDto,
   LinkCustomerDto,
   LoginDto,
@@ -371,4 +373,18 @@ export const uploadImageToCloudinary = async (
     );
     throw err;
   }
+};
+
+export const fetchAdminDashboardStatistics = async (
+  params: DashboardQueryParametersDto
+): Promise<DashboardResponseDto> => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== null && v !== "")
+  );
+
+  const response = await apiClient.get<DashboardResponseDto>(
+    "/admin/dashboard/order-statistics",
+    { params: cleanParams }
+  );
+  return response.data;
 };

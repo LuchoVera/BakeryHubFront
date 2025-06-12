@@ -1,0 +1,83 @@
+import React, { useMemo } from "react";
+import ReactECharts from "echarts-for-react";
+import type { EChartsOption } from "echarts";
+import { useDashboardData } from "../../../../../../hooks/useDashboardData";
+import { DashboardQueryParametersDto } from "../../../../../../types";
+
+interface ChartProps {
+  globalFilters: Omit<
+    DashboardQueryParametersDto,
+    "metric" | "granularity" | "breakdownDimension"
+  >;
+}
+
+const dayTranslationMap: Record<string, string> = {
+  Sunday: "Domingo",
+  Monday: "Lunes",
+  Tuesday: "Martes",
+  Wednesday: "Miércoles",
+  Thursday: "Jueves",
+  Friday: "Viernes",
+  Saturday: "Sábado",
+};
+
+const daySortOrder: Record<string, number> = {
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  Sunday: 7,
+};
+
+export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
+  const { data, isLoading, error } = useDashboardData({
+    ...globalFilters,
+    metric: "revenue",
+    granularity: "day",
+    breakdownDimension: "dayofweek",
+  });
+
+  const processedData = useMemo(() => {
+    if (!data?.breakdown) return [];
+
+    return [...data.breakdown]
+      .sort(
+        (a, b) => (daySortOrder[a.label] || 0) - (daySortOrder[b.label] || 0)
+      )
+      .map((d) => ({
+        ...d,
+        label: dayTranslationMap[d.label] || d.label,
+      }));
+  }, [data]);
+
+  const options: EChartsOption = {
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      formatter: "{b}: Bs. {c}",
+    },
+    grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
+    xAxis: {
+      type: "category",
+      data: processedData.map((d) => d.label),
+    },
+    yAxis: { type: "value" },
+    series: [
+      {
+        name: "Ingresos",
+        type: "bar",
+        data: processedData.map((d) => d.value),
+        itemStyle: { color: "#a9d6e5" },
+      },
+    ],
+  };
+
+  if (isLoading) return <div>Cargando datos por día...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!data || data.breakdown.length === 0)
+    return <div>No hay datos de ventas para este período.</div>;
+
+  return <ReactECharts option={options} style={{ height: 400 }} />;
+};
