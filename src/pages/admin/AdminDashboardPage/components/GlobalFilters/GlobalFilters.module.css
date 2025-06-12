@@ -1,0 +1,164 @@
+.filtersContainer {
+  background-color: var(--color-surface);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.filterLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.filterSelect {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.9rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.filterSelect:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.customDateContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.dateInput {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.9rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.dateInput:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+.applyButton {
+  padding: calc(var(--space-xs) + 1px) var(--space-md);
+  font-size: 0.9rem;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.applyButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.applyButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.activeFilterDisplay {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  flex-grow: 1;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+}
+
+.filterChip strong {
+  font-weight: 600;
+}
+
+.clearFilterButton {
+  background: none;
+  border: none;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  padding: 2px;
+  margin-left: var(--space-xs);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.clearFilterButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 900px) {
+  .filtersContainer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+  .customDateContainer {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .customDateContainer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+  .filterGroup {
+    justify-content: space-between;
+  }
+  .activeFilterDisplay {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: var(--space-sm);
+  }
+}
