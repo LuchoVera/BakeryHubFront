@@ -231,3 +231,44 @@ export interface CreateTagDto {
 export interface UpdateTagDto {
   name: string;
 }
+
+export interface DashboardQueryParametersDto {
+  timePeriod: string;
+  customStartDate?: string | null;
+  customEndDate?: string | null;
+  granularity: string;
+  metric: "revenue" | "ordercount";
+  filterDimension?: string | null;
+  filterValue?: string | null;
+  breakdownDimension?: string;
+  includeProductsWithNoSales?: boolean;
+}
+
+export interface AggregatedDataSummaryDto {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  totalCustomers: number;
+}
+
+export interface TimeSeriesDataPointDto {
+  id?: string;
+  label: string;
+  value: number;
+  count: number;
+}
+
+export interface AvailableDrillOptionDto {
+  dimensionName: string;
+  displayName: string;
+  isBreakdownDimension?: boolean;
+  targetGranularity?: string;
+}
+
+export interface DashboardResponseDto {
+  title: string;
+  periodDescription: string;
+  summary: AggregatedDataSummaryDto;
+  breakdown: TimeSeriesDataPointDto[];
+  nextDrillOptions: AvailableDrillOptionDto[];
+}
