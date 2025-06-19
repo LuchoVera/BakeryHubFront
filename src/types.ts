@@ -272,3 +272,11 @@ export interface DashboardResponseDto {
   breakdown: TimeSeriesDataPointDto[];
   nextDrillOptions: AvailableDrillOptionDto[];
 }
+
+export interface CreateManualOrderDto {
+  customerName: string;
+  customerPhoneNumber: string;
+  deliveryDate: Date;
+  items: OrderItemDto[];
+  totalAmount: number;
+}

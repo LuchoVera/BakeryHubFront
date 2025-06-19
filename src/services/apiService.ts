@@ -1,4 +1,3 @@
-// src/services/apiService.ts
 import axios, { AxiosError, AxiosInstance } from "axios";
 import {
   AdminRegisterDto,
@@ -7,6 +6,7 @@ import {
   AuthUser,
   CategoryDto,
   ChangePasswordDto,
+  CreateManualOrderDto,
   CreateOrderDto,
   CreateProductDto,
   CreateTagDto,
@@ -24,7 +24,7 @@ import {
   UpdateProductDto,
   UpdateTagDto,
   UpdateUserProfileDto,
-} from "../types"; // Asegúrate que la ruta a tus tipos sea correcta
+} from "../types";
 
 const API_BASE_URL = "/api";
 
@@ -33,10 +33,9 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Generalmente útil para manejo de sesiones/cookies
+  withCredentials: true,
 });
 
-// Interceptor de respuesta para logging básico de errores
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorResponse>) => {
@@ -385,6 +384,16 @@ export const fetchAdminDashboardStatistics = async (
   const response = await apiClient.get<DashboardResponseDto>(
     "/admin/dashboard/order-statistics",
     { params: cleanParams }
+  );
+  return response.data;
+};
+
+export const createManualAdminOrder = async (
+  orderData: CreateManualOrderDto
+): Promise<OrderDto> => {
+  const response = await apiClient.post<OrderDto>(
+    "/admin/orders/manual",
+    orderData
   );
   return response.data;
 };

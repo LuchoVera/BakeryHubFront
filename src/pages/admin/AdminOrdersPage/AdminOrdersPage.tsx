@@ -27,6 +27,7 @@ import {
   fetchPublicTenantInfo,
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
+import { Link } from "react-router-dom";
 
 const STATUS_ORDER: OrderStatus[] = [
   "Pending",
@@ -232,6 +233,14 @@ const AdminOrdersPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <h2>Gestión de Pedidos</h2>
+      <div className={styles.createOrderContainer}>
+        <Link
+          to="/admin/orders/new-manual"
+          className={styles.createOrderButton}
+        >
+          Crear Pedido Manual
+        </Link>
+      </div>
       <div className={styles.filterTabs}>
         {STATUS_ORDER.map((status) => {
           const count = groupedOrders[status]?.length ?? 0;
