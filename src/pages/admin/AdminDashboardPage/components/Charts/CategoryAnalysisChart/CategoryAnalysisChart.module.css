@@ -1,0 +1,17 @@
+.mobileChart {
+  display: none;
+}
+
+.desktopChart {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .mobileChart {
+    display: block;
+  }
+
+  .desktopChart {
+    display: none;
+  }
+}

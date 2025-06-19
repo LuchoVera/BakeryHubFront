@@ -32,6 +32,7 @@
   padding: var(--space-lg);
   border: 1px solid var(--color-border);
   min-height: 200px;
+  min-width: 0;
 }
 
 .kpiContainer {
@@ -56,14 +57,28 @@
   color: var(--color-text-primary);
 }
 
+@media (min-width: 769px) {
+  .dashboardGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .kpiContainer {
+    grid-column: 1 / -1;
+  }
+
+  .mainChartContainer {
+    grid-column: 1 / -1;
+  }
+
+  .detailedAnalysisContainer {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (min-width: 1200px) {
   .dashboardGrid {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: auto 1fr;
-  }
-  .kpiContainer {
-    grid-column: 1 / -1;
-    min-height: auto;
   }
   .mainChartContainer {
     grid-column: 1 / 3;

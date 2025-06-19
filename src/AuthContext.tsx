@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       isMounted = false;
     };
   }, [login]);
+
   const logoutContext = useCallback(async () => {
     setUser(null);
     setIsAuthenticated(false);
@@ -79,10 +80,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         "Backend logout failed, but client session is cleared.",
         error
       );
-    } finally {
-      if (window.location.pathname !== "/") {
-        window.location.href = "/";
-      }
     }
   }, []);
 
@@ -90,7 +87,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     <AuthContext.Provider
       value={{ isAuthenticated, user, isLoading, login, logout: logoutContext }}
     >
-      {isLoading ? <div>Loading Session...</div> : children}
+      {children}
     </AuthContext.Provider>
   );
 };
