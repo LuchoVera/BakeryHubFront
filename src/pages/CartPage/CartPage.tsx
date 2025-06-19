@@ -16,18 +16,15 @@ import {
 } from "react-icons/lu";
 import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../AuthContext";
+import { useTenant } from "../../hooks/useTenant";
 import { useNotification } from "../../hooks/useNotification";
 import {
   ApiErrorResponse,
-  TenantPublicInfoDto,
   CartItem,
   CreateOrderDto,
   OrderItemDto,
 } from "../../types";
-import {
-  fetchPublicTenantInfo,
-  createTenantOrder,
-} from "../../services/apiService";
+import { createTenantOrder } from "../../services/apiService";
 import { AxiosError } from "axios";
 
 const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
@@ -37,10 +34,7 @@ const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
-    const day = String(tomorrow.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return tomorrow.toISOString().split("T")[0];
   }
 
   cartItems.forEach((item) => {
@@ -49,30 +43,14 @@ const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
 
     if (typeof leadTimeDisplay === "string") {
       const leadTimeStr = leadTimeDisplay.trim().toLowerCase();
-      if (leadTimeStr === "n/a" || leadTimeStr === "" || leadTimeStr === "0") {
-        currentItemDays = 0;
-      } else {
+      if (leadTimeStr !== "n/a" && leadTimeStr !== "" && leadTimeStr !== "0") {
         const parsedLeadTime = parseInt(leadTimeStr, 10);
-        if (!isNaN(parsedLeadTime) && parsedLeadTime > 0) {
-          currentItemDays = parsedLeadTime + 1;
-        } else {
-          currentItemDays = 1;
-        }
+        currentItemDays =
+          !isNaN(parsedLeadTime) && parsedLeadTime > 0 ? parsedLeadTime + 1 : 1;
       }
-    } else if (
-      leadTimeDisplay === null ||
-      typeof leadTimeDisplay === "undefined"
-    ) {
-      currentItemDays = 0;
-    } else if (typeof leadTimeDisplay === "number") {
-      if (leadTimeDisplay === 0) {
-        currentItemDays = 0;
-      } else if (leadTimeDisplay > 0) {
-        currentItemDays = leadTimeDisplay + 1;
-      } else {
-        currentItemDays = 1;
-      }
-    } else {
+    } else if (typeof leadTimeDisplay === "number" && leadTimeDisplay > 0) {
+      currentItemDays = leadTimeDisplay + 1;
+    } else if (leadTimeDisplay !== 0) {
       currentItemDays = 1;
     }
 
@@ -84,18 +62,16 @@ const getMinDeliveryDateISO = (cartItems: CartItem[]): string => {
   const today = new Date();
   const minDate = new Date(today);
   minDate.setDate(today.getDate() + maxItemSpecificDays);
-
-  const year = minDate.getFullYear();
-  const month = String(minDate.getMonth() + 1).padStart(2, "0");
-  const day = String(minDate.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return minDate.toISOString().split("T")[0];
 };
 
-interface CartPageProps {
-  subdomain: string;
-}
-
-const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
+const CartPage: React.FC = () => {
+  const {
+    tenantInfo,
+    isLoading: isLoadingTenant,
+    error: tenantError,
+    subdomain,
+  } = useTenant();
   const {
     cartItems,
     addItemToCart,
@@ -107,11 +83,7 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   const { isAuthenticated, user } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
-    null
-  );
-  const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] =
     useState<boolean>(false);
   const [minDeliveryDateISO, setMinDeliveryDateISO] = useState<string>("");
@@ -125,30 +97,6 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   const [confirmingRemoveProductId, setConfirmingRemoveProductId] = useState<
     string | null
   >(null);
-
-  useEffect(() => {
-    setIsLoadingTenant(true);
-    setError(null);
-    const fetchTenantData = async () => {
-      try {
-        const data = await fetchPublicTenantInfo(subdomain);
-        setTenantInfo(data);
-      } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        setError(
-          axiosError.response?.status === 404
-            ? `La tienda "${subdomain}" no fue encontrada.`
-            : axiosError.response?.data?.detail ||
-                axiosError.message ||
-                "Ocurrió un error cargando la información de la tienda."
-        );
-        setTenantInfo(null);
-      } finally {
-        setIsLoadingTenant(false);
-      }
-    };
-    fetchTenantData();
-  }, [subdomain]);
 
   useEffect(() => {
     if (cartItems.length > 0) {
@@ -165,7 +113,7 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
         ) {
           setFinalSelectedDate(null);
           showNotification(
-            "La fecha de entrega anterior ya no es válida debido a cambios en el carrito. Por favor, selecciona una nueva.",
+            "La fecha de entrega anterior ya no es válida. Por favor, selecciona una nueva.",
             "info",
             5000
           );
@@ -185,7 +133,7 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
   }, [cartItems, finalSelectedDate, showNotification]);
 
   const distinctProductCount = cartItems.length;
-  const totalItemQuantity = getCartTotalQuantity ? getCartTotalQuantity() : 0;
+  const totalItemQuantity = getCartTotalQuantity();
   const cartTotal = useMemo(() => {
     return cartItems.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
@@ -224,7 +172,7 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       );
       return;
     }
-    if (user && user.roles.includes("Admin")) {
+    if (user?.roles?.includes("Admin")) {
       showNotification(
         "Los administradores no pueden realizar pedidos.",
         "info",
@@ -291,14 +239,12 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
 
   const getFinalConfirmModalMessage = (): ReactNode => {
     if (!finalSelectedDate) return null;
-
     const dateParts = finalSelectedDate.split("-");
     const localDisplayDate = new Date(
       Number(dateParts[0]),
       Number(dateParts[1]) - 1,
       Number(dateParts[2])
     );
-
     return (
       <p>
         Has seleccionado la fecha de entrega para el{" "}
@@ -358,17 +304,10 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
 
     try {
       const createdOrder = await createTenantOrder(
-        tenantInfo.subdomain,
+        subdomain,
         createOrderPayload
       );
-
-      const localNotificationDateParts = finalSelectedDate.split("-");
-      const localNotificationDate = new Date(
-        Number(localNotificationDateParts[0]),
-        Number(localNotificationDateParts[1]) - 1,
-        Number(localNotificationDateParts[2])
-      );
-
+      const localNotificationDate = new Date(finalSelectedDate + "T00:00:00");
       showNotification(
         `¡Pedido #${
           createdOrder?.orderNumber || createdOrder.id.substring(0, 6)
@@ -378,28 +317,19 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
         "success",
         8000
       );
-      if (clearCart) {
-        clearCart();
-      }
+
+      clearCart();
       setFinalSelectedDate(null);
       setIsConfirmOrderModalOpen(false);
 
       const adminPhoneNumber = tenantInfo.phoneNumber || "59100000000";
       const customerName = user.name || "Cliente";
-
-      const datePartsForWhatsApp = finalSelectedDate.split("-");
-      const yearW = parseInt(datePartsForWhatsApp[0]);
-      const monthW = parseInt(datePartsForWhatsApp[1]) - 1;
-      const dayW = parseInt(datePartsForWhatsApp[2]);
-      const localDeliveryDateForWhatsApp = new Date(yearW, monthW, dayW);
-
       const deliveryDateFormattedForWhatsApp =
-        localDeliveryDateForWhatsApp.toLocaleDateString("es-ES", {
+        localNotificationDate.toLocaleDateString("es-ES", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         });
-
       const messageItems = cartItems
         .map(
           (item) =>
@@ -408,21 +338,21 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
             } (Bs. ${item.product.price.toFixed(2)})`
         )
         .join("\n");
-      const fullMessage = `Hola ${tenantInfo.name},\n
-      ¡Tienes un nuevo pedido!\n
-      -----------------------------\n
-      Pedido #: ${
+      const fullMessage = `Hola ${tenantInfo.name},
+      \n¡Tienes un nuevo pedido!
+      \n-----------------------------
+      \nPedido #: ${
         createdOrder?.orderNumber ||
         createdOrder.id.substring(0, 8).toUpperCase()
-      }\n
-      Cliente: ${customerName}\n
-      Fecha de Entrega: ${deliveryDateFormattedForWhatsApp}\n
-      -----------------------------\n
-      Detalle:\n${messageItems}\n
-      -----------------------------\n
-      Total: Bs. ${cartTotal.toFixed(2)}\n
-      -----------------------------\n
-      ¡Gracias!`;
+      }\nCliente: ${customerName}
+      \nFecha de Entrega: ${deliveryDateFormattedForWhatsApp}
+      \n-----------------------------
+      \nDetalle:
+      \n${messageItems}
+      \n-----------------------------
+      \nTotal: Bs. ${cartTotal.toFixed(2)}
+      \n-----------------------------
+      \n¡Gracias!`;
       const whatsappUrl = `https://wa.me/${adminPhoneNumber.replace(
         /\D/g,
         ""
@@ -433,12 +363,10 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       showNotification(
         `Error al confirmar el pedido: ${
-          axiosError.response?.data?.errors
-            ? JSON.stringify(axiosError.response.data.errors)
-            : axiosError.response?.data?.detail ||
-              axiosError.response?.data?.title ||
-              axiosError.message ||
-              "Error desconocido."
+          axiosError.response?.data?.detail ||
+          axiosError.response?.data?.title ||
+          axiosError.message ||
+          "Error desconocido."
         }`,
         "error",
         0
@@ -454,9 +382,9 @@ const CartPage: React.FC<CartPageProps> = ({ subdomain }) => {
 
   return (
     <div className={styles.pageContainer}>
-      {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
-      {!tenantInfo && error && (
-        <div className={styles.errorLoadingHeader}>{error}</div>
+      {tenantInfo && <TenantHeader />}
+      {tenantError && (
+        <div className={styles.errorLoadingHeader}>{tenantError}</div>
       )}
 
       <main className={styles.cartContent}>

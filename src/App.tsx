@@ -7,7 +7,6 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "./AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import NotificationPopup from "./components/NotificationPopup/NotificationPopup";
@@ -36,6 +35,8 @@ import UserProfilePage from "./pages/UserProfilePage/UserProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage/ChangePasswordPage";
 import AdminTagsPage from "./pages/admin/AdminTagsPage/AdminTagsPage";
 import AdminCreateManualOrderPage from "./pages/admin/AdminCreateManualOrderPage/AdminCreateManualOrderPage";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { TenantProvider } from "./contexts/TenantContext";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -51,15 +52,66 @@ const ProtectedAdminRoute: React.FC = () => {
   return <Outlet />;
 };
 
-function App() {
+const TenantRoutes = () => {
   const host = window.location.hostname;
   let subdomain: string | null = null;
+  const parts = host.split(".");
+  if (parts.length > 1 && parts[0] !== "www") {
+    subdomain = parts[0];
+  }
 
-  if (host !== "localhost") {
-    const parts = host.split(".");
-    if (parts.length > 0) {
-      subdomain = parts[0];
-    }
+  if (!subdomain) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <TenantProvider subdomain={subdomain}>
+      <Routes>
+        <Route path="/" element={<TenantViewPage />} />
+        <Route path="/products/:productId" element={<ProductDetailPage />} />
+        <Route path="/login" element={<TenantCustomerLoginPage />} />
+        <Route path="/signup" element={<TenantCustomerSignUpPage />} />
+        <Route path="/search" element={<SearchResultsPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/my-orders" element={<MyOrdersPage />} />
+        <Route
+          path="/my-orders/:orderId"
+          element={<CustomerOrderDetailPage />}
+        />
+        <Route path="/user-profile" element={<UserProfilePage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
+        <Route
+          path="*"
+          element={<div>404 - Página no Encontrada en esta tienda</div>}
+        />
+      </Routes>
+    </TenantProvider>
+  );
+};
+
+function App() {
+  const host = window.location.hostname;
+  const isSubdomain =
+    host.split(".").length > 1 &&
+    host.split(".")[0] !== "www" &&
+    host.split(".")[0] !== "localhost";
+
+  const isDevSubdomain =
+    host.endsWith(".localhost") && host.split(".").length > 1;
+
+  if (isSubdomain || isDevSubdomain) {
+    return (
+      <AuthProvider>
+        <CartProvider>
+          <NotificationProvider>
+            <Router>
+              <TenantRoutes />
+              <NotificationPopup />
+            </Router>
+          </NotificationProvider>
+        </CartProvider>
+      </AuthProvider>
+    );
   }
 
   return (
@@ -68,92 +120,36 @@ function App() {
         <NotificationProvider>
           <Router>
             <Routes>
-              {subdomain ? (
-                <>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/register-admin"
+                element={<AdminRegistrationPage />}
+              />
+              <Route path="/admin" element={<ProtectedAdminRoute />}>
+                <Route element={<AdminLayout />}>
+                  <Route index element={<AdminDashboardPage />} />
+                  <Route path="categories" element={<CategoryListPage />} />
+                  <Route path="tags" element={<AdminTagsPage />} />
+                  <Route path="products" element={<ProductListPage />} />
+                  <Route path="products/new" element={<AddProductPage />} />
                   <Route
-                    path="/"
-                    element={<TenantViewPage subdomain={subdomain} />}
+                    path="products/edit/:id"
+                    element={<EditProductPage />}
+                  />
+                  <Route path="orders" element={<AdminOrdersPage />} />
+                  <Route
+                    path="orders/:orderId"
+                    element={<AdminOrderDetailPage />}
                   />
                   <Route
-                    path="/products/:productId"
-                    element={<ProductDetailPage subdomain={subdomain} />}
+                    path="orders/new-manual"
+                    element={<AdminCreateManualOrderPage />}
                   />
-                  <Route
-                    path="/login"
-                    element={<TenantCustomerLoginPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/signup"
-                    element={<TenantCustomerSignUpPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/search"
-                    element={<SearchResultsPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/cart"
-                    element={<CartPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/my-orders"
-                    element={<MyOrdersPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/my-orders/:orderId"
-                    element={<CustomerOrderDetailPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/user-profile"
-                    element={<UserProfilePage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="/change-password"
-                    element={<ChangePasswordPage subdomain={subdomain} />}
-                  />
-                  <Route
-                    path="*"
-                    element={
-                      <div>404 - Página no Encontrada en {subdomain}</div>
-                    }
-                  />
-                </>
-              ) : (
-                <>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route
-                    path="/register-admin"
-                    element={<AdminRegistrationPage />}
-                  />
-                  <Route path="/admin" element={<ProtectedAdminRoute />}>
-                    <Route element={<AdminLayout />}>
-                      <Route index element={<AdminDashboardPage />} />
-                      <Route path="categories" element={<CategoryListPage />} />
-                      <Route path="products" element={<ProductListPage />} />
-                      <Route path="products/new" element={<AddProductPage />} />
-                      <Route
-                        path="products/edit/:id"
-                        element={<EditProductPage />}
-                      />
-                      <Route path="orders" element={<AdminOrdersPage />} />
-                      <Route
-                        path="orders/:orderId"
-                        element={<AdminOrderDetailPage />}
-                      />
-                      <Route
-                        path="orders/new-manual"
-                        element={<AdminCreateManualOrderPage />}
-                      />
-                      <Route path="settings" element={<StoreSettingsPage />} />
-                      <Route path="tags" element={<AdminTagsPage />} />
-                    </Route>
-                  </Route>
-                  <Route
-                    path="*"
-                    element={<div>404 - Página No Encontrada</div>}
-                  />
-                </>
-              )}
+                  <Route path="settings" element={<StoreSettingsPage />} />
+                </Route>
+              </Route>
+              <Route path="*" element={<div>404 - Página No Encontrada</div>} />
             </Routes>
             <NotificationPopup />
           </Router>

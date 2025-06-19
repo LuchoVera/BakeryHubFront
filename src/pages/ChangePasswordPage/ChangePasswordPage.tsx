@@ -19,11 +19,7 @@ import {
   LuCircleCheck,
   LuTriangleAlert,
 } from "react-icons/lu";
-import {
-  TenantPublicInfoDto,
-  ApiErrorResponse,
-  ChangePasswordDto,
-} from "../../types";
+import { ApiErrorResponse, ChangePasswordDto } from "../../types";
 import {
   validateRequired,
   validateMinLength,
@@ -31,15 +27,9 @@ import {
   validateComparison,
   validateMaxLength,
 } from "../../utils/validationUtils";
-import {
-  fetchPublicTenantInfo,
-  changePassword as apiChangePassword,
-} from "../../services/apiService";
+import { changePassword as apiChangePassword } from "../../services/apiService";
 import { AxiosError } from "axios";
-
-interface ChangePasswordPageProps {
-  subdomain: string;
-}
+import { useTenant } from "../../hooks/useTenant";
 
 interface FeedbackModalData {
   title: string;
@@ -49,17 +39,14 @@ interface FeedbackModalData {
   onClose?: () => void;
 }
 
-const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
-  subdomain,
-}) => {
+const ChangePasswordPage: React.FC = () => {
+  const {
+    tenantInfo,
+    isLoading: isLoadingTenant,
+    error: errorTenant,
+  } = useTenant();
   const { isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
-
-  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
-    null
-  );
-  const [isLoadingTenant, setIsLoadingTenant] = useState<boolean>(true);
-  const [errorTenant, setErrorTenant] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<ChangePasswordDto>({
     currentPassword: "",
@@ -86,27 +73,6 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
       navigate(`/login?redirect=/change-password`);
     }
   }, [isAuthenticated, authLoading, navigate]);
-
-  useEffect(() => {
-    const fetchTenantData = async () => {
-      setIsLoadingTenant(true);
-      try {
-        const data = await fetchPublicTenantInfo(subdomain);
-        setTenantInfo(data);
-        setErrorTenant(null);
-      } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        setErrorTenant(
-          axiosError.response?.data?.detail ||
-            `No se pudo cargar la información de la tienda "${subdomain}".`
-        );
-        setTenantInfo(null);
-      } finally {
-        setIsLoadingTenant(false);
-      }
-    };
-    fetchTenantData();
-  }, [subdomain]);
 
   const validateField = (
     name: keyof typeof formData,
@@ -320,7 +286,7 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = ({
 
   return (
     <div className={styles.pageContainer}>
-      {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
+      {tenantInfo && <TenantHeader />}
       <main className={styles.mainContent}>
         <Link to="/user-profile" className={styles.backLink}>
           <LuChevronLeft /> Volver al Perfil

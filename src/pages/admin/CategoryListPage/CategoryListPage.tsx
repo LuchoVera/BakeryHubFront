@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useCallback, ReactNode } from "react";
-import {
-  CategoryDto,
-  UpdateCategoryDto,
-  ApiErrorResponse,
-} from "../../../types";
+import { CategoryDto, ApiErrorResponse } from "../../../types";
 import styles from "./CategoryListPage.module.css";
 import CategoryTable from "../../../components/CategoryTable/CategoryTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
@@ -21,15 +17,20 @@ import {
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
 
-interface CategoryDeleteModalData {
-  id: string;
-  name: string;
+interface ModalInfo {
+  type: "delete" | "success" | "error";
+  title: string;
+  message: ReactNode;
+  onConfirm: () => void;
+  confirmButtonVariant?: "primary" | "danger";
+  icon: ReactNode;
+  iconType: "info" | "warning" | "danger" | "success";
+  warningMessage?: ReactNode;
 }
 
 interface AddCategoryFormProps {
   onCategoryAdded: () => void;
 }
-
 const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
   onCategoryAdded,
 }) => {
@@ -65,36 +66,12 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
       const axiosError = err as AxiosError<ApiErrorResponse>;
       const response = axiosError.response;
       let errorMessage = "Ocurrió un error inesperado al añadir la categoría.";
-      if (response) {
-        if (response.status === 400) {
-          if (
-            response.data?.errors?.Name?.includes(
-              "A category with this name already exists for your business."
-            )
-          ) {
-            errorMessage = "Una categoría con este nombre ya existe.";
-          } else if (response.data?.errors?.Name) {
-            errorMessage = response.data.errors.Name[0];
-          } else {
-            errorMessage =
-              response.data?.title ||
-              response.data?.detail ||
-              "La categoría ya existe.";
-          }
-        } else if (response.status === 409) {
-          errorMessage =
-            response.data?.title ||
-            response.data?.detail ||
-            "Conflicto: El recurso ya podría existir o hubo un problema.";
-        } else {
-          const responseData = response.data;
-          errorMessage =
-            responseData?.detail ||
-            responseData?.message ||
-            `Error del servidor (${response.status})`;
-        }
-      } else if (axiosError.message) {
-        errorMessage = `Error de red: ${axiosError.message}`;
+      if (response?.data) {
+        errorMessage =
+          response.data.errors?.Name?.[0] ||
+          response.data.title ||
+          response.data.detail ||
+          "La categoría ya existe.";
       }
       setError(errorMessage);
     } finally {
@@ -142,18 +119,8 @@ const CategoryListPage: React.FC = () => {
   const [editingName, setEditingName] = useState<string>("");
   const [editLoading, setEditLoading] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [categoryToDelete, setCategoryToDelete] =
-    useState<CategoryDeleteModalData | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
-  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
-    null
-  );
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
-  const [successModalMessage, setSuccessModalMessage] = useState<string | null>(
-    null
-  );
+  const [modalInfo, setModalInfo] = useState<ModalInfo | null>(null);
 
   const fetchCategories = useCallback(async () => {
     setError(null);
@@ -162,16 +129,9 @@ const CategoryListPage: React.FC = () => {
       setCategories(data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      if (axiosError.response?.status === 401) {
-        setError("Autenticación requerida. Por favor, inicia sesión de nuevo.");
-      } else {
-        setError(
-          axiosError.response?.data?.title ||
-            axiosError.response?.data?.detail ||
-            axiosError.message ||
-            "Fallo al cargar categorías."
-        );
-      }
+      setError(
+        axiosError.response?.data?.detail || "Fallo al cargar categorías."
+      );
     } finally {
       setLoading(false);
     }
@@ -218,120 +178,73 @@ const CategoryListPage: React.FC = () => {
     setEditLoading(true);
     setEditError(null);
     try {
-      const updateData: UpdateCategoryDto = { name: editingName.trim() };
-      await updateAdminCategory(categoryId, updateData);
+      await updateAdminCategory(categoryId, { name: editingName.trim() });
       setEditingCategoryId(null);
       setEditingName("");
       await fetchCategories();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      const response = axiosError.response;
-      const responseData = response?.data;
-      let errorMessage = "Ocurrió un error al guardar los cambios.";
-      if (response) {
-        if (response.status === 400) {
-          if (
-            responseData?.errors?.Name?.includes(
-              "A category with this name already exists for your business."
-            )
-          ) {
-            errorMessage = "Una categoría con este nombre ya existe.";
-          } else if (responseData?.errors?.Name) {
-            errorMessage = responseData.errors.Name[0];
-          } else {
-            errorMessage =
-              responseData?.title ||
-              responseData?.detail ||
-              "La categoría ya existe o el nombre es inválido.";
-          }
-        } else if (response.status === 409) {
-          errorMessage =
-            responseData?.title ||
-            responseData?.detail ||
-            "Conflicto: El recurso ya podría existir o hubo un problema.";
-        } else {
-          errorMessage =
-            responseData?.detail ||
-            responseData?.message ||
-            `Error del servidor (${response.status})`;
-        }
-      } else if (axiosError.message) {
-        errorMessage = `Error de red: ${axiosError.message}`;
-      }
-      setEditError(errorMessage);
+      setEditError(
+        axiosError.response?.data?.detail ||
+          "El nombre de la categoría ya existe."
+      );
     } finally {
       setEditLoading(false);
     }
   };
 
-  const handleDeleteClick = (categoryId: string) => {
-    const category = categories.find((cat) => cat.id === categoryId);
-    if (category) {
-      setCategoryToDelete({ id: category.id, name: category.name });
-      setIsDeleteModalOpen(true);
-      setErrorModalMessage(null);
-      setIsErrorModalOpen(false);
-    }
-  };
-  const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false);
-    setCategoryToDelete(null);
-  };
-  const handleErrorModalClose = () => {
-    setIsErrorModalOpen(false);
-    setErrorModalMessage(null);
-  };
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    setSuccessModalMessage(null);
+  const handleDeleteClick = (category: CategoryDto) => {
+    setModalInfo({
+      type: "delete",
+      title: "Confirmar Eliminación",
+      message: (
+        <>
+          ¿Estás seguro de querer borrar la categoría{" "}
+          <strong>"{category.name}"</strong>?
+        </>
+      ),
+      warningMessage:
+        "Esta acción no se puede deshacer. Si la categoría tiene productos asociados, la eliminación podría fallar.",
+      onConfirm: () => handleConfirmDelete(category),
+      confirmButtonVariant: "danger",
+      icon: <LuTriangleAlert />,
+      iconType: "danger",
+    });
   };
 
-  const handleConfirmDelete = async () => {
-    if (!categoryToDelete) return;
+  const handleConfirmDelete = async (categoryToDelete: {
+    id: string;
+    name: string;
+  }) => {
     setDeletingId(categoryToDelete.id);
-    setIsDeleteModalOpen(false);
+    setModalInfo(null);
     try {
       await deleteAdminCategory(categoryToDelete.id);
-      setSuccessModalMessage(
-        `Categoría "${categoryToDelete.name}" eliminada correctamente.`
-      );
-      setIsSuccessModalOpen(true);
-      setCategoryToDelete(null);
+      setModalInfo({
+        type: "success",
+        title: "Éxito",
+        message: `Categoría "${categoryToDelete.name}" eliminada correctamente.`,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleCheck />,
+        iconType: "success",
+      });
       await fetchCategories();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      let userErrorMessage = `No se pudo borrar la categoría "${categoryToDelete.name}".`;
-      if (axiosError.response?.status === 400) {
-        userErrorMessage =
-          axiosError.response.data?.detail ||
-          axiosError.response.data?.title ||
-          "La categoría tiene productos asociados y no puede ser eliminada.";
-      } else {
-        userErrorMessage =
-          "La categoría tiene productos asociados y no puede ser eliminada.";
-      }
-      setErrorModalMessage(userErrorMessage);
-      setIsErrorModalOpen(true);
+      setModalInfo({
+        type: "error",
+        title: "Error al Eliminar",
+        message:
+          axiosError.response?.data?.detail ||
+          `No se pudo borrar la categoría "${categoryToDelete.name}". Es probable que tenga productos asociados.`,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleX />,
+        iconType: "danger",
+      });
     } finally {
       setDeletingId(null);
     }
   };
-
-  const deleteModalMessage: ReactNode = categoryToDelete ? (
-    <>
-      ¿Estás seguro de querer borrar la categoría{" "}
-      <strong>"{categoryToDelete.name}"</strong>?
-    </>
-  ) : (
-    ""
-  );
-
-  const deleteModalWarning: ReactNode = (
-    <>
-      Esta acción no se puede deshacer. Si la categoría tiene productos
-      asociados, la eliminación podría fallar.
-    </>
-  );
 
   return (
     <div className={styles.pageContainer}>
@@ -340,7 +253,7 @@ const CategoryListPage: React.FC = () => {
 
       {loading && <p className={styles.loadingText}>Cargando categorías...</p>}
       {error && <p className={styles.errorText}>{error}</p>}
-      {!loading && !error && categories.length >= 0 && (
+      {!loading && !error && (
         <CategoryTable
           categories={categories}
           editingCategoryId={editingCategoryId}
@@ -351,7 +264,10 @@ const CategoryListPage: React.FC = () => {
           onEditClick={handleEditClick}
           onCancelEdit={handleCancelEdit}
           onSaveEdit={handleSaveEdit}
-          onDeleteClick={handleDeleteClick}
+          onDeleteClick={(catId) => {
+            const cat = categories.find((c) => c.id === catId);
+            if (cat) handleDeleteClick(cat);
+          }}
           onEditingNameChange={handleEditingNameChange}
         />
       )}
@@ -361,45 +277,23 @@ const CategoryListPage: React.FC = () => {
         </p>
       )}
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCancelDelete}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar Eliminación"
-        message={deleteModalMessage}
-        warningMessage={deleteModalWarning}
-        confirmText="Sí, Borrar"
-        cancelText="Cancelar"
-        isConfirming={!!deletingId}
-        icon={<LuTriangleAlert />}
-        iconType="danger"
-        confirmButtonVariant="danger"
-      />
-
-      <ConfirmationModal
-        isOpen={isErrorModalOpen}
-        onClose={handleErrorModalClose}
-        onConfirm={handleErrorModalClose}
-        title="Error al Eliminar"
-        message={errorModalMessage || "Ocurrió un error."}
-        confirmText="OK"
-        showCancelButton={false}
-        icon={<LuCircleX />}
-        iconType="danger"
-        confirmButtonVariant="primary"
-      />
-      <ConfirmationModal
-        isOpen={isSuccessModalOpen}
-        onClose={handleSuccessModalClose}
-        onConfirm={handleSuccessModalClose}
-        title="Éxito"
-        message={successModalMessage || "Operación completada."}
-        confirmText="OK"
-        showCancelButton={false}
-        icon={<LuCircleCheck />}
-        iconType="success"
-        confirmButtonVariant="primary"
-      />
+      {modalInfo && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setModalInfo(null)}
+          onConfirm={modalInfo.onConfirm}
+          title={modalInfo.title}
+          message={modalInfo.message}
+          warningMessage={modalInfo.warningMessage}
+          confirmText={modalInfo.type === "delete" ? "Sí, Borrar" : "OK"}
+          cancelText="Cancelar"
+          isConfirming={!!deletingId}
+          showCancelButton={modalInfo.type === "delete"}
+          icon={modalInfo.icon}
+          iconType={modalInfo.iconType}
+          confirmButtonVariant={modalInfo.confirmButtonVariant || "primary"}
+        />
+      )}
     </div>
   );
 };

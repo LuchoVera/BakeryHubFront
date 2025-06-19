@@ -14,23 +14,11 @@ import {
   LuTriangleAlert,
 } from "react-icons/lu";
 import { PiReceiptLight, PiUserCircle } from "react-icons/pi";
-import {
-  TenantPublicInfoDto,
-  UpdateUserProfileDto,
-  ApiErrorResponse,
-} from "../../types";
+import { UpdateUserProfileDto, ApiErrorResponse } from "../../types";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
-import {
-  fetchPublicTenantInfo,
-  updateUserProfile as apiUpdateUserProfile,
-} from "../../services/apiService";
+import { updateUserProfile as apiUpdateUserProfile } from "../../services/apiService";
 import { AxiosError } from "axios";
-
-interface UserProfilePageProps {
-  subdomain: string;
-}
-
-type EditableField = "name" | "phone" | null;
+import { useTenant } from "../../hooks/useTenant";
 
 interface FeedbackModalData {
   title: string;
@@ -49,7 +37,7 @@ const capitalizeName = (name: string): string => {
     .join(" ");
 };
 
-const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
+const UserProfilePage: React.FC = () => {
   const {
     user,
     logout,
@@ -57,28 +45,30 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     isLoading: authLoading,
     login: updateUserAuthContext,
   } = useAuth();
+  const {
+    tenantInfo,
+    isLoading: isLoadingTenant,
+    error: tenantError,
+  } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
-  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
+
+  const [editingField, setEditingField] = useState<"name" | "phone" | null>(
     null
   );
-  const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
-  const [errorTenant, setErrorTenant] = useState<string | null>(null);
-  const [editingField, setEditingField] = useState<EditableField>(null);
   const [tempValue, setTempValue] = useState<string>("");
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] =
     useState<boolean>(false);
   const [feedbackModalData, setFeedbackModalData] =
     useState<FeedbackModalData | null>(null);
+
   useEffect(() => {
     if (editingField === "name" && user) {
       setTempValue(user.name);
     } else if (editingField === "phone" && user) {
-      const currentPhone = (user as any).phoneNumber;
-      setTempValue(
-        currentPhone && currentPhone !== "No disponible" ? currentPhone : ""
-      );
+      const currentPhone = user.phoneNumber || "";
+      setTempValue(currentPhone);
     }
   }, [editingField, user]);
 
@@ -89,36 +79,11 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     }
   }, [isAuthenticated, authLoading, navigate, location.pathname]);
 
-  useEffect(() => {
-    const fetchTenantData = async () => {
-      setIsLoadingPage(true);
-      try {
-        const data = await fetchPublicTenantInfo(subdomain);
-        setTenantInfo(data);
-        setErrorTenant(null);
-      } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        setErrorTenant(
-          axiosError.response?.data?.detail ||
-            `No se pudo cargar la información de la tienda "${subdomain}".`
-        );
-        setTenantInfo(null);
-      } finally {
-        setIsLoadingPage(false);
-      }
-    };
-    if (isAuthenticated) {
-      fetchTenantData();
-    } else if (!authLoading) {
-      setIsLoadingPage(false);
-    }
-  }, [subdomain, isAuthenticated, authLoading]);
-
   const handleLogout = async () => {
     await logout();
   };
 
-  const handleEditClick = (field: EditableField) => {
+  const handleEditClick = (field: "name" | "phone" | null) => {
     setEditingField(field);
   };
 
@@ -184,17 +149,12 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
 
     setIsSavingProfile(true);
 
-    const currentPhoneNumberInContext =
-      (user as any).phoneNumber && (user as any).phoneNumber !== "No disponible"
-        ? (user as any).phoneNumber
-        : "";
-
     const profileDataForBackend: UpdateUserProfileDto = {
       name: editingField === "name" ? payloadValue : user.name,
       phoneNumber:
         editingField === "phone"
           ? payloadValue || null
-          : currentPhoneNumberInContext || null,
+          : user.phoneNumber || null,
     };
 
     try {
@@ -220,9 +180,6 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
           .map((e, i) => <div key={i}>{e}</div>);
       } else if (axiosError.response?.data?.detail) {
         errorMessage = axiosError.response.data.detail;
-      } else if (axiosError.message) {
-        errorMessage =
-          "No se pudo conectar con el servidor. Intenta de nuevo más tarde.";
       }
       showAppFeedbackModal("Error de Actualización", errorMessage, "danger");
     } finally {
@@ -230,7 +187,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     }
   };
 
-  if (authLoading || isLoadingPage) {
+  if (authLoading || isLoadingTenant) {
     return <div className={styles.loadingMessage}>Cargando perfil...</div>;
   }
 
@@ -240,17 +197,16 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
     );
   }
 
-  if (errorTenant && !tenantInfo) {
-    return <div className={styles.errorMessage}>{errorTenant}</div>;
+  if (tenantError && !tenantInfo) {
+    return <div className={styles.errorMessage}>{tenantError}</div>;
   }
 
-  const currentPhoneNumber = (user as any).phoneNumber || "No disponible";
+  const currentPhoneNumber = user.phoneNumber || "No disponible";
   const displayName = user ? capitalizeName(user.name) : "";
-  const nameInContactSection = user ? capitalizeName(user.name) : "";
 
   return (
     <div className={styles.pageContainer}>
-      {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
+      <TenantHeader />
       <main className={styles.mainContent}>
         <Link to="/" className={styles.backLink}>
           <LuChevronLeft /> Volver a la Tienda
@@ -299,7 +255,7 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({ subdomain }) => {
               ) : (
                 <>
                   <span className={styles.infoValue}>
-                    {nameInContactSection}
+                    {capitalizeName(user.name)}
                   </span>
                   <button
                     onClick={() => handleEditClick("name")}

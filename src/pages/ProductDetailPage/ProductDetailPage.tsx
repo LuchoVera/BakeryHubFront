@@ -1,30 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ProductDto, TenantPublicInfoDto, ApiErrorResponse } from "../../types";
+import { ProductDto } from "../../types";
 import styles from "./ProductDetailPage.module.css";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import { useAuth } from "../../AuthContext";
 import { useCart } from "../../hooks/useCart";
 import { useNotification } from "../../hooks/useNotification";
+import { useTenant } from "../../hooks/useTenant";
 import { LuTag } from "react-icons/lu";
-import {
-  fetchPublicTenantInfo,
-  fetchPublicProductDetail,
-} from "../../services/apiService";
+import { fetchPublicProductDetail } from "../../services/apiService";
 import { AxiosError } from "axios";
 
-interface ProductDetailPageProps {
-  subdomain: string;
-}
-
-const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
+const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
+  const {
+    subdomain,
+    isLoading: isLoadingTenant,
+    error: tenantError,
+  } = useTenant();
+
   const [product, setProduct] = useState<ProductDto | null>(null);
-  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
-    null
-  );
-  const [isLoadingPage, setIsLoadingPage] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingProduct, setIsLoadingProduct] = useState<boolean>(true);
+  const [errorProduct, setErrorProduct] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const { user } = useAuth();
@@ -32,59 +29,39 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
   const { showNotification } = useNotification();
 
   useEffect(() => {
-    if (!subdomain || !productId) {
-      setError(
-        "Falta información para cargar la página (subdominio o ID de producto)."
-      );
-      setIsLoadingPage(false);
+    if (!productId || !subdomain) {
+      setErrorProduct("Falta información para cargar el producto.");
       return;
     }
 
-    setIsLoadingPage(true);
-    setError(null);
-    setProduct(null);
-    setTenantInfo(null);
-
-    const fetchPageData = async () => {
+    const fetchProductData = async () => {
+      setIsLoadingProduct(true);
+      setErrorProduct(null);
       try {
-        const [tenantData, productData] = await Promise.all([
-          fetchPublicTenantInfo(subdomain),
-          fetchPublicProductDetail(subdomain, productId),
-        ]);
-
-        setTenantInfo(tenantData);
+        const productData = await fetchPublicProductDetail(
+          subdomain,
+          productId
+        );
         setProduct(productData);
-
         if (productData.images && productData.images.length > 0) {
           setSelectedImage(productData.images[0]);
-        } else {
-          setSelectedImage(null);
         }
       } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
+        const axiosError = err as AxiosError;
         if (axiosError.response?.status === 404) {
-          setError(
-            axiosError.response.data?.detail ||
-              "Producto o tienda no encontrada."
-          );
+          setErrorProduct("Producto no encontrado.");
         } else {
-          setError(
-            axiosError.response?.data?.detail ||
-              axiosError.message ||
-              "Ocurrió un error cargando la página del producto."
-          );
+          setErrorProduct("Ocurrió un error cargando el producto.");
         }
-        setProduct(null);
       } finally {
-        setIsLoadingPage(false);
+        setIsLoadingProduct(false);
       }
     };
 
-    fetchPageData();
+    fetchProductData();
   }, [productId, subdomain]);
 
   const isAdmin = user?.roles?.includes("Admin") ?? false;
-
   const isButtonDisabled = !product || !product.isAvailable || isAdmin;
 
   const handleAddToCart = () => {
@@ -109,14 +86,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
     setSelectedImage(imageUrl);
   };
 
-  if (isLoadingPage) {
+  if (isLoadingTenant || isLoadingProduct) {
     return <div className={styles.message}>Cargando...</div>;
   }
 
-  if (error && (!tenantInfo || !product)) {
+  const error = tenantError || errorProduct;
+  if (error) {
     return (
       <div className={styles.pageContainerWithError}>
-        {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
+        <TenantHeader />
         <div className={styles.message} style={{ paddingTop: "20px" }}>
           <p className={styles.errorText}>{error}</p>
           <Link to="/" className={styles.backLink}>
@@ -127,29 +105,19 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ subdomain }) => {
     );
   }
 
-  if (!product && !isLoadingPage) {
-    return (
-      <div className={styles.pageContainerWithError}>
-        {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
-        <div className={styles.message} style={{ paddingTop: "20px" }}>
-          <p>No se pudo cargar la información del producto.</p>
-          <Link to="/" className={styles.backLink}>
-            Volver al Catálogo
-          </Link>
-        </div>
-      </div>
-    );
+  if (!product) {
+    return null;
   }
-  if (!product) return null;
 
   const leadTimeNumber = Number(product.leadTimeDisplay);
   const leadTimeText =
     product.leadTimeDisplay && leadTimeNumber > 0
       ? `${leadTimeNumber} día${leadTimeNumber > 1 ? "s" : ""}`
       : null;
+
   return (
     <div>
-      <TenantHeader tenantName={tenantInfo?.name ?? subdomain} />{" "}
+      <TenantHeader />
       <div className={styles.pageContainer}>
         <div className={styles.productDetailLayout}>
           <div className={styles.imageSection}>

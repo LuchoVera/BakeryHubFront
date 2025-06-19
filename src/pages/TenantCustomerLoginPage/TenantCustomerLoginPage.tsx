@@ -2,15 +2,11 @@ import React from "react";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import LoginForm from "../../components/LoginForm/LoginForm";
 import { useAuth } from "../../AuthContext";
+import { useTenant } from "../../hooks/useTenant";
 import styles from "./TenantCustomerLoginPage.module.css";
 
-interface TenantCustomerLoginPageProps {
-  subdomain: string;
-}
-
-const TenantCustomerLoginPage: React.FC<TenantCustomerLoginPageProps> = ({
-  subdomain,
-}) => {
+const TenantCustomerLoginPage: React.FC = () => {
+  const { subdomain } = useTenant();
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 

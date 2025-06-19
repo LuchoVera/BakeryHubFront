@@ -6,7 +6,6 @@ import React, {
   useEffect,
   FocusEvent,
 } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
 import {
   CustomerRegisterDto,
@@ -31,17 +30,12 @@ import {
   linkTenantCustomer,
 } from "../../services/apiService";
 import { AxiosError } from "axios";
-
-interface TenantCustomerSignUpFormProps {
-  subdomain: string;
-  tenantName?: string;
-}
+import { useTenant } from "../../hooks/useTenant";
 
 type EmailCheckState = "idle" | "checking" | "checked";
 
-const TenantCustomerSignUpForm: React.FC<TenantCustomerSignUpFormProps> = ({
-  subdomain,
-}) => {
+const TenantCustomerSignUpForm: React.FC = () => {
+  const { subdomain } = useTenant();
   const [email, setEmail] = useState("");
   const [emailCheckState, setEmailCheckState] =
     useState<EmailCheckState>("idle");
