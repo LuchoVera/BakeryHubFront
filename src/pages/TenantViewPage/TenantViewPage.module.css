@@ -215,7 +215,7 @@
   font-size: 1.1em;
   min-height: 200px;
   display: flex;
-  justify-content: end;
+  justify-content: center;
   align-items: center;
 }
 
