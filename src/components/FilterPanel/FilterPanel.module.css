@@ -1,0 +1,107 @@
+.filterPanel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.3s ease-out;
+  margin-bottom: var(--space-xl);
+  justify-content: center;
+}
+
+.filterGroupItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.filterLabel {
+  font-size: 0.8em;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.filterSelect,
+.filterInput {
+  padding: calc(var(--space-xs) + 2px) var(--space-sm);
+  font-size: 0.9em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-surface);
+}
+
+.filterSelect {
+  min-width: 150px;
+}
+.filterInput {
+  width: 100px;
+}
+
+.autocomplete {
+  width: 300px;
+}
+
+.filterActionButtons {
+  display: flex;
+  gap: var(--space-sm);
+  margin-left: var(--space-md);
+  align-self: flex-end;
+}
+
+.applyButton,
+.clearButton {
+  padding: var(--space-xs) var(--space-md);
+  font-size: 0.85em;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.applyButton {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: 1px solid var(--color-primary);
+}
+
+.clearButton {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .filterPanel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filterSelect,
+  .filterInput,
+  .autocomplete {
+    width: 100%;
+  }
+  .filterActionButtons {
+    margin-left: 0;
+    flex-direction: column;
+    width: 100%;
+  }
+  .applyButton,
+  .clearButton {
+    width: 100%;
+  }
+}
