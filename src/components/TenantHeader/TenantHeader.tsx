@@ -2,16 +2,16 @@ import React, { useState, FormEvent, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./TenantHeader.module.css";
 import { useAuth } from "../../AuthContext";
+import { useTenant } from "../../hooks/useTenant";
 import { FaSearch } from "react-icons/fa";
 import { LuShoppingCart } from "react-icons/lu";
 import { PiUserCircle, PiReceiptLight } from "react-icons/pi";
 import { useCart } from "../../hooks/useCart";
 
-interface TenantHeaderProps {
-  tenantName: string;
-}
+const TenantHeader: React.FC = () => {
+  const { tenantInfo } = useTenant();
+  const tenantName = tenantInfo?.name || "";
 
-const TenantHeader: React.FC<TenantHeaderProps> = ({ tenantName }) => {
   const { isAuthenticated, user } = useAuth();
   const { getCartTotalQuantity } = useCart();
   const [isSearchVisible, setIsSearchVisible] = useState(false);

@@ -3,6 +3,7 @@ import styles from "./OrdersTable.module.css";
 import { OrderDto, OrderStatus } from "../../types";
 import { useNavigate } from "react-router-dom";
 import { FaWhatsapp } from "react-icons/fa";
+import { formatDate } from "../../utils/dateUtils";
 
 interface OrdersTableProps {
   orders: OrderDto[];
@@ -51,25 +52,6 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
   ) => {
     const newStatus = event.target.value as OrderStatus | string;
     onStatusChange(orderId, newStatus);
-  };
-
-  const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return "N/A";
-    try {
-      const dateParts = dateString.split("T")[0].split("-");
-      const date = new Date(
-        Number(dateParts[0]),
-        Number(dateParts[1]) - 1,
-        Number(dateParts[2])
-      );
-      return date.toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch (e) {
-      return "Fecha Inválida";
-    }
   };
 
   const handleRowClick = (orderId: string) => {
