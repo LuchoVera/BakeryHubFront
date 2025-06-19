@@ -1,26 +1,5 @@
 import { OrderDto } from "../types";
-
-const formatDateForMessage = (
-  dateString: string | null | undefined
-): string => {
-  if (!dateString) return "Fecha no especificada";
-  try {
-    const dateParts = dateString.split("T")[0].split("-");
-    const date = new Date(
-      Number(dateParts[0]),
-      Number(dateParts[1]) - 1,
-      Number(dateParts[2])
-    );
-
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch (e) {
-    return "Fecha Inválida";
-  }
-};
+import { formatDate } from "./dateUtils";
 
 export const generateWhatsAppMessageForOrder = (
   order: OrderDto,
@@ -28,7 +7,7 @@ export const generateWhatsAppMessageForOrder = (
 ): string => {
   const customerName = order.customerName || "Cliente";
   const orderNum = order.orderNumber ?? order.id.substring(0, 8).toUpperCase();
-  const deliveryDate = formatDateForMessage(order.deliveryDate);
+  const deliveryDate = formatDate(order.deliveryDate);
   let messageBody = "";
 
   switch (order.status?.toLowerCase()) {
