@@ -35,6 +35,7 @@ import CustomerOrderDetailPage from "./pages/CustomerOrderDetailPage/CustomerOrd
 import UserProfilePage from "./pages/UserProfilePage/UserProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage/ChangePasswordPage";
 import AdminTagsPage from "./pages/admin/AdminTagsPage/AdminTagsPage";
+import AdminCreateManualOrderPage from "./pages/admin/AdminCreateManualOrderPage/AdminCreateManualOrderPage";
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -138,6 +139,10 @@ function App() {
                       <Route
                         path="orders/:orderId"
                         element={<AdminOrderDetailPage />}
+                      />
+                      <Route
+                        path="orders/new-manual"
+                        element={<AdminCreateManualOrderPage />}
                       />
                       <Route path="settings" element={<StoreSettingsPage />} />
                       <Route path="tags" element={<AdminTagsPage />} />
