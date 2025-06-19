@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
-import { OrderDto, TenantPublicInfoDto, ApiErrorResponse } from "../../types";
+import { useTenant } from "../../hooks/useTenant";
+import { OrderDto, ApiErrorResponse } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import styles from "./CustomerOrderDetailPage.module.css";
 import {
@@ -11,41 +12,9 @@ import {
   LuHash,
   LuCircleAlert,
 } from "react-icons/lu";
-import {
-  fetchPublicTenantInfo,
-  fetchTenantOrderById,
-} from "../../services/apiService";
+import { fetchTenantOrderById } from "../../services/apiService";
 import { AxiosError } from "axios";
-
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return "N/A";
-  try {
-    const dateOnlyString = dateString.split("T")[0];
-    const parts = dateOnlyString.split("-");
-
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const date = new Date(year, month, day);
-
-      return date.toLocaleDateString("es-ES", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      });
-    }
-
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  } catch (e) {
-    return "Fecha Inválida";
-  }
-};
+import { formatDate } from "../../utils/dateUtils";
 
 const formatCurrency = (amount: number): string => {
   return `Bs. ${amount.toFixed(2)}`;
@@ -80,23 +49,21 @@ const getStatusClass = (status: string): string => {
   }
 };
 
-interface CustomerOrderDetailPageProps {
-  subdomain: string;
-}
-
-const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
-  subdomain,
-}) => {
+const CustomerOrderDetailPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const {
+    tenantInfo,
+    subdomain,
+    isLoading: isLoadingTenant,
+    error: tenantError,
+  } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [order, setOrder] = useState<OrderDto | null>(null);
-  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(true);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -104,19 +71,16 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
       navigate("/login", { state: { from: location.pathname } });
     }
   }, [isAuthenticated, authLoading, navigate, location.pathname]);
-  const fetchPageData = useCallback(async () => {
-    if (!isAuthenticated || !orderId || authLoading) {
-      setIsLoading(false);
+
+  const fetchOrderData = useCallback(async () => {
+    if (!isAuthenticated || !orderId || !subdomain) {
+      setIsLoadingOrder(false);
       return;
     }
-    setIsLoading(true);
-    setError(null);
+    setIsLoadingOrder(true);
+    setOrderError(null);
 
     try {
-      if (!tenantInfo) {
-        const fetchedTenantInfo = await fetchPublicTenantInfo(subdomain);
-        setTenantInfo(fetchedTenantInfo);
-      }
       const orderData = await fetchTenantOrderById(subdomain, orderId);
       setOrder(orderData);
     } catch (err) {
@@ -124,9 +88,9 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
       if (axiosError.response?.status === 401) {
         navigate("/login", { state: { from: location.pathname } });
       } else if (axiosError.response?.status === 404) {
-        setError(`Pedido no encontrado o la tienda '${subdomain}' no existe.`);
+        setOrderError(`Pedido no encontrado.`);
       } else {
-        setError(
+        setOrderError(
           axiosError.response?.data?.detail ||
             axiosError.message ||
             "Error al cargar el detalle del pedido."
@@ -134,39 +98,29 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
       }
       setOrder(null);
     } finally {
-      setIsLoading(false);
+      setIsLoadingOrder(false);
     }
-  }, [
-    subdomain,
-    orderId,
-    isAuthenticated,
-    authLoading,
-    navigate,
-    location.pathname,
-    tenantInfo,
-  ]);
+  }, [subdomain, orderId, isAuthenticated, navigate, location.pathname]);
 
   useEffect(() => {
-    fetchPageData();
-  }, [fetchPageData]);
+    if (!isLoadingTenant && tenantInfo) {
+      fetchOrderData();
+    }
+  }, [fetchOrderData, isLoadingTenant, tenantInfo]);
 
-  if (authLoading || isLoading) {
+  if (authLoading || isLoadingTenant) {
     return (
       <div className={styles.messageCenter}>
-        <LuShoppingBag /> Cargando detalle del pedido...
+        <LuShoppingBag /> Cargando información de la tienda...
       </div>
     );
   }
 
   return (
     <div className={styles.pageContainer}>
-      {tenantInfo && <TenantHeader tenantName={tenantInfo.name} />}
-      {!tenantInfo && error && !isLoading && (
-        <div className={styles.errorLoadingHeader}>
-          {error.includes("tienda")
-            ? error
-            : "Error al cargar información de la tienda."}
-        </div>
+      {tenantInfo && <TenantHeader />}
+      {!tenantInfo && tenantError && (
+        <div className={styles.errorLoadingHeader}>{tenantError}</div>
       )}
 
       <main className={styles.detailContent}>
@@ -176,14 +130,20 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
           </Link>
         </div>
 
-        {error && !order && (
-          <div className={`${styles.messageCenter} ${styles.error}`}>
-            <LuCircleAlert size={48} />
-            <p>{error}</p>
+        {isLoadingOrder && (
+          <div className={styles.messageCenter}>
+            <LuShoppingBag /> Cargando detalle del pedido...
           </div>
         )}
 
-        {!error && order && (
+        {orderError && (
+          <div className={`${styles.messageCenter} ${styles.error}`}>
+            <LuCircleAlert size={48} />
+            <p>{orderError}</p>
+          </div>
+        )}
+
+        {!isLoadingOrder && !orderError && order && (
           <>
             <h1 className={styles.pageTitle}>
               Detalle del Pedido{" "}
@@ -287,11 +247,6 @@ const CustomerOrderDetailPage: React.FC<CustomerOrderDetailPageProps> = ({
               )}
             </section>
           </>
-        )}
-        {!error && !order && !isLoading && (
-          <div className={styles.messageCenter}>
-            <p>No se encontró el pedido.</p>
-          </div>
         )}
       </main>
     </div>

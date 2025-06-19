@@ -1,28 +1,21 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import styles from "./TenantViewPage.module.css";
-import {
-  ApiErrorResponse,
-  ProductDto,
-  TenantPublicInfoDto,
-  CategoryDto,
-  TagDto,
-} from "../../types";
+import { ProductDto, CategoryDto, TagDto } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import CategorySidebar from "../../components/CategorySidebar/CategorySidebar";
+import FilterPanel, {
+  AppliedFilters,
+} from "../../components/FilterPanel/FilterPanel";
 import { useAuth } from "../../AuthContext";
+import { useTenant } from "../../hooks/useTenant";
 import { LuFilter, LuX } from "react-icons/lu";
-import Autocomplete from "@mui/material/Autocomplete";
-import Chip from "@mui/material/Chip";
-import TextField from "@mui/material/TextField";
 import {
-  fetchPublicTenantInfo,
   fetchPublicTenantCategoriesPreferred,
   fetchPublicTenantProducts,
   fetchPublicTenantRecommendations,
   fetchPublicTenantTags,
 } from "../../services/apiService";
-import { AxiosError } from "axios";
 
 type GroupedProductsRender = Record<string, ProductDto[]>;
 
@@ -35,193 +28,150 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffledArray;
 };
 
-interface TenantViewPageProps {
-  subdomain: string;
-}
+const TenantViewPage: React.FC = () => {
+  const {
+    tenantInfo,
+    subdomain,
+    isLoading: isLoadingTenant,
+    error: tenantError,
+  } = useTenant();
+  const { isAuthenticated } = useAuth();
 
-const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
-  const [tenantInfo, setTenantInfo] = useState<TenantPublicInfoDto | null>(
-    null
-  );
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
-  const [isLoadingPageData, setIsLoadingPageData] = useState<boolean>(true);
-  const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
-  const [allRecommendations, setAllRecommendations] = useState<ProductDto[]>(
-    []
+  const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
+  const [isLoadingSecondaryData, setIsLoadingSecondaryData] =
+    useState<boolean>(true);
+  const [errorSecondaryData, setErrorSecondaryData] = useState<string | null>(
+    null
   );
+
   const [displayedRecommendations, setDisplayedRecommendations] = useState<
     ProductDto[]
   >([]);
   const [loadingRecommendations, setLoadingRecommendations] =
     useState<boolean>(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
-  );
-  const [appliedMinPrice, setAppliedMinPrice] = useState<string | null>(null);
-  const [appliedMaxPrice, setAppliedMaxPrice] = useState<string | null>(null);
-  const [tempMinPrice, setTempMinPrice] = useState<string>("");
-  const [tempMaxPrice, setTempMaxPrice] = useState<string>("");
+
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
-  const [appliedTags, setAppliedTags] = useState<string[]>([]);
-  const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
-  const [selectedTagsInPanel, setSelectedTagsInPanel] = useState<TagDto[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
+    categoryId: null,
+    minPrice: null,
+    maxPrice: null,
+    tags: [],
+  });
 
   useEffect(() => {
-    setIsLoadingPageData(true);
-    setError(null);
-    setTenantInfo(null);
-    setProducts([]);
-    setAllCategories([]);
-    setAllTenantTags([]);
-    setAllRecommendations([]);
-    const fetchInitialPageData = async () => {
+    if (!tenantInfo) return;
+
+    const fetchPageData = async () => {
+      setIsLoadingSecondaryData(true);
+      setErrorSecondaryData(null);
       try {
-        const tenantData = await fetchPublicTenantInfo(subdomain);
-        setTenantInfo(tenantData);
         const [categoriesData, tagsData] = await Promise.all([
-          (async () => {
-            let cats: CategoryDto[] = [];
-            let fallbackNeeded = !isAuthenticated;
-            if (isAuthenticated) {
-              try {
-                const preferredCats =
-                  await fetchPublicTenantCategoriesPreferred(subdomain);
-                if (preferredCats && preferredCats.length > 0)
-                  cats = preferredCats;
-                else fallbackNeeded = true;
-              } catch {
-                fallbackNeeded = true;
-              }
-            }
-            if (fallbackNeeded) {
-              try {
-                const prodsForCats = await fetchPublicTenantProducts(subdomain);
-                const categoriesMap = new Map<string, string>();
-                (prodsForCats || []).forEach((p) => {
-                  if (
-                    p.categoryId &&
-                    p.categoryName &&
-                    !categoriesMap.has(p.categoryId)
-                  ) {
-                    categoriesMap.set(p.categoryId, p.categoryName);
-                  }
-                });
-                cats = Array.from(categoriesMap.entries()).map(
-                  ([id, name]) => ({ id, name })
-                );
-                cats.sort((a, b) => a.name.localeCompare(b.name));
-              } catch {}
-            }
-            return cats;
-          })(),
+          fetchPublicTenantCategoriesPreferred(subdomain),
           fetchPublicTenantTags(subdomain),
         ]);
-        setAllCategories(categoriesData);
+        setAllCategories(categoriesData || []);
         setAllTenantTags(tagsData || []);
       } catch (err) {
-        const axiosError = err as AxiosError<ApiErrorResponse>;
-        if (axiosError.response?.status === 404) {
-          setError(`La tienda "${subdomain}" no fue encontrada.`);
-        } else {
-          setError(
-            axiosError.response?.data?.detail ||
-              axiosError.message ||
-              "Ocurrió un error cargando datos de la tienda."
-          );
-        }
-        setTenantInfo(null);
-        setAllCategories([]);
-        setAllTenantTags([]);
+        setErrorSecondaryData(
+          "No se pudieron cargar las categorías o etiquetas."
+        );
       } finally {
-        setIsLoadingPageData(false);
+        setIsLoadingSecondaryData(false);
       }
     };
-    fetchInitialPageData();
-  }, [subdomain, isAuthenticated]);
+    fetchPageData();
+  }, [tenantInfo, subdomain]);
 
   const performProductFetch = useCallback(async () => {
-    if (!tenantInfo || error) {
-      setIsLoadingProducts(false);
-      setProducts([]);
-      return;
-    }
-    setIsLoadingProducts(true);
-    setError(null);
+    if (!tenantInfo) return;
+
+    setIsLoadingSecondaryData(true);
+    setErrorSecondaryData(null);
     try {
       const params = new URLSearchParams();
-      if (selectedCategoryId) params.append("categoryId", selectedCategoryId);
-      if (appliedMinPrice) params.append("minPrice", appliedMinPrice);
-      if (appliedMaxPrice) params.append("maxPrice", appliedMaxPrice);
-      appliedTags.forEach((tag) => params.append("tags", tag));
-      const productData = await fetchPublicTenantProducts(
-        tenantInfo.subdomain,
-        params
-      );
+      if (appliedFilters.categoryId)
+        params.append("categoryId", appliedFilters.categoryId);
+      if (appliedFilters.minPrice)
+        params.append("minPrice", appliedFilters.minPrice);
+      if (appliedFilters.maxPrice)
+        params.append("maxPrice", appliedFilters.maxPrice);
+      appliedFilters.tags.forEach((tag) => params.append("tags", tag));
+
+      const productData = await fetchPublicTenantProducts(subdomain, params);
       setProducts(productData || []);
     } catch (err) {
-      const axiosError = err as AxiosError<ApiErrorResponse>;
-      if (axiosError.response?.status !== 404) {
-        setError(
-          axiosError.response?.data?.detail ||
-            axiosError.message ||
-            "No se pudieron cargar los productos."
-        );
-      }
-      setProducts([]);
+      setErrorSecondaryData("No se pudieron cargar los productos.");
     } finally {
-      setIsLoadingProducts(false);
+      setIsLoadingSecondaryData(false);
     }
-  }, [
-    tenantInfo,
-    selectedCategoryId,
-    appliedMinPrice,
-    appliedMaxPrice,
-    appliedTags,
-    error,
-  ]);
+  }, [tenantInfo, subdomain, appliedFilters]);
 
   useEffect(() => {
-    if (!isLoadingPageData) {
+    if (!isLoadingTenant && tenantInfo) {
       performProductFetch();
     }
-  }, [performProductFetch, isLoadingPageData]);
+  }, [performProductFetch, isLoadingTenant, tenantInfo]);
 
   useEffect(() => {
-    if (isAuthenticated && subdomain && tenantInfo && !isLoadingPageData) {
+    if (isAuthenticated && tenantInfo) {
       setLoadingRecommendations(true);
-      setAllRecommendations([]);
-      setDisplayedRecommendations([]);
-      const fetchRecs = async () => {
-        try {
-          const recData = await fetchPublicTenantRecommendations(subdomain);
-          setAllRecommendations(recData || []);
-        } catch (err) {
-          setAllRecommendations([]);
-        } finally {
-          setLoadingRecommendations(false);
-        }
-      };
-      fetchRecs();
-    } else {
-      setAllRecommendations([]);
-      setDisplayedRecommendations([]);
-      setLoadingRecommendations(false);
+      fetchPublicTenantRecommendations(subdomain)
+        .then((data) => {
+          const shuffled = shuffleArray(data || []);
+          setDisplayedRecommendations(shuffled.slice(0, 6));
+        })
+        .catch(() => setDisplayedRecommendations([]))
+        .finally(() => setLoadingRecommendations(false));
     }
-  }, [isAuthenticated, subdomain, tenantInfo, isLoadingPageData]);
+  }, [isAuthenticated, tenantInfo, subdomain]);
 
-  useEffect(() => {
-    if (allRecommendations.length > 0) {
-      const shuffled = shuffleArray(allRecommendations);
-      setDisplayedRecommendations(shuffled.slice(0, 6));
-    } else {
-      setDisplayedRecommendations([]);
-    }
-  }, [allRecommendations]);
+  const handleApplyFilters = (newFilters: AppliedFilters) => {
+    setAppliedFilters((prev) => ({
+      ...prev,
+      minPrice: newFilters.minPrice,
+      maxPrice: newFilters.maxPrice,
+      tags: newFilters.tags,
+    }));
+    setIsFilterPanelOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setAppliedFilters((prev) => ({
+      ...prev,
+      minPrice: null,
+      maxPrice: null,
+      tags: [],
+    }));
+    setIsFilterPanelOpen(false);
+  };
+
+  const handleSelectCategory = (categoryId: string | null) => {
+    setAppliedFilters((prev) => ({ ...prev, categoryId: categoryId }));
+    setIsFilterPanelOpen(false);
+  };
+
+  const arePriceOrTagFiltersApplied = useMemo(() => {
+    return (
+      appliedFilters.minPrice !== null ||
+      appliedFilters.maxPrice !== null ||
+      appliedFilters.tags.length > 0
+    );
+  }, [appliedFilters]);
+
+  const areFiltersActive = useMemo(() => {
+    return appliedFilters.categoryId !== null || arePriceOrTagFiltersApplied;
+  }, [appliedFilters.categoryId, arePriceOrTagFiltersApplied]);
 
   const groupedProductsRender = useMemo(() => {
+    if (appliedFilters.categoryId) {
+      const category = allCategories.find(
+        (c) => c.id === appliedFilters.categoryId
+      );
+      return category ? { [category.name]: products } : {};
+    }
+
     const initialGroup: GroupedProductsRender = {};
     allCategories.forEach((cat) => {
       initialGroup[cat.name] = [];
@@ -233,334 +183,102 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
       acc[categoryKey].push(product);
       return acc;
     }, initialGroup);
-  }, [products, allCategories]);
+  }, [products, allCategories, appliedFilters.categoryId]);
 
-  const categoryLinksForSidebar = useMemo(() => {
-    return allCategories.map((cat) => ({ id: cat.id, name: cat.name }));
-  }, [allCategories]);
+  const renderContent = () => {
+    if (isLoadingTenant || isLoadingSecondaryData) {
+      return <p className={styles.loadingOrError}>Cargando productos...</p>;
+    }
+    if (errorSecondaryData) {
+      return <p className={styles.loadingOrError}>{errorSecondaryData}</p>;
+    }
+    if (products.length === 0) {
+      return (
+        <p className={styles.noProducts}>
+          No se encontraron productos con los filtros actuales.
+        </p>
+      );
+    }
 
-  const handleSelectCategory = (categoryId: string | null) => {
-    setSelectedCategoryId(categoryId);
-  };
+    if (areFiltersActive) {
+      return (
+        <div className={styles.productGrid}>
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      );
+    }
 
-  const toggleFilterPanel = () => {
-    if (!isFilterPanelOpen) {
-      setTempMinPrice(appliedMinPrice || "");
-      setTempMaxPrice(appliedMaxPrice || "");
-      const rehydratedTags = appliedTags.map((tagName) => {
-        const existingTag = allTenantTags.find(
-          (t) => t.name.toLowerCase() === tagName.toLowerCase()
-        );
+    return Object.entries(groupedProductsRender).map(
+      ([categoryName, productsInCategory]) => {
+        if (productsInCategory.length === 0) return null;
+        const category = allCategories.find((c) => c.name === categoryName);
         return (
-          existingTag || {
-            id: `applied_${tagName}_${Date.now()}`,
-            name: tagName,
-          }
+          <section
+            key={category?.id || categoryName}
+            id={category?.id}
+            className={styles.categorySection}
+          >
+            <h2 className={styles.categoryTitle}>{categoryName}</h2>
+            <div className={styles.productGrid}>
+              {productsInCategory.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
         );
-      });
-      setSelectedTagsInPanel(rehydratedTags);
-    }
-    setIsFilterPanelOpen(!isFilterPanelOpen);
-  };
-
-  const handleApplyFilters = () => {
-    const min = parseFloat(tempMinPrice);
-    const max = parseFloat(tempMaxPrice);
-
-    if (tempMinPrice && (isNaN(min) || min < 0)) {
-      alert("Precio mínimo inválido.");
-      return;
-    }
-    if (tempMaxPrice && (isNaN(max) || max < 0)) {
-      alert("Precio máximo inválido.");
-      return;
-    }
-    if (!isNaN(min) && !isNaN(max) && min > max) {
-      alert("El precio mínimo no puede ser mayor al máximo.");
-      return;
-    }
-
-    const newAppliedTags = selectedTagsInPanel.map((tag) => tag.name.trim());
-    setAppliedMinPrice(tempMinPrice || null);
-    setAppliedMaxPrice(tempMaxPrice || null);
-    setAppliedTags(newAppliedTags);
-    setIsFilterPanelOpen(false);
-  };
-
-  const handleClearPanelFilters = () => {
-    setTempMinPrice("");
-    setTempMaxPrice("");
-    setSelectedTagsInPanel([]);
-    setAppliedMinPrice(null);
-    setAppliedMaxPrice(null);
-    setAppliedTags([]);
-    setIsFilterPanelOpen(false);
-  };
-
-  const areAnyPriceOrTagFiltersApplied = useMemo(() => {
-    return (
-      appliedMinPrice !== null ||
-      appliedMaxPrice !== null ||
-      appliedTags.length > 0
+      }
     );
-  }, [appliedMinPrice, appliedMaxPrice, appliedTags]);
+  };
 
-  const areFiltersActive = useMemo(() => {
-    return selectedCategoryId !== null || areAnyPriceOrTagFiltersApplied;
-  }, [selectedCategoryId, areAnyPriceOrTagFiltersApplied]);
-
-  if (isLoadingPageData) {
-    return (
-      <div className={styles.loadingOrError}>
-        Cargando Información de la Tienda...
-      </div>
-    );
+  if (isLoadingTenant) {
+    return <div className={styles.loadingOrError}>Cargando Tienda...</div>;
   }
-  if (error && !tenantInfo) {
-    const { protocol, port } = window.location;
-    const baseHost = window.location.hostname.endsWith(".localhost")
-      ? "localhost"
-      : window.location.hostname;
-    const baseUrl = `${protocol}//${baseHost}${port ? ":" + port : ""}/`;
+
+  if (tenantError) {
     return (
       <div className={styles.loadingOrError}>
         <h1>Error</h1>
-        <p>{error}</p>
-        <a href={baseUrl}>Volver a la página principal</a>
-      </div>
-    );
-  }
-  if (!tenantInfo && !isLoadingPageData) {
-    return (
-      <div className={styles.loadingOrError}>
-        No se pudo cargar la información de la tienda.
+        <p>{tenantError}</p>
       </div>
     );
   }
 
   return (
     <div className={styles.tenantView}>
-      <TenantHeader tenantName={tenantInfo?.name ?? "Cargando..."} />
+      <TenantHeader />
       <div className={styles.pageLayout}>
-        {!isLoadingPageData && categoryLinksForSidebar.length > 0 && (
+        {allCategories.length > 0 && (
           <CategorySidebar
-            categories={categoryLinksForSidebar}
-            selectedCategoryId={selectedCategoryId}
+            categories={allCategories.map((c) => ({ id: c.id, name: c.name }))}
+            selectedCategoryId={appliedFilters.categoryId}
             onSelectCategory={handleSelectCategory}
           />
         )}
-        {isLoadingPageData && tenantInfo && (
-          <div
-            className={styles.productsArea}
-            style={{ textAlign: "center", paddingTop: "50px" }}
-          >
-            Cargando categorías y filtros...
-          </div>
-        )}
-        <main className={styles.productsArea} id="product-area-start">
+        <main className={styles.productsArea}>
           <div className={styles.productsAreaContent}>
-            {error &&
-              products.length === 0 &&
-              !isLoadingProducts &&
-              tenantInfo && <p className={styles.loadingOrError}>{error}</p>}
             <div className={styles.filterControlsContainer}>
               <div className={styles.filterButtonContainer}>
                 <button
-                  onClick={toggleFilterPanel}
+                  onClick={() => setIsFilterPanelOpen((prev) => !prev)}
                   className={`${styles.filterToggleButton} ${
-                    areAnyPriceOrTagFiltersApplied && !selectedCategoryId
-                      ? styles.filterButtonActive
-                      : ""
+                    arePriceOrTagFiltersApplied ? styles.filterButtonActive : ""
                   }`}
-                  disabled={isLoadingProducts || isLoadingPageData}
                 >
-                  <LuFilter /> Filtros
-                  {isFilterPanelOpen ? <LuX /> : null}
+                  <LuFilter /> Filtros {isFilterPanelOpen ? <LuX /> : null}
                 </button>
               </div>
               {isFilterPanelOpen && (
-                <div className={styles.filterPanelHorizontal}>
-                  <div className={styles.filterPriceGroup}>
-                    <label htmlFor="minPrice" className={styles.filterLabel}>
-                      Mín (Bs.):
-                    </label>
-                    <input
-                      type="number"
-                      id="minPrice"
-                      min="0"
-                      step="1"
-                      placeholder="Ej: 10"
-                      value={tempMinPrice}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "" || parseFloat(val) >= 0) {
-                          setTempMinPrice(val);
-                        } else if (parseFloat(val) < 0) {
-                          setTempMinPrice("0");
-                        }
-                      }}
-                      className={styles.filterInput}
-                    />
-                  </div>
-                  <div className={styles.filterPriceGroup}>
-                    <label htmlFor="maxPrice" className={styles.filterLabel}>
-                      Máx (Bs.):
-                    </label>
-                    <input
-                      type="number"
-                      id="maxPrice"
-                      min="0"
-                      step="1"
-                      placeholder="Ej: 100"
-                      value={tempMaxPrice}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "" || parseFloat(val) >= 0) {
-                          setTempMaxPrice(val);
-                        } else if (parseFloat(val) < 0) {
-                          setTempMaxPrice("0");
-                        }
-                      }}
-                      className={styles.filterInput}
-                    />
-                  </div>
-                  <div className={styles.filterPriceGroup}>
-                    <label htmlFor="tagsFilter" className={styles.filterLabel}>
-                      Etiquetas:
-                    </label>
-                    <Autocomplete
-                      multiple
-                      freeSolo
-                      loading={isLoadingPageData && allTenantTags.length === 0}
-                      id="tags-filter-autocomplete"
-                      value={selectedTagsInPanel}
-                      onChange={(_, newValue) => {
-                        setSelectedTagsInPanel(
-                          newValue.map((option) => {
-                            if (typeof option === "string") {
-                              const existing = allTenantTags.find(
-                                (t) =>
-                                  t.name.toLowerCase() === option.toLowerCase()
-                              );
-                              return (
-                                existing || {
-                                  id: `new_${option}_${Date.now()}`,
-                                  name: option,
-                                }
-                              );
-                            }
-                            return option;
-                          })
-                        );
-                      }}
-                      options={allTenantTags}
-                      getOptionLabel={(option) =>
-                        typeof option === "string" ? option : option.name
-                      }
-                      isOptionEqualToValue={(option, value) =>
-                        option.id === value.id ||
-                        option.name.toLowerCase() === value.name.toLowerCase()
-                      }
-                      renderTags={(value, getTagProps) =>
-                        value.map((tag, index) => (
-                          <Chip
-                            label={tag.name}
-                            {...getTagProps({ index })}
-                            key={tag.id || tag.name + index}
-                            sx={{
-                              backgroundColor: "var(--color-secondary)",
-                              color: "var(--color-primary-dark)",
-                              height: "25px",
-                              fontSize: "0.8rem",
-                              "& .MuiChip-deleteIcon": {
-                                color: "var(--color-primary-dark)",
-                                fontSize: "0.9rem",
-                                "&:hover": { color: "var(--color-error)" },
-                              },
-                            }}
-                          />
-                        ))
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          variant="outlined"
-                          placeholder={
-                            selectedTagsInPanel.length > 0
-                              ? "Añadir más..."
-                              : "Etiquetas..."
-                          }
-                          disabled={
-                            isLoadingPageData && allTenantTags.length === 0
-                          }
-                          sx={{
-                            width: "300px",
-                            fontSize: "0.8em",
-                            "& .MuiInputLabel-root": {
-                              fontSize: "0.8rem",
-                              marginBottom: "var(--space-xs)",
-                              color: "var(--color-text-secondary)",
-                            },
-                            "& .MuiOutlinedInput-root": {
-                              padding:
-                                "calc(var(--space-xs) + 2px) var(--space-sm)",
-                              display: "flex",
-                              flexWrap: "wrap",
-                              alignItems: "center",
-                              maxHeight: "116px",
-                              overflowY: "auto",
-                              backgroundColor: "var(--color-surface)",
-                              borderRadius: "var(--border-radius-sm)",
-                              fontFamily: "var(--font-primary)",
-                              border: "1px solid var(--color-border)",
-                              "&:hover": {
-                                borderColor: "var(--color-text-secondary)",
-                              },
-                              "&.Mui-focused": {
-                                borderColor: "var(--color-primary)",
-                                boxShadow: "0 0 0 2px rgba(251, 111, 146, 0.2)",
-                              },
-                              "&.Mui-disabled": {
-                                backgroundColor: "#f0f0f0",
-                                borderColor: "var(--color-border-light)",
-                              },
-                            },
-                            "& .MuiAutocomplete-input": {
-                              minHeight: "28px",
-                              paddingTop: "1.5px !important",
-                              paddingBottom: "1.5px !important",
-                              paddingLeft: "4px !important",
-                              paddingRight: "6px !important",
-                              minWidth: "100px",
-                              flexGrow: 1,
-                              fontSize: "0.9em",
-                              lineHeight: "1.4em",
-                              color: "var(--color-text-primary)",
-                              fontFamily: "var(--font-primary)",
-                            },
-                            "& .MuiOutlinedInput-notchedOutline": {
-                              border: "none",
-                            },
-                          }}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className={styles.filterActionButtonsHorizontal}>
-                    <button
-                      onClick={handleApplyFilters}
-                      className={styles.applyButtonSmall}
-                    >
-                      Aplicar
-                    </button>
-                    <button
-                      onClick={handleClearPanelFilters}
-                      className={styles.clearButtonSmall}
-                    >
-                      Limpiar
-                    </button>
-                  </div>
-                </div>
+                <FilterPanel
+                  allCategories={allCategories}
+                  allTags={allTenantTags}
+                  initialFilters={appliedFilters}
+                  onApplyFilters={handleApplyFilters}
+                  onClearFilters={handleClearFilters}
+                  showCategoryFilter={false}
+                  isLoading={isLoadingSecondaryData}
+                />
               )}
             </div>
 
@@ -586,60 +304,8 @@ const TenantViewPage: React.FC<TenantViewPageProps> = ({ subdomain }) => {
             {isAuthenticated && loadingRecommendations && !areFiltersActive && (
               <p className={styles.loadingText}>Cargando recomendaciones...</p>
             )}
-            {isLoadingProducts && !error && (
-              <p className={styles.loadingOrError}>Cargando productos...</p>
-            )}
-            {!isLoadingProducts && products.length === 0 && !error && (
-              <p className={styles.noProducts}>
-                No se encontraron productos que coincidan con los filtros
-                seleccionados.
-              </p>
-            )}
-            {!isLoadingProducts &&
-              !error &&
-              products.length > 0 &&
-              (selectedCategoryId
-                ? allCategories.filter((c) => c.id === selectedCategoryId)
-                : allCategories
-              ).map(({ name: categoryName, id: categoryId }) => {
-                const productsInCategory =
-                  groupedProductsRender[categoryName] || [];
 
-                if (productsInCategory.length > 0) {
-                  return (
-                    <section
-                      key={categoryId}
-                      id={categoryId}
-                      className={styles.categorySection}
-                    >
-                      <h2 className={styles.categoryTitle}>{categoryName}</h2>
-                      <div className={styles.productGrid}>
-                        {productsInCategory.map((product) => (
-                          <ProductCard key={product.id} product={product} />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                } else if (
-                  selectedCategoryId === categoryId &&
-                  productsInCategory.length === 0
-                ) {
-                  return (
-                    <section
-                      key={categoryId}
-                      className={styles.categorySection}
-                      id={categoryId}
-                    >
-                      <h2 className={styles.categoryTitle}>{categoryName}</h2>
-                      <p className={styles.noProducts}>
-                        No hay productos en esta categoría con los filtros
-                        aplicados.
-                      </p>
-                    </section>
-                  );
-                }
-                return null;
-              })}
+            {renderContent()}
           </div>
         </main>
       </div>

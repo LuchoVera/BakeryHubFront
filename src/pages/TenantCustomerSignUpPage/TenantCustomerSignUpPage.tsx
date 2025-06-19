@@ -4,16 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 import TenantCustomerSignUpForm from "../../components/TenantCustomerSignUpForm/TenantCustomerSignUpForm";
 import styles from "./TenantCustomerSignUpPage.module.css";
 
-interface TenantCustomerSignUpPageProps {
-  subdomain: string;
-
-  tenantName?: string;
-}
-
-const TenantCustomerSignUpPage: React.FC<TenantCustomerSignUpPageProps> = ({
-  subdomain,
-  tenantName,
-}) => {
+const TenantCustomerSignUpPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
@@ -25,7 +16,7 @@ const TenantCustomerSignUpPage: React.FC<TenantCustomerSignUpPageProps> = ({
       <Link to="/" className={styles.backLink}>
         {"< Volver a la Tienda"}
       </Link>
-      <TenantCustomerSignUpForm subdomain={subdomain} tenantName={tenantName} />
+      <TenantCustomerSignUpForm />
     </div>
   );
 };
