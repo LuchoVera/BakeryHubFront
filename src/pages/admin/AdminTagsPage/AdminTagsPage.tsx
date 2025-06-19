@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback, ReactNode } from "react";
-import {
-  TagDto,
-  CreateTagDto,
-  UpdateTagDto,
-  ApiErrorResponse,
-} from "../../../types";
+import { TagDto, CreateTagDto, ApiErrorResponse } from "../../../types";
 import styles from "./AdminTagsPage.module.css";
 import TagTable from "../../../components/TagTable/TagTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
@@ -22,9 +17,15 @@ import {
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
 
-interface TagDeleteModalData {
-  id: string;
-  name: string;
+interface ModalInfo {
+  type: "delete" | "success" | "error";
+  title: string;
+  message: ReactNode;
+  onConfirm: () => void;
+  confirmButtonVariant?: "primary" | "danger";
+  icon: ReactNode;
+  iconType: "info" | "warning" | "danger" | "success";
+  warningMessage?: ReactNode;
 }
 
 interface AddTagFormProps {
@@ -66,42 +67,7 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
       const response = axiosError.response;
       let errorMessage = "Ocurrió un error inesperado al añadir la etiqueta.";
       if (response?.status === 400) {
-        if (
-          response.data?.errors?.Name?.includes(
-            "A tag with this name already exists for your business."
-          )
-        ) {
-          errorMessage = "Una etiqueta con este nombre ya existe.";
-        } else if (
-          response.data?.detail?.includes(
-            "A tag with this name already exists for your business."
-          )
-        ) {
-          errorMessage = "Una etiqueta con este nombre ya existe.";
-        } else if (
-          response.data?.title?.includes(
-            "A tag with this name already exists for your business."
-          )
-        ) {
-          errorMessage = "Una etiqueta con este nombre ya existe.";
-        } else if (response?.data?.errors?.Name) {
-          errorMessage = response.data.errors.Name[0];
-        } else if (response?.data?.title) {
-          errorMessage = response.data.title;
-        } else if (response?.data?.detail) {
-          errorMessage = response.data.detail;
-        } else {
-          errorMessage =
-            "La etiqueta ya existe o el nombre es inválido.";
-        }
-      } else if (response?.status) {
-        if (response.data?.errors?.Name) {
-          errorMessage = response.data.errors.Name[0];
-        } else if (response.data?.title) {
-          errorMessage = response.data.title;
-        } else if (response.data?.detail) {
-          errorMessage = response.data.detail;
-        }
+        errorMessage = "Una etiqueta con este nombre ya existe.";
       }
       setError(errorMessage);
     } finally {
@@ -147,19 +113,8 @@ const AdminTagsPage: React.FC = () => {
   const [editingName, setEditingName] = useState<string>("");
   const [editLoading, setEditLoading] = useState<boolean>(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [tagToDelete, setTagToDelete] = useState<TagDeleteModalData | null>(
-    null
-  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
-  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
-    null
-  );
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
-  const [successModalMessage, setSuccessModalMessage] = useState<string | null>(
-    null
-  );
+  const [modalInfo, setModalInfo] = useState<ModalInfo | null>(null);
 
   const fetchTags = useCallback(async () => {
     setError(null);
@@ -168,16 +123,9 @@ const AdminTagsPage: React.FC = () => {
       setTags(data);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      if (axiosError.response?.status === 401) {
-        setError("Autenticación requerida. Por favor, inicia sesión de nuevo.");
-      } else {
-        setError(
-          axiosError.response?.data?.title ||
-            axiosError.response?.data?.detail ||
-            axiosError.message ||
-            "Fallo al cargar las etiquetas."
-        );
-      }
+      setError(
+        axiosError.response?.data?.detail || "Fallo al cargar las etiquetas."
+      );
     } finally {
       setLoading(false);
     }
@@ -224,100 +172,72 @@ const AdminTagsPage: React.FC = () => {
     setEditLoading(true);
     setEditError(null);
     try {
-      const updateData: UpdateTagDto = { name: editingName.trim() };
-      await updateAdminTag(tagId, updateData);
+      await updateAdminTag(tagId, { name: editingName.trim() });
       setEditingTagId(null);
       setEditingName("");
       await fetchTags();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      const response = axiosError.response;
-      let errorMessage = "Ocurrió un error al guardar los cambios.";
-      if (response?.data?.errors?.Name) {
-        errorMessage = response.data.errors.Name[0];
-      } else if (response?.data?.title) {
-        errorMessage = response.data.title;
-      } else if (response?.data?.detail) {
-        errorMessage = response.data.detail;
-      } else if (response?.status === 400) {
-        errorMessage = "El nombre del tag ya existe.";
-      }
-      setEditError(errorMessage);
+      setEditError(
+        axiosError.response?.data?.detail || "El nombre del tag ya existe."
+      );
     } finally {
       setEditLoading(false);
     }
   };
 
-  const handleDeleteClick = (tagId: string) => {
-    const tag = tags.find((t) => t.id === tagId);
-    if (tag) {
-      setTagToDelete({ id: tag.id, name: tag.name });
-      setIsDeleteModalOpen(true);
-      setErrorModalMessage(null);
-      setIsErrorModalOpen(false);
-    }
-  };
-  const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false);
-    setTagToDelete(null);
-  };
-  const handleErrorModalClose = () => {
-    setIsErrorModalOpen(false);
-    setErrorModalMessage(null);
-  };
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    setSuccessModalMessage(null);
+  const handleDeleteClick = (tag: TagDto) => {
+    setModalInfo({
+      type: "delete",
+      title: "Confirmar Eliminación",
+      message: (
+        <>
+          ¿Estás seguro de querer borrar la etiqueta{" "}
+          <strong>"{tag.name}"</strong>?
+        </>
+      ),
+      warningMessage:
+        "Esta acción no se puede deshacer. La etiqueta se eliminará de todos los productos que la usan.",
+      onConfirm: () => handleConfirmDelete(tag),
+      confirmButtonVariant: "danger",
+      icon: <LuTriangleAlert />,
+      iconType: "danger",
+    });
   };
 
-  const handleConfirmDelete = async () => {
-    if (!tagToDelete) return;
+  const handleConfirmDelete = async (tagToDelete: {
+    id: string;
+    name: string;
+  }) => {
     setDeletingId(tagToDelete.id);
-    setIsDeleteModalOpen(false);
+    setModalInfo(null);
     try {
       await deleteAdminTag(tagToDelete.id);
-      setSuccessModalMessage(
-        `Etiqueta "${tagToDelete.name}" eliminada correctamente.`
-      );
-      setIsSuccessModalOpen(true);
-      setTagToDelete(null);
+      setModalInfo({
+        type: "success",
+        title: "Éxito",
+        message: `Etiqueta "${tagToDelete.name}" eliminada correctamente.`,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleCheck />,
+        iconType: "success",
+      });
       await fetchTags();
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      const response = axiosError.response;
-      let userErrorMessage = `No se pudo borrar la etiqueta "${tagToDelete.name}".`;
-      if (response?.status === 400) {
-        userErrorMessage =
-          response.data?.detail ||
-          response.data?.title ||
-          "La etiqueta está en uso y no puede ser eliminada.";
-      } else {
-        userErrorMessage =
-          "Ocurrió un error inesperado al eliminar la etiqueta.";
-      }
-      setErrorModalMessage(userErrorMessage);
-      setIsErrorModalOpen(true);
+      setModalInfo({
+        type: "error",
+        title: "Error al Eliminar",
+        message:
+          axiosError.response?.data?.detail ||
+          `No se pudo borrar la etiqueta "${tagToDelete.name}". Es posible que esté en uso.`,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleX />,
+        iconType: "danger",
+      });
     } finally {
       setDeletingId(null);
     }
   };
-
-  const deleteModalMessage: ReactNode = tagToDelete ? (
-    <>
-      ¿Estás seguro de querer borrar la etiqueta{" "}
-      <strong>"{tagToDelete.name}"</strong>?
-    </>
-  ) : (
-    ""
-  );
-
-  const deleteModalWarning: ReactNode = (
-    <>
-      Esta acción no se puede deshacer. La etiqueta se eliminará permanentemente
-      y se quitará de todos los productos que la estén utilizando. ¿Estás seguro
-      de querer proceder?
-    </>
-  );
 
   return (
     <div className={styles.pageContainer}>
@@ -327,7 +247,7 @@ const AdminTagsPage: React.FC = () => {
       {loading && <p className={styles.loadingText}>Cargando etiquetas...</p>}
       {error && <p className={styles.errorText}>{error}</p>}
 
-      {!loading && !error && tags.length >= 0 && (
+      {!loading && !error && (
         <TagTable
           tags={tags}
           editingTagId={editingTagId}
@@ -338,7 +258,10 @@ const AdminTagsPage: React.FC = () => {
           onEditClick={handleEditClick}
           onCancelEdit={handleCancelEdit}
           onSaveEdit={handleSaveEdit}
-          onDeleteClick={handleDeleteClick}
+          onDeleteClick={(tagId) => {
+            const tag = tags.find((t) => t.id === tagId);
+            if (tag) handleDeleteClick(tag);
+          }}
           onEditingNameChange={handleEditingNameChange}
         />
       )}
@@ -348,45 +271,23 @@ const AdminTagsPage: React.FC = () => {
         </p>
       )}
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCancelDelete}
-        onConfirm={handleConfirmDelete}
-        title="Confirmar Eliminación"
-        message={deleteModalMessage}
-        warningMessage={deleteModalWarning}
-        confirmText="Sí, Borrar"
-        cancelText="Cancelar"
-        isConfirming={!!deletingId}
-        icon={<LuTriangleAlert />}
-        iconType="danger"
-        confirmButtonVariant="danger"
-      />
-
-      <ConfirmationModal
-        isOpen={isErrorModalOpen}
-        onClose={handleErrorModalClose}
-        onConfirm={handleErrorModalClose}
-        title="Error al Eliminar"
-        message={errorModalMessage || "Ocurrió un error."}
-        confirmText="OK"
-        showCancelButton={false}
-        icon={<LuCircleX />}
-        iconType="danger"
-        confirmButtonVariant="primary"
-      />
-      <ConfirmationModal
-        isOpen={isSuccessModalOpen}
-        onClose={handleSuccessModalClose}
-        onConfirm={handleSuccessModalClose}
-        title="Éxito"
-        message={successModalMessage || "Operación completada."}
-        confirmText="OK"
-        showCancelButton={false}
-        icon={<LuCircleCheck />}
-        iconType="success"
-        confirmButtonVariant="primary"
-      />
+      {modalInfo && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setModalInfo(null)}
+          onConfirm={modalInfo.onConfirm}
+          title={modalInfo.title}
+          message={modalInfo.message}
+          warningMessage={modalInfo.warningMessage}
+          confirmText={modalInfo.type === "delete" ? "Sí, Borrar" : "OK"}
+          cancelText="Cancelar"
+          isConfirming={!!deletingId}
+          showCancelButton={modalInfo.type === "delete"}
+          icon={modalInfo.icon}
+          iconType={modalInfo.iconType}
+          confirmButtonVariant={modalInfo.confirmButtonVariant || "primary"}
+        />
+      )}
     </div>
   );
 };

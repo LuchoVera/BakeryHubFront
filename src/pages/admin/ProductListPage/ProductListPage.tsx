@@ -18,9 +18,16 @@ import {
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
 
-interface ProductActionModalData {
-  action: "delete" | "deactivate";
-  product: ProductDto;
+interface ModalInfo {
+  type: "delete" | "deactivate" | "success" | "error";
+  title: string;
+  message: ReactNode;
+  onConfirm: () => void;
+  confirmButtonVariant?: "primary" | "danger";
+  icon: ReactNode;
+  iconType: "info" | "warning" | "danger" | "success";
+  warningMessage?: ReactNode;
+  itemData?: ProductDto;
 }
 
 const ProductListPage: React.FC = () => {
@@ -28,19 +35,7 @@ const ProductListPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
-  const [productActionData, setProductActionData] =
-    useState<ProductActionModalData | null>(null);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
-  const [successModalMessage, setSuccessModalMessage] = useState<string | null>(
-    null
-  );
-  const [successModalTitle, setSuccessModalTitle] = useState<string>("Éxito");
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
-  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(
-    null
-  );
-  const [errorModalTitle, setErrorModalTitle] = useState<string>("Error");
+  const [modalInfo, setModalInfo] = useState<ModalInfo | null>(null);
   const navigate = useNavigate();
   const [adminSearchTerm, setAdminSearchTerm] = useState<string>("");
 
@@ -101,76 +96,75 @@ const ProductListPage: React.FC = () => {
   }, [filteredProducts]);
 
   const executeToggleAvailability = async (
-    productId: string,
-    newAvailability: boolean,
-    productName?: string
+    product: ProductDto,
+    newAvailability: boolean
   ) => {
     setIsProcessingAction(true);
+    setModalInfo(null);
     try {
-      await updateAdminProductAvailability(productId, newAvailability);
+      await updateAdminProductAvailability(product.id, newAvailability);
       await fetchProducts();
-      if (productName) {
-        if (newAvailability) {
-          setSuccessModalTitle("Producto Activado");
-          setSuccessModalMessage(
-            `Producto "${productName}" activado y ahora visible para clientes.`
-          );
-        } else {
-          setSuccessModalTitle("Producto Desactivado");
-          setSuccessModalMessage(
-            `Producto "${productName}" desactivado y ya no será visible.`
-          );
-        }
-        setIsSuccessModalOpen(true);
-      }
+      setModalInfo({
+        type: "success",
+        title: newAvailability ? "Producto Activado" : "Producto Desactivado",
+        message: `El producto "${product.name}" ha sido ${
+          newAvailability ? "activado" : "desactivado"
+        }.`,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleCheck />,
+        iconType: "success",
+      });
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      setErrorModalTitle("Error al Actualizar");
-      setErrorModalMessage(
-        `Fallo al actualizar disponibilidad. ${
-          axiosError.response?.data?.detail ||
-          axiosError.response?.data?.title ||
-          axiosError.message ||
-          "Error desconocido"
-        }`
-      );
-      setIsErrorModalOpen(true);
+      setModalInfo({
+        type: "error",
+        title: "Error al Actualizar",
+        message:
+          `Fallo al actualizar disponibilidad. ${
+            axiosError.response?.data?.detail ||
+            axiosError.response?.data?.title
+          }` || "Error desconocido",
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleX />,
+        iconType: "danger",
+      });
     } finally {
       setIsProcessingAction(false);
     }
   };
 
-  const executeDeleteProduct = async (
-    productId: string,
-    productName: string
-  ) => {
+  const executeDeleteProduct = async (product: ProductDto) => {
     setIsProcessingAction(true);
+    setModalInfo(null);
     try {
-      await deleteAdminProduct(productId);
+      await deleteAdminProduct(product.id);
       await fetchProducts();
-      setSuccessModalTitle("Producto Eliminado");
-      setSuccessModalMessage(
-        `Producto "${productName}" eliminado correctamente.`
-      );
-      setIsSuccessModalOpen(true);
+      setModalInfo({
+        type: "success",
+        title: "Producto Eliminado",
+        message: `Producto "${product.name}" eliminado correctamente.`,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleCheck />,
+        iconType: "success",
+      });
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
-      let userErrorMessage = `No se pudo borrar el producto "${productName}".`;
+      let userErrorMessage = `No se pudo borrar el producto "${product.name}".`;
       if (
-        axiosError.response?.status === 500 ||
         axiosError.response?.status === 400 ||
         axiosError.response?.status === 409
       ) {
         userErrorMessage +=
-          " Es probable que esté asociado a pedidos registrados o alguna otra restricción.";
-      } else if (axiosError.response?.data?.detail) {
-        userErrorMessage = axiosError.response.data.detail;
-      } else {
-        userErrorMessage += " Ocurrió un error inesperado.";
+          " Es probable que esté asociado a pedidos registrados.";
       }
-      setErrorModalTitle("Error al Eliminar");
-      setErrorModalMessage(userErrorMessage);
-      setIsErrorModalOpen(true);
+      setModalInfo({
+        type: "error",
+        title: "Error al Eliminar",
+        message: userErrorMessage,
+        onConfirm: () => setModalInfo(null),
+        icon: <LuCircleX />,
+        iconType: "danger",
+      });
     } finally {
       setIsProcessingAction(false);
     }
@@ -182,76 +176,9 @@ const ProductListPage: React.FC = () => {
   ) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
-    const isDeactivating = currentAvailability === true;
-    if (isDeactivating) {
-      setProductActionData({ action: "deactivate", product });
-      setIsConfirmModalOpen(true);
-    } else {
-      executeToggleAvailability(productId, true, product.name);
-    }
-  };
-
-  const handleDeleteProduct = (productId: string) => {
-    const product = allProducts.find((p) => p.id === productId);
-    if (product) {
-      setProductActionData({ action: "delete", product });
-      setIsConfirmModalOpen(true);
-    }
-  };
-
-  const handleModalConfirm = () => {
-    if (!productActionData) return;
-    const { action, product } = productActionData;
-    setIsConfirmModalOpen(false);
-    if (action === "deactivate") {
-      executeToggleAvailability(product.id, false, product.name);
-    } else if (action === "delete") {
-      executeDeleteProduct(product.id, product.name);
-    }
-    setProductActionData(null);
-  };
-
-  const handleModalCancel = () => {
-    setIsConfirmModalOpen(false);
-    setProductActionData(null);
-  };
-
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    setSuccessModalMessage(null);
-    setSuccessModalTitle("Éxito");
-  };
-
-  const handleErrorModalClose = () => {
-    setIsErrorModalOpen(false);
-    setErrorModalMessage(null);
-    setErrorModalTitle("Error");
-  };
-
-  const handleEdit = (productId: string) => {
-    navigate(`/admin/products/edit/${productId}`);
-  };
-
-  const getModalInfo = (): {
-    title: string;
-    message: ReactNode;
-    warning: ReactNode | undefined;
-    confirmText: string;
-    variant: "primary" | "danger";
-    iconType: "warning" | "danger";
-  } => {
-    if (!productActionData)
-      return {
-        title: "",
-        message: "",
-        warning: undefined,
-        confirmText: "",
-        variant: "primary",
-        iconType: "warning",
-      };
-    const { action, product } = productActionData;
-    if (action === "deactivate") {
-      return {
+    if (currentAvailability) {
+      setModalInfo({
+        type: "deactivate",
         title: "Confirmar Desactivación",
         message: (
           <>
@@ -259,14 +186,23 @@ const ProductListPage: React.FC = () => {
             <strong>"{product.name}"</strong>?
           </>
         ),
-        warning:
+        warningMessage:
           "El producto ya no será visible ni se podrá comprar por los clientes.",
-        confirmText: "Sí, Desactivar",
-        variant: "primary",
+        onConfirm: () => executeToggleAvailability(product, false),
+        icon: <LuTriangleAlert />,
         iconType: "warning",
-      };
+        itemData: product,
+      });
     } else {
-      return {
+      executeToggleAvailability(product, true);
+    }
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    const product = allProducts.find((p) => p.id === productId);
+    if (product) {
+      setModalInfo({
+        type: "delete",
         title: "Confirmar Eliminación",
         message: (
           <>
@@ -274,14 +210,20 @@ const ProductListPage: React.FC = () => {
             <strong>"{product.name}"</strong>?
           </>
         ),
-        warning: "Esta acción no se puede deshacer.",
-        confirmText: "Sí, Borrar",
-        variant: "danger",
+        warningMessage: "Esta acción no se puede deshacer.",
+        onConfirm: () => executeDeleteProduct(product),
+        confirmButtonVariant: "danger",
+        icon: <LuTriangleAlert />,
         iconType: "danger",
-      };
+        itemData: product,
+      });
     }
   };
-  const modalInfo = getModalInfo();
+
+  const handleEdit = (productId: string) => {
+    navigate(`/admin/products/edit/${productId}`);
+  };
+
   const getToggleButtonLabel = (isAvailable: boolean): string => {
     return isAvailable ? "Desactivar" : "Activar";
   };
@@ -289,10 +231,8 @@ const ProductListPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <h2>Gestion de Productos</h2>
-      <Link to="/admin/products/new">
-        <button className={styles.addProductButton}>
-          Añadir Nuevo Producto
-        </button>
+      <Link to="/admin/products/new" className={styles.addProductButton}>
+        Añadir Nuevo Producto
       </Link>
 
       <div className={styles.searchContainerAdmin}>
@@ -316,12 +256,7 @@ const ProductListPage: React.FC = () => {
             actionButtonLabel={getToggleButtonLabel}
             onToggleAvailability={handleToggleAvailability}
             onEdit={handleEdit}
-            isLoading={
-              isProcessingAction &&
-              productActionData?.action === "deactivate" &&
-              productActionData?.product.isAvailable
-            }
-            deletingProductId={null}
+            isLoading={isProcessingAction}
             isUnavailableList={false}
           />
           <ProductTable
@@ -332,16 +267,10 @@ const ProductListPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDeleteProduct}
             isUnavailableList={true}
-            isLoading={
-              isProcessingAction &&
-              productActionData?.action === "delete" &&
-              !productActionData?.product.isAvailable
-            }
+            isLoading={isProcessingAction}
             deletingProductId={
-              isProcessingAction &&
-              productActionData?.action === "delete" &&
-              !productActionData?.product.isAvailable
-                ? productActionData.product.id
+              isProcessingAction && modalInfo?.type === "delete"
+                ? modalInfo.itemData?.id
                 : null
             }
           />
@@ -350,59 +279,34 @@ const ProductListPage: React.FC = () => {
               No se encontraron productos que coincidan con "{adminSearchTerm}".
             </p>
           )}
-          {allProducts.length > 0 &&
-            filteredProducts.length === 0 &&
-            !adminSearchTerm && (
-              <p className={styles.noProductsMessage}>
-                No hay productos para mostrar. Intenta añadir algunos.
-              </p>
-            )}
-          {allProducts.length === 0 && !adminSearchTerm && (
-            <p className={styles.noProductsMessage}>
-              Aún no has añadido ningún producto. ¡Empieza creando uno!
-            </p>
-          )}
         </>
       )}
 
-      <ConfirmationModal
-        isOpen={isConfirmModalOpen}
-        onClose={handleModalCancel}
-        onConfirm={handleModalConfirm}
-        title={modalInfo.title}
-        message={modalInfo.message}
-        warningMessage={modalInfo.warning}
-        confirmText={modalInfo.confirmText}
-        cancelText="Cancelar"
-        isConfirming={isProcessingAction}
-        icon={<LuTriangleAlert />}
-        iconType={modalInfo.iconType}
-        confirmButtonVariant={modalInfo.variant}
-      />
-      <ConfirmationModal
-        isOpen={isSuccessModalOpen}
-        onClose={handleSuccessModalClose}
-        onConfirm={handleSuccessModalClose}
-        title={successModalTitle}
-        message={successModalMessage || "Operación exitosa."}
-        confirmText="OK"
-        showCancelButton={false}
-        icon={<LuCircleCheck />}
-        iconType="success"
-        confirmButtonVariant="primary"
-      />
-      <ConfirmationModal
-        isOpen={isErrorModalOpen}
-        onClose={handleErrorModalClose}
-        onConfirm={handleErrorModalClose}
-        title={errorModalTitle}
-        message={errorModalMessage || "Ocurrió un error."}
-        confirmText="OK"
-        showCancelButton={false}
-        icon={<LuCircleX />}
-        iconType="danger"
-        confirmButtonVariant="primary"
-      />
+      {modalInfo && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={() => setModalInfo(null)}
+          onConfirm={modalInfo.onConfirm}
+          title={modalInfo.title}
+          message={modalInfo.message}
+          warningMessage={modalInfo.warningMessage}
+          isConfirming={isProcessingAction}
+          showCancelButton={
+            modalInfo.type === "delete" || modalInfo.type === "deactivate"
+          }
+          icon={modalInfo.icon}
+          iconType={modalInfo.iconType}
+          confirmButtonVariant={modalInfo.confirmButtonVariant || "primary"}
+          confirmText={
+            modalInfo.type === "delete"
+              ? "Sí, Borrar"
+              : modalInfo.type === "deactivate"
+              ? "Sí, Desactivar"
+              : "OK"
+          }
+          cancelText="Cancelar"
+        />
+      )}
     </div>
   );
 };

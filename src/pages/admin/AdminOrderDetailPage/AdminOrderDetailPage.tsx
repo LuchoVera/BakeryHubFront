@@ -26,26 +26,7 @@ import {
   updateAdminOrderStatus,
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
-
-const formatDate = (dateString: string | null | undefined): string => {
-  if (!dateString) return "N/A";
-  try {
-    const dateParts = dateString.split("T")[0].split("-");
-    const date = new Date(
-      Number(dateParts[0]),
-      Number(dateParts[1]) - 1,
-      Number(dateParts[2])
-    );
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    };
-    return date.toLocaleString("es-BO", options);
-  } catch (e) {
-    return "Fecha Inválida";
-  }
-};
+import { formatDate } from "../../../utils/dateUtils";
 
 const formatCurrency = (amount: number): string => {
   return `Bs. ${amount.toFixed(2)}`;
