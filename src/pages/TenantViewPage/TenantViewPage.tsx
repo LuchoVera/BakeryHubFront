@@ -186,17 +186,34 @@ const TenantViewPage: React.FC = () => {
   }, [products, allCategories, appliedFilters.categoryId]);
 
   const renderContent = () => {
-    if (isLoadingTenant || isLoadingSecondaryData) {
-      return <p className={styles.loadingOrError}>Cargando productos...</p>;
+    const isLoading = isLoadingTenant || isLoadingSecondaryData;
+    if (isLoading) {
+      return (
+        <div className={styles.contentWrapper}>
+          <p className={styles.loadingOrError}>Cargando productos...</p>
+        </div>
+      );
     }
     if (errorSecondaryData) {
-      return <p className={styles.loadingOrError}>{errorSecondaryData}</p>;
+      return (
+        <div className={styles.contentWrapper}>
+          <p className={styles.loadingOrError}>{errorSecondaryData}</p>
+        </div>
+      );
     }
     if (products.length === 0) {
+      let message = "";
+      if (arePriceOrTagFiltersApplied) {
+        message = "No se encontraron productos con los filtros actuales.";
+      } else if (appliedFilters.categoryId) {
+        message = "No hay productos disponibles en esta categoría.";
+      } else {
+        message = "No se encontraron productos.";
+      }
       return (
-        <p className={styles.noProducts}>
-          No se encontraron productos con los filtros actuales.
-        </p>
+        <div className={styles.contentWrapper}>
+          <p className={styles.noProducts}>{message}</p>
+        </div>
       );
     }
 
@@ -232,7 +249,7 @@ const TenantViewPage: React.FC = () => {
     );
   };
 
-  if (isLoadingTenant) {
+  if (isLoadingTenant && !tenantInfo) {
     return <div className={styles.loadingOrError}>Cargando Tienda...</div>;
   }
 

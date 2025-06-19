@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +6,7 @@ import {
   Navigate,
   Outlet,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
@@ -35,8 +36,23 @@ import UserProfilePage from "./pages/UserProfilePage/UserProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage/ChangePasswordPage";
 import AdminTagsPage from "./pages/admin/AdminTagsPage/AdminTagsPage";
 import AdminCreateManualOrderPage from "./pages/admin/AdminCreateManualOrderPage/AdminCreateManualOrderPage";
-import { AuthProvider, useAuth } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
+import { usePrevious } from "./hooks/usePrevious";
+
+const AuthRedirectHandler = () => {
+  const { isAuthenticated } = useAuth();
+  const prevIsAuthenticated = usePrevious(isAuthenticated);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (prevIsAuthenticated && !isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, prevIsAuthenticated, navigate]);
+
+  return null;
+};
 
 const ProtectedAdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
@@ -45,10 +61,13 @@ const ProtectedAdminRoute: React.FC = () => {
   if (isLoading) {
     return <div>Cargando la Sesión...</div>;
   }
+
   const isAdmin = isAuthenticated && (user?.roles?.includes("Admin") ?? false);
+
   if (!isAdmin) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
   return <Outlet />;
 };
 
@@ -101,61 +120,53 @@ function App() {
 
   if (isSubdomain || isDevSubdomain) {
     return (
-      <AuthProvider>
-        <CartProvider>
-          <NotificationProvider>
-            <Router>
-              <TenantRoutes />
-              <NotificationPopup />
-            </Router>
-          </NotificationProvider>
-        </CartProvider>
-      </AuthProvider>
-    );
-  }
-
-  return (
-    <AuthProvider>
       <CartProvider>
         <NotificationProvider>
           <Router>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/register-admin"
-                element={<AdminRegistrationPage />}
-              />
-              <Route path="/admin" element={<ProtectedAdminRoute />}>
-                <Route element={<AdminLayout />}>
-                  <Route index element={<AdminDashboardPage />} />
-                  <Route path="categories" element={<CategoryListPage />} />
-                  <Route path="tags" element={<AdminTagsPage />} />
-                  <Route path="products" element={<ProductListPage />} />
-                  <Route path="products/new" element={<AddProductPage />} />
-                  <Route
-                    path="products/edit/:id"
-                    element={<EditProductPage />}
-                  />
-                  <Route path="orders" element={<AdminOrdersPage />} />
-                  <Route
-                    path="orders/:orderId"
-                    element={<AdminOrderDetailPage />}
-                  />
-                  <Route
-                    path="orders/new-manual"
-                    element={<AdminCreateManualOrderPage />}
-                  />
-                  <Route path="settings" element={<StoreSettingsPage />} />
-                </Route>
-              </Route>
-              <Route path="*" element={<div>404 - Página No Encontrada</div>} />
-            </Routes>
+            <AuthRedirectHandler />
+            <TenantRoutes />
             <NotificationPopup />
           </Router>
         </NotificationProvider>
       </CartProvider>
-    </AuthProvider>
+    );
+  }
+
+  return (
+    <CartProvider>
+      <NotificationProvider>
+        <Router>
+          <AuthRedirectHandler />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register-admin" element={<AdminRegistrationPage />} />
+            <Route path="/admin" element={<ProtectedAdminRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="categories" element={<CategoryListPage />} />
+                <Route path="tags" element={<AdminTagsPage />} />
+                <Route path="products" element={<ProductListPage />} />
+                <Route path="products/new" element={<AddProductPage />} />
+                <Route path="products/edit/:id" element={<EditProductPage />} />
+                <Route path="orders" element={<AdminOrdersPage />} />
+                <Route
+                  path="orders/:orderId"
+                  element={<AdminOrderDetailPage />}
+                />
+                <Route
+                  path="orders/new-manual"
+                  element={<AdminCreateManualOrderPage />}
+                />
+                <Route path="settings" element={<StoreSettingsPage />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<div>404 - Página No Encontrada</div>} />
+          </Routes>
+          <NotificationPopup />
+        </Router>
+      </NotificationProvider>
+    </CartProvider>
   );
 }
 

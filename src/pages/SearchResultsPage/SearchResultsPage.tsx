@@ -10,8 +10,8 @@ import styles from "./SearchResultsPage.module.css";
 import { LuFilter, LuX } from "react-icons/lu";
 import {
   fetchPublicTenantTags,
-  fetchPublicTenantProducts,
   searchPublicTenantProducts,
+  fetchPublicTenantCategoriesPreferred,
 } from "../../services/apiService";
 import { useTenant } from "../../hooks/useTenant";
 
@@ -49,28 +49,14 @@ const SearchResultsPage: React.FC = () => {
 
     const fetchSecondaryData = async () => {
       setIsLoadingSecondaryData(true);
+      setSearchError(null);
       try {
-        const [tagsData, productsForCategories] = await Promise.all([
+        const [tagsData, categoriesData] = await Promise.all([
           fetchPublicTenantTags(subdomain),
-          fetchPublicTenantProducts(subdomain),
+          fetchPublicTenantCategoriesPreferred(subdomain),
         ]);
         setAllTenantTags(tagsData || []);
-
-        const categoriesMap = new Map<string, string>();
-        (productsForCategories || []).forEach((p) => {
-          if (
-            p.categoryId &&
-            p.categoryName &&
-            !categoriesMap.has(p.categoryId)
-          ) {
-            categoriesMap.set(p.categoryId, p.categoryName);
-          }
-        });
-        const derivedCategories = Array.from(categoriesMap.entries()).map(
-          ([id, name]) => ({ id, name })
-        );
-        derivedCategories.sort((a, b) => a.name.localeCompare(b.name));
-        setAllCategories(derivedCategories);
+        setAllCategories(categoriesData || []);
       } catch (err) {
         setSearchError("No se pudieron cargar los filtros.");
       } finally {
