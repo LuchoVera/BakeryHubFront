@@ -59,7 +59,6 @@
 }
 
 .chartScrollContainer > div {
-  min-width: 600px !important;
   width: 100% !important;
 }
 
