@@ -82,6 +82,29 @@
   display: inline-block;
 }
 
+.createOrderContainer {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.createOrderButton {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+}
+
+.createOrderButton:hover {
+  background-color: var(--color-primary-dark);
+}
+
 @media (max-width: 600px) {
   .pageContainer {
     padding: var(--space-md);
@@ -100,5 +123,16 @@
   }
   .groupTitle {
     font-size: 1.3rem;
+  }
+  .createOrderContainer {
+    padding: 0 var(--space-xs);
+  }
+  .createOrderButton {
+    display: block;
+    width: calc(100% - var(--space-sm));
+    max-width: 280px;
+    margin: 0 auto;
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.9rem;
   }
 }
