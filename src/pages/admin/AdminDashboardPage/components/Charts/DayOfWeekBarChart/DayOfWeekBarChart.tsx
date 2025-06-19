@@ -3,6 +3,7 @@ import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import { useDashboardData } from "../../../../../../hooks/useDashboardData";
 import { DashboardQueryParametersDto } from "../../../../../../types";
+import { useIsMobile } from "../../../../../../hooks/useIsMobile";
 
 interface ChartProps {
   globalFilters: Omit<
@@ -32,6 +33,7 @@ const daySortOrder: Record<string, number> = {
 };
 
 export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
+  const isMobile = useIsMobile();
   const { data, isLoading, error } = useDashboardData({
     ...globalFilters,
     metric: "revenue",
@@ -62,6 +64,10 @@ export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
     xAxis: {
       type: "category",
       data: processedData.map((d) => d.label),
+      axisLabel: {
+        interval: isMobile ? "auto" : 0,
+        rotate: isMobile ? 30 : 0,
+      },
     },
     yAxis: { type: "value" },
     series: [

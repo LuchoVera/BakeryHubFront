@@ -10,14 +10,6 @@ import { useIsMobile } from "../../../../../../hooks/useIsMobile";
 type RankingType = "top" | "bottom" | "none";
 type RankingMetric = "revenue" | "ordercount";
 
-const formatAxisLabelMultiline = (
-  value: string,
-  maxChars: number = 20
-): string => {
-  const chunks = value.match(new RegExp(`.{1,${maxChars}}`, "g"));
-  return chunks ? chunks.join("\n") : value;
-};
-
 export const ProductsBarChart: React.FC<{
   globalFilters: Omit<
     DashboardQueryParametersDto,
@@ -84,10 +76,15 @@ export const ProductsBarChart: React.FC<{
           type: "category",
           data: chartData.map((d) => d.label),
           axisLabel: {
-            rotate: 45,
             interval: 0,
-            formatter: (value: string): string =>
-              formatAxisLabelMultiline(value),
+            rotate: 65,
+            formatter: (value: string): string => {
+              const maxLength = 15;
+              if (value.length > maxLength) {
+                return value.substring(0, maxLength) + "...";
+              }
+              return value;
+            },
           },
         }
       : {
@@ -104,8 +101,6 @@ export const ProductsBarChart: React.FC<{
           axisLabel: {
             overflow: "truncate",
             width: 250,
-            formatter: (value: string): string =>
-              formatAxisLabelMultiline(value),
           },
         },
     series: [
