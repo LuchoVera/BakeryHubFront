@@ -102,7 +102,11 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({
           </p>
         )}
       </div>
-      <button type="submit" disabled={loading} className={styles.submitButton}>
+      <button
+        type="submit"
+        disabled={loading}
+        className="button button-primary"
+      >
         {loading ? "Añadiendo..." : "Añadir Categoría"}
       </button>
     </form>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styles from "./CategorySidebar.module.css";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 interface CategoryLinkData {
   id: string;
@@ -13,7 +14,6 @@ interface CategorySidebarProps {
   onSelectCategory: (categoryId: string | null) => void;
 }
 
-const MOBILE_BREAKPOINT = 768;
 const INITIAL_VISIBLE_CATEGORIES_MOBILE = 4;
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({
@@ -21,17 +21,8 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   selectedCategoryId,
   onSelectCategory,
 }) => {
-  const [isMobileView, setIsMobileView] = useState(false);
+  const isMobileView = useIsMobile();
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-
-  useEffect(() => {
-    const checkMobileView = () => {
-      setIsMobileView(window.innerWidth <= MOBILE_BREAKPOINT);
-    };
-    checkMobileView();
-    window.addEventListener("resize", checkMobileView);
-    return () => window.removeEventListener("resize", checkMobileView);
-  }, []);
 
   const handleCategoryClick = (
     event: React.MouseEvent<HTMLAnchorElement>,

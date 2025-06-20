@@ -38,6 +38,9 @@ const ProductListPage: React.FC = () => {
   const [modalInfo, setModalInfo] = useState<ModalInfo | null>(null);
   const navigate = useNavigate();
   const [adminSearchTerm, setAdminSearchTerm] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"available" | "unavailable">(
+    "available"
+  );
 
   const fetchProducts = useCallback(async () => {
     setError(null);
@@ -231,7 +234,7 @@ const ProductListPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <h2>Gestion de Productos</h2>
-      <Link to="/admin/products/new" className={styles.addProductButton}>
+      <Link to="/admin/products/new" className="button button-primary">
         Añadir Nuevo Producto
       </Link>
 
@@ -250,30 +253,54 @@ const ProductListPage: React.FC = () => {
 
       {!loading && !error && (
         <>
-          <ProductTable
-            products={filteredAvailableProducts}
-            title="Productos Disponibles"
-            actionButtonLabel={getToggleButtonLabel}
-            onToggleAvailability={handleToggleAvailability}
-            onEdit={handleEdit}
-            isLoading={isProcessingAction}
-            isUnavailableList={false}
-          />
-          <ProductTable
-            products={filteredUnavailableProducts}
-            title="Productos No Disponibles"
-            actionButtonLabel={getToggleButtonLabel}
-            onToggleAvailability={handleToggleAvailability}
-            onEdit={handleEdit}
-            onDelete={handleDeleteProduct}
-            isUnavailableList={true}
-            isLoading={isProcessingAction}
-            deletingProductId={
-              isProcessingAction && modalInfo?.type === "delete"
-                ? modalInfo.itemData?.id
-                : null
-            }
-          />
+          <div className={styles.tabsContainer}>
+            <button
+              className={`${styles.tabButton} ${
+                activeTab === "available" ? styles.activeTab : ""
+              }`}
+              onClick={() => setActiveTab("available")}
+            >
+              Disponibles ({filteredAvailableProducts.length})
+            </button>
+            <button
+              className={`${styles.tabButton} ${
+                activeTab === "unavailable" ? styles.activeTab : ""
+              }`}
+              onClick={() => setActiveTab("unavailable")}
+            >
+              No Disponibles ({filteredUnavailableProducts.length})
+            </button>
+          </div>
+
+          <div className={styles.tableContent}>
+            {activeTab === "available" && (
+              <ProductTable
+                products={filteredAvailableProducts}
+                actionButtonLabel={getToggleButtonLabel}
+                onToggleAvailability={handleToggleAvailability}
+                onEdit={handleEdit}
+                isLoading={isProcessingAction}
+                isUnavailableList={false}
+              />
+            )}
+            {activeTab === "unavailable" && (
+              <ProductTable
+                products={filteredUnavailableProducts}
+                actionButtonLabel={getToggleButtonLabel}
+                onToggleAvailability={handleToggleAvailability}
+                onEdit={handleEdit}
+                onDelete={handleDeleteProduct}
+                isUnavailableList={true}
+                isLoading={isProcessingAction}
+                deletingProductId={
+                  isProcessingAction && modalInfo?.type === "delete"
+                    ? modalInfo.itemData?.id
+                    : null
+                }
+              />
+            )}
+          </div>
+
           {filteredProducts.length === 0 && adminSearchTerm && (
             <p className={styles.noProductsMessage}>
               No se encontraron productos que coincidan con "{adminSearchTerm}".

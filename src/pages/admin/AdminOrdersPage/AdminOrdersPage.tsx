@@ -234,10 +234,7 @@ const AdminOrdersPage: React.FC = () => {
     <div className={styles.pageContainer}>
       <h2>Gestión de Pedidos</h2>
       <div className={styles.createOrderContainer}>
-        <Link
-          to="/admin/orders/new-manual"
-          className={styles.createOrderButton}
-        >
+        <Link to="/admin/orders/new-manual" className="button button-primary">
           Crear Pedido Manual
         </Link>
       </div>
