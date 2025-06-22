@@ -106,21 +106,16 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--border-radius-md);
-  font-weight: 500;
-}
-
-.filterChip strong {
-  font-weight: 600;
 }
 
 .clearFilterButton {
   background: none;
   border: none;
-  color: var(--color-primary-dark);
+  color: var(--color-text-on-primary);
   cursor: pointer;
   padding: 2px;
   margin-left: var(--space-xs);

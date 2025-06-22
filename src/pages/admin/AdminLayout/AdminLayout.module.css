@@ -69,7 +69,7 @@
   color: var(--color-text-primary);
   border-radius: var(--border-radius-md);
   transition: background-color 0.2s ease, color 0.2s ease;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -79,12 +79,12 @@
 }
 .navLinkActive {
   background-color: var(--color-primary);
-  color: var(--color-surface);
-  font-weight: 600;
+  color: var(--color-text-on-primary);
+  font-weight: var(--font-weight-bold);
 }
 .navLinkActive:hover {
   background-color: var(--color-primary-dark);
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
 }
 .navIcon {
   font-size: 1.3rem;
@@ -92,7 +92,7 @@
   line-height: 1;
 }
 .navLinkActive .navIcon {
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
 }
 .navText {
   opacity: 1;
@@ -117,7 +117,7 @@
   width: 100%;
   text-decoration: none;
   border-radius: var(--border-radius-md);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   white-space: nowrap;
   overflow: hidden;
   background-color: transparent;
@@ -190,7 +190,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-overlay-bg);
   z-index: 1029;
   opacity: 0;
   visibility: hidden;
