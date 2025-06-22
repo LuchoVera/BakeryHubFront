@@ -8,14 +8,14 @@
 }
 
 .tableHeaderRow {
-  border-bottom: 2px solid #ccc;
+  border-bottom: 2px solid var(--color-border);
   text-align: left;
 }
 
 .tableHeaderCell {
   padding: var(--space-sm) var(--space-xs);
   text-align: left;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
 }
 
 .tableHeaderCell:first-child {
@@ -29,7 +29,7 @@
 }
 
 .tableRow {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .tableCell {
@@ -65,8 +65,7 @@
   background-color: var(--color-surface);
   border-radius: var(--border-radius-sm);
   font-size: 0.9em;
-  transition: background-color 0.2s ease, border-color 0.2s ease,
-    opacity 0.2s ease;
+  transition: all 0.2s ease;
   line-height: 1.5;
   display: inline-flex;
   align-items: center;
@@ -87,7 +86,7 @@
   border: 1px solid var(--color-border);
 }
 .cancelButton:hover:not(:disabled) {
-  background-color: #e9ecef;
+  background-color: var(--color-disabled-bg);
 }
 
 .editButton {
@@ -112,30 +111,30 @@
 .editInput:focus {
   border-color: var(--color-primary);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.3);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.3);
 }
 
 .saveButton {
   background-color: var(--color-success);
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
   border: none;
 }
 .saveButton:hover:not(:disabled) {
-  background-color: #4cae4c;
+  filter: brightness(90%);
 }
 
 .deleteButton {
   background-color: var(--color-error);
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
   border: none;
 }
 .deleteButton:hover:not(:disabled) {
-  background-color: #c9302c;
+  filter: brightness(90%);
 }
 
 .errorText {
   color: var(--color-error);
-  font-size: 0.9em;
+  font-size: var(--font-size-sm);
   margin-top: var(--space-xs);
 }
 
