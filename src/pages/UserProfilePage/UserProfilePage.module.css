@@ -74,7 +74,7 @@
 .sectionTitleCentered {
   font-family: var(--font-primary);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-md);
   padding-bottom: var(--space-xs);
@@ -88,7 +88,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md) 0;
-  border-bottom: 1px dotted #eee;
+  border-bottom: 1px dotted var(--color-border-light);
   font-size: 0.95rem;
   min-height: 40px;
 }
@@ -136,7 +136,7 @@
 .inlineInput:focus {
   border-color: var(--color-primary);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .editActionButton {
@@ -146,18 +146,19 @@
   padding: var(--space-xs);
   font-size: 1.1rem;
   line-height: 1;
+  transition: filter 0.2s ease;
 }
 .saveButton {
   color: var(--color-success);
 }
 .saveButton:hover {
-  color: darkgreen;
+  filter: brightness(85%);
 }
 .cancelButton {
   color: var(--color-error);
 }
 .cancelButton:hover {
-  color: darkred;
+  filter: brightness(85%);
 }
 
 .editButton {
@@ -217,11 +218,10 @@
 .button {
   padding: var(--space-sm) var(--space-md);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   border-radius: var(--border-radius-md);
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease,
-    color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   flex-grow: 1;
   display: flex;
   align-items: center;
@@ -238,7 +238,7 @@
 
 .buttonMyOrders {
   background-color: var(--color-primary);
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
   border: 1px solid var(--color-primary);
 }
 .buttonMyOrders:hover {
@@ -253,7 +253,7 @@
   border: 1px solid var(--color-error);
 }
 .buttonLogoutError:hover {
-  background-color: rgba(217, 83, 79, 0.05);
+  background-color: rgba(var(--color-error-rgb), 0.05);
   border-color: var(--color-error);
   color: var(--color-error);
   box-shadow: var(--shadow-sm);

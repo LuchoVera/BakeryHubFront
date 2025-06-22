@@ -6,7 +6,7 @@
 .errorLoadingHeader {
   text-align: center;
   padding: var(--space-md);
-  background-color: var(--color-error-light);
+  background-color: rgba(var(--color-error-rgb), 0.1);
   color: var(--color-error);
   font-weight: 500;
 }
@@ -104,7 +104,7 @@
 }
 
 .cartItem:nth-child(even) {
-  background-color: var(--color-secondary-light, #f8f9fa);
+  background-color: var(--color-background);
 }
 
 .itemImage {
@@ -112,7 +112,7 @@
   height: 70px;
   object-fit: cover;
   border-radius: var(--border-radius-sm);
-  background-color: var(--color-secondary-light);
+  background-color: var(--color-secondary);
   display: block;
 }
 
@@ -120,7 +120,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: var(--color-text-subtle);
+  color: var(--color-text-secondary);
   font-size: 0.75em;
   text-align: center;
   border: 1px dashed var(--color-border);
@@ -128,7 +128,7 @@
   width: 70px;
   height: 70px;
   border-radius: var(--border-radius-sm);
-  background-color: var(--color-secondary-light);
+  background-color: var(--color-secondary);
 }
 
 .itemImagePlaceholder span {
@@ -206,7 +206,7 @@
   transition: background-color 0.2s ease;
 }
 .quantityDisplay:hover {
-  background-color: var(--color-secondary-light);
+  background-color: var(--color-secondary);
   cursor: default;
 }
 
@@ -316,7 +316,7 @@
   background-color: var(--color-primary-dark);
 }
 .checkoutButton:disabled {
-  background-color: var(--color-border-light);
+  background-color: var(--color-disabled-bg);
   color: var(--color-text-secondary);
   cursor: not-allowed;
   opacity: 0.8;
@@ -328,7 +328,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--color-overlay-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -380,11 +380,11 @@
 }
 .modalContent .warningText {
   font-size: 0.9em;
-  color: var(--color-warning-dark);
-  background-color: var(--color-warning-light);
+  color: #8a6d3b;
+  background-color: #fcf8e3;
   padding: var(--space-sm);
   border-radius: var(--border-radius-sm);
-  border: 1px solid var(--color-warning);
+  border: 1px solid #faebcc;
 }
 
 .datePickerGroup {
@@ -409,7 +409,7 @@
 .dateInput:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-transparent);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.25);
 }
 
 .modalActions {
@@ -477,7 +477,7 @@
   margin-bottom: var(--space-md);
 }
 .changeDateButton:hover {
-  background-color: var(--color-secondary-light);
+  background-color: var(--color-secondary);
   border-color: var(--color-primary);
 }
 .changeDateButton svg {
@@ -486,11 +486,11 @@
 
 .confirmRemoveRow {
   grid-column: 1 / -1;
-  background-color: var(--color-warning-light, #fcf8e3);
+  background-color: #fcf8e3;
   padding: var(--space-sm) var(--space-md);
   margin-top: calc(-1 * var(--space-sm));
   margin-bottom: var(--space-sm);
-  border: 1px solid var(--color-warning, #faebcc);
+  border: 1px solid #faebcc;
   border-top: none;
   border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
   display: flex;
@@ -512,7 +512,7 @@
 }
 
 .confirmRemoveMessage {
-  color: var(--color-warning-dark, #8a6d3b);
+  color: #8a6d3b;
   font-size: 0.9em;
   font-weight: 500;
   display: flex;
@@ -547,8 +547,7 @@
   border-color: var(--color-error);
 }
 .confirmRemoveButtonYes:hover {
-  background-color: #c9302c;
-  border-color: #c9302c;
+  filter: brightness(90%);
 }
 
 .confirmRemoveButtonNo {
@@ -586,7 +585,6 @@
     font-size: 1.5rem;
     margin-bottom: var(--space-lg);
   }
-
   .cartItem {
     grid-template-columns: 50px 1fr auto;
     grid-template-rows: auto auto;
@@ -599,7 +597,7 @@
     margin-bottom: var(--space-sm);
   }
   .cartItem:nth-child(even) {
-    background-color: var(--color-secondary-light, #f8f9fa);
+    background-color: var(--color-background);
   }
   .cartItemsList .cartItem:last-child {
     margin-bottom: 0;
@@ -609,7 +607,6 @@
     border-radius: 0;
     overflow: visible;
   }
-
   .itemImage {
     width: 50px;
     height: 50px;
@@ -680,7 +677,6 @@
     font-size: 1rem;
     padding: 0;
   }
-
   .cartSummary {
     padding: var(--space-md);
   }
@@ -721,30 +717,17 @@
     gap: var(--space-sm);
     padding: var(--space-sm);
     margin-top: 0;
-    border-top: 1px dashed var(--color-warning);
+    border-top: 1px dashed #faebcc;
   }
-
   .confirmRemoveMessage {
     text-align: center;
     margin-bottom: var(--space-xs);
   }
-
   .confirmRemoveActions {
     width: 100%;
     justify-content: center;
   }
   .confirmRemoveButton {
     flex-grow: 1;
-  }
-}
-
-@keyframes slideUpModal {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }

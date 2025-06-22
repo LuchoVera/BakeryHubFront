@@ -8,7 +8,7 @@
 .errorLoadingHeader {
   text-align: center;
   padding: var(--space-md);
-  background-color: var(--color-error-light, #f2dede);
+  background-color: rgba(var(--color-error-rgb), 0.1);
   color: var(--color-error);
   font-weight: 500;
 }
@@ -52,7 +52,7 @@
 .backLink:hover {
   background-color: var(--color-secondary);
   color: var(--color-text-primary);
-  border-color: var(--color-accent);
+  border-color: var(--color-primary-light);
 }
 .backLink svg {
   margin-bottom: -2px;
@@ -121,34 +121,31 @@
   margin: 0;
   font-size: 1.3rem;
   font-family: var(--font-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
 
 .statusBadge {
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--border-radius-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   font-size: 0.8em;
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
   text-transform: capitalize;
   white-space: nowrap;
 }
+
 .statusPending {
   background-color: var(--color-warning);
 }
 .statusConfirmed {
-  background-color: var(--color-info, #5bc0de);
+  background-color: var(--color-info);
 }
 .statusPreparing {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  border: 1px solid var(--color-primary);
+  background-color: var(--color-primary);
 }
 .statusReady {
-  background-color: var(--color-success-light, #dff0d8);
-  color: var(--color-success-dark, #3c763d);
-  border: 1px solid var(--color-success);
+  background-color: var(--color-success);
 }
 .statusReceived {
   background-color: var(--color-success);
@@ -158,8 +155,7 @@
   text-decoration: line-through;
 }
 .statusDefault {
-  background-color: gray;
-  color: var(--color-surface);
+  background-color: var(--color-text-secondary);
 }
 
 .orderDetails {
@@ -192,7 +188,7 @@
   margin-bottom: var(--space-sm);
   font-size: 1.05em;
   color: var(--color-text-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   font-family: var(--font-primary);
   text-align: left;
 }

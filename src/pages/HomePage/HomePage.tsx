@@ -32,10 +32,11 @@ const HomePage: React.FC = () => {
                 Iniciar Sesión
               </button>
             </Link>
-            <Link to="/register-admin">
-              <button className={`${styles.button} ${styles.buttonSecondary}`}>
-                Registra tu Negocio
-              </button>
+            <Link
+              to="/register-admin"
+              className={`${styles.button} ${styles.buttonSecondary}`}
+            >
+              Registra tu Negocio
             </Link>
           </div>
         </div>
