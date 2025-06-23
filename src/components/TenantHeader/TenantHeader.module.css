@@ -10,8 +10,11 @@
 }
 
 .headerContent {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(350px, 500px) minmax(
+      150px,
+      1fr
+    );
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
@@ -19,10 +22,11 @@
   height: 60px;
   box-sizing: border-box;
   width: 100%;
+  gap: var(--space-md);
 }
 
 .tenantInfo {
-  flex-shrink: 0;
+  justify-self: start;
   text-align: left;
 }
 
@@ -41,16 +45,15 @@
 .searchContainer {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex: 1 1 auto;
-  max-width: 400px;
-  min-width: 40px;
+  justify-content: center;
+  max-width: 500px;
+  min-width: 350px;
+  width: 100%;
   margin: 0;
   padding: 0;
-  margin-left: var(--space-lg);
-  margin-right: var(--space-lg);
   position: relative;
   box-sizing: border-box;
+  justify-self: center;
 }
 
 .searchInput {
@@ -92,8 +95,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  flex-shrink: 0;
   justify-content: flex-end;
+  justify-self: end;
 }
 
 .actionButton,
@@ -182,6 +185,7 @@
 
 @media (max-width: 768px) {
   .headerContent {
+    display: flex;
     flex-wrap: wrap;
     height: auto;
     padding: var(--space-sm) var(--space-md);
@@ -189,6 +193,7 @@
     justify-content: space-between;
     align-items: center;
   }
+
   .tenantInfo {
     order: 1;
     flex-basis: auto;
@@ -196,9 +201,11 @@
     margin: 0;
     padding-bottom: 0;
   }
+
   .tenantName {
     font-size: 1.2rem;
   }
+
   .searchContainer {
     order: 3;
     flex-basis: 100%;
@@ -208,36 +215,45 @@
     margin-left: 0;
     margin-right: 0;
   }
+
   .searchInput {
     display: block;
   }
+
   .searchIconButton {
     display: none;
   }
+
   .actions {
     order: 2;
     gap: var(--space-xs);
   }
+
   .actionButton,
   .actionLink {
     padding: var(--space-xs) 6px;
     font-size: 0.8rem;
   }
+
   .iconButton {
     font-size: 1.4rem;
     width: 36px;
     height: 36px;
   }
+
   .myOrdersButton {
     padding: var(--space-xs);
   }
+
   .myOrdersButton .buttonIcon {
     margin-right: 0;
     font-size: 1.4rem;
   }
+
   .myOrdersButton span {
     display: none;
   }
+
   .cartBadge {
     top: -2px;
     right: -3px;
@@ -251,20 +267,24 @@
   .actions {
     gap: 3px;
   }
+
   .actionButton,
   .actionLink {
     font-size: 0.75rem;
     padding: 4px;
   }
+
   .iconButton,
   .cartButton {
     width: 32px;
     height: 32px;
     font-size: 1.3rem;
   }
+
   .myOrdersButton .buttonIcon {
     font-size: 1.3rem;
   }
+
   .cartBadge {
     top: 0px;
     right: -1px;
