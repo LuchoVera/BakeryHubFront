@@ -11,7 +11,7 @@ import { LuFilter, LuX } from "react-icons/lu";
 import {
   fetchPublicTenantTags,
   searchPublicTenantProducts,
-  fetchPublicTenantCategoriesPreferred,
+  fetchPublicTenantCategories,
 } from "../../services/apiService";
 import { useTenant } from "../../hooks/useTenant";
 
@@ -53,7 +53,7 @@ const SearchResultsPage: React.FC = () => {
       try {
         const [tagsData, categoriesData] = await Promise.all([
           fetchPublicTenantTags(subdomain),
-          fetchPublicTenantCategoriesPreferred(subdomain),
+          fetchPublicTenantCategories(subdomain),
         ]);
         setAllTenantTags(tagsData || []);
         setAllCategories(categoriesData || []);

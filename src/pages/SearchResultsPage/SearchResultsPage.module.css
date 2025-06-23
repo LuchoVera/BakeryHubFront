@@ -58,9 +58,9 @@
 }
 
 .filterButtonActive {
-  background-color: var(--color-primary-light);
+  background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: var(--color-primary-dark);
+  color: var(--color-text-on-primary);
   font-weight: 600;
 }
 .filterButtonActive:hover {
