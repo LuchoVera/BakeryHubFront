@@ -39,7 +39,7 @@
 .button {
   padding: var(--space-md) var(--space-xl);
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   border-radius: var(--border-radius-md);
   border: var(--border-width) solid transparent;
   cursor: pointer;
@@ -58,19 +58,21 @@
   border-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  text-decoration: none;
 }
 
 .buttonSecondary {
-  background-color: transparent;
+  background-color: var(--color-surface);
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
 .buttonSecondary:hover {
-  background-color: var(--color-surface);
+  background-color: var(--color-background);
   color: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
+  text-decoration: none;
 }
 
 .featuresSection {
@@ -104,7 +106,7 @@
   margin-bottom: var(--space-sm);
   color: var(--color-primary-dark);
   font-family: var(--font-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   font-size: 1.2rem;
 }
 
@@ -118,42 +120,33 @@
     min-height: 60vh;
     padding: var(--space-lg) var(--space-md);
   }
-
   .heroTitle {
     font-size: 2.5rem;
   }
-
   .heroSubtitle {
     font-size: 1.1rem;
     margin-bottom: var(--space-lg);
   }
-
   .heroActions {
     gap: var(--space-md);
   }
-
   .button {
     padding: var(--space-sm) var(--space-lg);
     font-size: 1rem;
   }
-
   .featuresSection {
     padding: var(--space-lg) var(--space-md);
   }
-
   .featuresSection h2 {
     font-size: 1.8rem;
     margin-bottom: var(--space-lg);
   }
-
   .featuresGrid {
     gap: var(--space-lg);
   }
-
   .featureCard {
     padding: var(--space-md);
   }
-
   .featureCard h3 {
     font-size: 1.1rem;
   }
@@ -167,23 +160,19 @@
     min-height: 50vh;
     padding: var(--space-md) var(--space-sm);
   }
-
   .heroTitle {
     font-size: 2rem;
     line-height: 1.3;
   }
-
   .heroSubtitle {
     font-size: 1rem;
   }
-
   .button {
     width: 100%;
     max-width: 280px;
     margin-left: auto;
     margin-right: auto;
   }
-
   .featuresSection h2 {
     font-size: 1.6rem;
   }

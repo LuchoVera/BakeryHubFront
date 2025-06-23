@@ -6,13 +6,12 @@ const AddProductPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSuccess = () => {
-    console.log("Product created successfully, navigating back to list.");
     navigate("/admin/products");
   };
 
   return (
     <div>
-      <Link to="/admin/products">{"< Back to Product List"}</Link>
+      <Link to="/admin/products">&larr; Volver a la lista de Productos</Link>
       <ProductForm onSuccess={handleSuccess} />
     </div>
   );

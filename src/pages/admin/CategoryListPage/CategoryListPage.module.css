@@ -6,7 +6,7 @@
   margin-bottom: var(--space-lg);
   display: flex;
   gap: var(--space-sm);
-  align-items: flex-start;
+  align-items: center;
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
@@ -35,28 +35,6 @@
   border-color: var(--color-primary);
   outline: none;
   box-shadow: 0 0 0 2px rgba(251, 111, 146, 0.3);
-}
-
-.submitButton {
-  padding: var(--space-sm) var(--space-md);
-  margin-top: calc(var(--space-xs) + 1.1em + 4px);
-  background-color: var(--color-primary);
-  color: var(--color-surface);
-  border: none;
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.submitButton:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
-}
-.submitButton:disabled {
-  background-color: #e9ecef;
-  color: var(--color-text-secondary);
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .errorText {
@@ -92,13 +70,6 @@
     width: 100%;
     box-sizing: border-box;
     min-width: auto;
-  }
-
-  .submitButton {
-    margin-top: 0;
-    width: 100%;
-    padding: var(--space-sm) var(--space-lg);
-    font-size: 1rem;
   }
 
   .errorText {

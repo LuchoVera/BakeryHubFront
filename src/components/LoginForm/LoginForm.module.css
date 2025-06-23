@@ -9,8 +9,8 @@
 }
 
 .formGroup label {
-  font-weight: 600;
-  font-size: 0.9em;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
   color: var(--color-text-primary);
 }
 .passwordInputWrapper {
@@ -44,13 +44,13 @@
 
 .passwordToggleBtn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary-transparent);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
   border-radius: var(--border-radius-sm);
 }
 
 .submitButton {
   background-color: var(--color-primary);
-  color: var(--color-surface);
+  color: var(--color-text-on-primary);
   border-color: var(--color-primary);
   align-self: flex-start;
   margin-top: var(--space-sm);
@@ -66,40 +66,40 @@
 
 .error {
   color: var(--color-error);
-  background-color: rgba(217, 83, 79, 0.1);
+  background-color: rgba(var(--color-error-rgb), 0.1);
   border: 1px solid var(--color-error);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--border-radius-sm);
-  font-size: 0.9em;
+  font-size: var(--font-size-sm);
   margin-top: var(--space-md);
   white-space: pre-wrap;
 }
 
 .success {
   color: var(--color-success);
-  background-color: rgba(92, 184, 92, 0.1);
+  background-color: rgba(var(--color-success-rgb), 0.1);
   border: 1px solid var(--color-success);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--border-radius-sm);
-  font-size: 0.9em;
+  font-size: var(--font-size-sm);
   margin-top: var(--space-md);
 }
 
 .validationError {
   color: var(--color-error);
-  font-size: 0.8em;
+  font-size: var(--font-size-xs);
   margin-top: var(--space-xs);
   display: block;
 }
 
 input[aria-invalid="true"] {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.2);
 }
 
 input[aria-invalid="true"]:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--color-error-rgb), 0.2);
 }
 
 .rememberMeGroup {
@@ -126,9 +126,9 @@ input[aria-invalid="true"]:focus {
 }
 
 .rememberMeLabel {
-  font-weight: normal;
+  font-weight: var(--font-weight-normal);
   margin-bottom: 0;
-  font-size: 0.9em;
+  font-size: var(--font-size-sm);
   color: var(--color-text-primary);
   cursor: pointer;
   line-height: 1;
@@ -147,6 +147,6 @@ input[aria-invalid="true"]:focus {
   }
 
   .rememberMeLabel {
-    font-size: 0.85em;
+    font-size: var(--font-size-sm);
   }
 }

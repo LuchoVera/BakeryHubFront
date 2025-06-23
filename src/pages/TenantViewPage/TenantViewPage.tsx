@@ -15,6 +15,7 @@ import {
   fetchPublicTenantProducts,
   fetchPublicTenantRecommendations,
   fetchPublicTenantTags,
+  fetchPublicTenantCategories,
 } from "../../services/apiService";
 
 type GroupedProductsRender = Record<string, ProductDto[]>;
@@ -38,6 +39,7 @@ const TenantViewPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [allTenantProducts, setAllTenantProducts] = useState<ProductDto[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
   const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
   const [isLoadingSecondaryData, setIsLoadingSecondaryData] =
@@ -45,13 +47,11 @@ const TenantViewPage: React.FC = () => {
   const [errorSecondaryData, setErrorSecondaryData] = useState<string | null>(
     null
   );
-
   const [displayedRecommendations, setDisplayedRecommendations] = useState<
     ProductDto[]
   >([]);
   const [loadingRecommendations, setLoadingRecommendations] =
     useState<boolean>(false);
-
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
     categoryId: null,
@@ -67,25 +67,39 @@ const TenantViewPage: React.FC = () => {
       setIsLoadingSecondaryData(true);
       setErrorSecondaryData(null);
       try {
-        const [categoriesData, tagsData] = await Promise.all([
-          fetchPublicTenantCategoriesPreferred(subdomain),
+        const categoriesPromise = isAuthenticated
+          ? fetchPublicTenantCategoriesPreferred(subdomain)
+          : fetchPublicTenantCategories(subdomain);
+
+        const [categoriesData, tagsData, allProductsData] = await Promise.all([
+          categoriesPromise,
           fetchPublicTenantTags(subdomain),
+          fetchPublicTenantProducts(subdomain),
         ]);
         setAllCategories(categoriesData || []);
         setAllTenantTags(tagsData || []);
+        setAllTenantProducts(allProductsData || []);
+        setProducts(allProductsData || []);
       } catch (err) {
-        setErrorSecondaryData(
-          "No se pudieron cargar las categorías o etiquetas."
-        );
+        setErrorSecondaryData("No se pudieron cargar los datos de la tienda.");
       } finally {
         setIsLoadingSecondaryData(false);
       }
     };
     fetchPageData();
-  }, [tenantInfo, subdomain]);
+  }, [tenantInfo, subdomain, isAuthenticated]);
 
   const performProductFetch = useCallback(async () => {
     if (!tenantInfo) return;
+    const noFilters =
+      !appliedFilters.categoryId &&
+      !appliedFilters.minPrice &&
+      !appliedFilters.maxPrice &&
+      appliedFilters.tags.length === 0;
+    if (noFilters) {
+      setProducts(allTenantProducts);
+      return;
+    }
 
     setIsLoadingSecondaryData(true);
     setErrorSecondaryData(null);
@@ -106,13 +120,13 @@ const TenantViewPage: React.FC = () => {
     } finally {
       setIsLoadingSecondaryData(false);
     }
-  }, [tenantInfo, subdomain, appliedFilters]);
+  }, [tenantInfo, subdomain, appliedFilters, allTenantProducts]);
 
   useEffect(() => {
-    if (!isLoadingTenant && tenantInfo) {
+    if (!isLoadingTenant && tenantInfo && !isLoadingSecondaryData) {
       performProductFetch();
     }
-  }, [performProductFetch, isLoadingTenant, tenantInfo]);
+  }, [appliedFilters, isLoadingTenant, tenantInfo]);
 
   useEffect(() => {
     if (isAuthenticated && tenantInfo) {
@@ -127,9 +141,20 @@ const TenantViewPage: React.FC = () => {
     }
   }, [isAuthenticated, tenantInfo, subdomain]);
 
+  const categoriesWithProducts = useMemo(() => {
+    if (allTenantProducts.length === 0) {
+      return allCategories;
+    }
+    const activeCategoryIds = new Set(
+      allTenantProducts.map((p) => p.categoryId)
+    );
+    return allCategories.filter((cat) => activeCategoryIds.has(cat.id));
+  }, [allTenantProducts, allCategories]);
+
   const handleApplyFilters = (newFilters: AppliedFilters) => {
     setAppliedFilters((prev) => ({
       ...prev,
+      categoryId: prev.categoryId,
       minPrice: newFilters.minPrice,
       maxPrice: newFilters.maxPrice,
       tags: newFilters.tags,
@@ -208,7 +233,7 @@ const TenantViewPage: React.FC = () => {
       } else if (appliedFilters.categoryId) {
         message = "No hay productos disponibles en esta categoría.";
       } else {
-        message = "No se encontraron productos.";
+        message = "Esta tienda aún no tiene productos disponibles.";
       }
       return (
         <div className={styles.contentWrapper}>
@@ -268,7 +293,10 @@ const TenantViewPage: React.FC = () => {
       <div className={styles.pageLayout}>
         {allCategories.length > 0 && (
           <CategorySidebar
-            categories={allCategories.map((c) => ({ id: c.id, name: c.name }))}
+            categories={categoriesWithProducts.map((c) => ({
+              id: c.id,
+              name: c.name,
+            }))}
             selectedCategoryId={appliedFilters.categoryId}
             onSelectCategory={handleSelectCategory}
           />

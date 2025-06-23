@@ -15,7 +15,7 @@
 
 .chartTitle {
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
 }
@@ -28,7 +28,7 @@
 
 .controlGroup {
   display: flex;
-  background-color: var(--color-secondary-light, #f0f0f0);
+  background-color: var(--color-disabled-bg);
   border-radius: var(--border-radius-sm);
   padding: 4px;
 }
@@ -39,7 +39,7 @@
   background-color: transparent;
   color: var(--color-text-secondary);
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -55,7 +55,7 @@
 .controlButton.active {
   background-color: var(--color-surface);
   color: var(--color-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   box-shadow: var(--shadow-sm);
 }
 
@@ -74,7 +74,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--color-surface-translucent);
   border-radius: var(--border-radius-md);
   font-size: 1.1rem;
   color: var(--color-text-secondary);

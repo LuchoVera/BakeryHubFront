@@ -25,7 +25,6 @@ import SearchResultsPage from "./pages/SearchResultsPage/SearchResultsPage";
 import ProductDetailPage from "./pages/ProductDetailPage/ProductDetailPage";
 import TenantCustomerLoginPage from "./pages/TenantCustomerLoginPage/TenantCustomerLoginPage";
 import TenantCustomerSignUpPage from "./pages/TenantCustomerSignUpPage/TenantCustomerSignUpPage";
-import "./App.css";
 import CartPage from "./pages/CartPage/CartPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage/AdminOrdersPage";
 import StoreSettingsPage from "./pages/admin/StoreSettingsPage/StoreSettingsPage";

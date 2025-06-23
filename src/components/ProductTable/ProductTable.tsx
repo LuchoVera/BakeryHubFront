@@ -4,7 +4,7 @@ import styles from "./ProductTable.module.css";
 
 export interface ProductTableProps {
   products: ProductDto[];
-  title: string;
+  title?: string;
   actionButtonLabel: (isAvailable: boolean) => string;
   onToggleAvailability: (
     productId: string,
@@ -58,7 +58,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
 
   return (
     <div className={styles.tableContainer}>
-      <h3>{title}</h3>
+      {title && <h3>{title}</h3>}
       {products.length === 0 ? (
         <p>No se encontraron productos en esta categoría.</p>
       ) : (

@@ -16,21 +16,21 @@ import {
   LuMenu,
   LuX,
 } from "react-icons/lu";
+import { useIsMobile } from "../../../hooks/useIsMobile";
 
 const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    if (isMobile) {
+      setIsSidebarCollapsed(false);
+    } else {
+      setIsMobileMenuOpen(false);
+    }
+  }, [isMobile]);
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -38,6 +38,12 @@ const AdminLayout: React.FC = () => {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleMobileLinkClick = () => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
   };
 
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
@@ -89,7 +95,13 @@ const AdminLayout: React.FC = () => {
 
         <ul className={styles.navList}>
           <li className={styles.navItem}>
-            <NavLink to="/admin" end className={getNavLinkClass} title="Panel">
+            <NavLink
+              to="/admin"
+              end
+              className={getNavLinkClass}
+              title="Panel"
+              onClick={handleMobileLinkClick}
+            >
               <LuLayoutDashboard className={styles.navIcon} />
               <span className={styles.navText}>Dashboard</span>
             </NavLink>
@@ -99,6 +111,7 @@ const AdminLayout: React.FC = () => {
               to="/admin/orders"
               className={getNavLinkClass}
               title="Pedidos"
+              onClick={handleMobileLinkClick}
             >
               <LuPackage className={styles.navIcon} />
               <span className={styles.navText}>Pedidos</span>
@@ -109,13 +122,19 @@ const AdminLayout: React.FC = () => {
               to="/admin/categories"
               className={getNavLinkClass}
               title="Categorías"
+              onClick={handleMobileLinkClick}
             >
               <LuTag className={styles.navIcon} />
               <span className={styles.navText}>Categorías</span>
             </NavLink>
           </li>
           <li className={styles.navItem}>
-            <NavLink to="/admin/tags" className={getNavLinkClass} title="Tags">
+            <NavLink
+              to="/admin/tags"
+              className={getNavLinkClass}
+              title="Tags"
+              onClick={handleMobileLinkClick}
+            >
               <LuTags className={styles.navIcon} />
               <span className={styles.navText}>Etiquetas</span>
             </NavLink>
@@ -125,6 +144,7 @@ const AdminLayout: React.FC = () => {
               to="/admin/products"
               className={getNavLinkClass}
               title="Productos"
+              onClick={handleMobileLinkClick}
             >
               <LuBoxes className={styles.navIcon} />
               <span className={styles.navText}>Productos</span>
@@ -140,6 +160,7 @@ const AdminLayout: React.FC = () => {
               to="/admin/settings"
               className={getNavLinkClass}
               title="Ajustes de Tienda"
+              onClick={handleMobileLinkClick}
             >
               <LuSettings className={styles.navIcon} />
               <span className={styles.navText}>Ajustes de Tienda</span>
@@ -154,6 +175,7 @@ const AdminLayout: React.FC = () => {
                 rel="noopener noreferrer"
                 className={styles.navLink}
                 title="Ir a mi Negocio (Vista Cliente)"
+                onClick={handleMobileLinkClick}
               >
                 <LuExternalLink className={styles.navIcon} />
                 <span className={styles.navText}>Ir a mi Negocio</span>
@@ -163,7 +185,10 @@ const AdminLayout: React.FC = () => {
 
           <li className={`${styles.navItem} ${styles.logoutNavItem}`}>
             <button
-              onClick={logout}
+              onClick={() => {
+                logout();
+                handleMobileLinkClick();
+              }}
               className={styles.logoutButton}
               title="Cerrar Sesión"
             >

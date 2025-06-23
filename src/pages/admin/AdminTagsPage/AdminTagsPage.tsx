@@ -98,7 +98,11 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ onTagAdded }) => {
           </p>
         )}
       </div>
-      <button type="submit" disabled={loading} className={styles.submitButton}>
+      <button
+        type="submit"
+        disabled={loading}
+        className="button button-primary"
+      >
         {loading ? "Añadiendo..." : "Añadir Etiqueta"}
       </button>
     </form>

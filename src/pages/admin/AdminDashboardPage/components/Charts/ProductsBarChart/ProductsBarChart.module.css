@@ -8,7 +8,7 @@
 .controlGroup {
   display: flex;
   justify-content: center;
-  background-color: var(--color-secondary-light, #f0f0f0);
+  background-color: var(--color-disabled-bg);
   border-radius: var(--border-radius-sm);
   padding: 4px;
 }
@@ -81,7 +81,7 @@
 }
 
 .noSalesList li {
-  background-color: var(--color-secondary-light, #f8f9fa);
+  background-color: var(--color-disabled-bg);
   padding: var(--space-sm);
   border-radius: var(--border-radius-sm);
   margin-bottom: var(--space-xs);

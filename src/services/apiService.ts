@@ -397,3 +397,12 @@ export const createManualAdminOrder = async (
   );
   return response.data;
 };
+
+export const fetchPublicTenantCategories = async (
+  subdomain: string
+): Promise<CategoryDto[]> => {
+  const response = await apiClient.get<CategoryDto[]>(
+    `/public/tenants/${subdomain}/categories`
+  );
+  return response.data;
+};
