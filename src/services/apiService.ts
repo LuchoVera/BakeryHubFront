@@ -20,6 +20,7 @@ import {
   ProductDto,
   TagDto,
   TenantPublicInfoDto,
+  TenantThemeDto,
   UpdateCategoryDto,
   UpdateProductDto,
   UpdateTagDto,
@@ -405,4 +406,23 @@ export const fetchPublicTenantCategories = async (
     `/public/tenants/${subdomain}/categories`
   );
   return response.data;
+};
+
+export const getAdminTheme = async (): Promise<TenantThemeDto> => {
+  const response = await apiClient.get<TenantThemeDto>("/admin/theme");
+  return response.data;
+};
+
+export const updateAdminTheme = async (
+  themeData: TenantThemeDto
+): Promise<void> => {
+  await apiClient.put("/admin/theme", themeData);
+};
+
+export const resetPublicTheme = async (): Promise<void> => {
+  await apiClient.post("/admin/theme/reset-public");
+};
+
+export const resetAdminTheme = async (): Promise<void> => {
+  await apiClient.post("/admin/theme/reset-admin");
 };
