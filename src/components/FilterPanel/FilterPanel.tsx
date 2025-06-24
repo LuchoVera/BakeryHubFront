@@ -242,6 +242,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               disabled={isLoading}
               sx={{
                 width: "300px",
+                "&:hover:not(.Mui-focused) .MuiOutlinedInput-root:not(.Mui-disabled)":
+                  {
+                    borderColor: "var(--color-primary) !important",
+                    backgroundColor: "#fafafa !important",
+                  },
                 "& .MuiOutlinedInput-root": {
                   padding: "calc(var(--space-xs) + 2px) var(--space-sm)",
                   display: "flex",
@@ -250,18 +255,15 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   maxHeight: "116px",
                   overflowY: "auto",
                   backgroundColor: "var(--color-surface)",
+
                   borderRadius: "var(--border-radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  "&:hover": {
-                    borderColor: "var(--color-text-secondary)",
-                  },
+                  border: "2px solid var(--color-border)",
+                  transition:
+                    "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
                   "&.Mui-focused": {
-                    borderColor: "var(--color-primary)",
-                    boxShadow: "0 0 0 2px rgba(251, 111, 146, 0.2)",
-                  },
-                  "&.Mui-disabled": {
-                    backgroundColor: "#f0f0f0",
-                    borderColor: "var(--color-border-light)",
+                    borderColor: "var(--color-primary-dark) !important",
+                    boxShadow: "0 0 0 3px var(--color-accent) !important",
+                    backgroundColor: "var(--color-surface) !important",
                   },
                 },
                 "& .MuiAutocomplete-input": {
@@ -273,7 +275,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   color: "var(--color-text-primary)",
                 },
                 "& .MuiOutlinedInput-notchedOutline": {
-                  border: "none",
+                  border: "none !important",
+                },
+                "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                  border: "none !important",
+                },
+                "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
+                  {
+                    border: "none !important",
+                  },
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                  {
+                    border: "none !important",
+                  },
+                "& fieldset": {
+                  border: "none !important",
                 },
               }}
             />

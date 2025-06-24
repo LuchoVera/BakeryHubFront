@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, ChangeEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  ChangeEvent,
+  FocusEvent,
+} from "react";
 import {
   ProductDto,
   OrderItemDto,
@@ -109,19 +115,38 @@ const AdminCreateManualOrderForm: React.FC = () => {
     );
   }, [orderItems]);
 
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case "customerName":
+        if (!value.trim()) return "El nombre del cliente es requerido.";
+        if (value.trim().length < 3)
+          return "El nombre debe tener al menos 3 caracteres.";
+        return "";
+      case "customerPhone":
+        if (!value.trim()) return "El teléfono del cliente es requerido.";
+        if (!/^\d{8}$/.test(value.trim()))
+          return "El teléfono debe contener exactamente 8 dígitos.";
+        return "";
+      case "deliveryDate":
+        if (!value) return "La fecha de entrega es requerida.";
+        return "";
+      default:
+        return "";
+    }
+  };
+
   const validateForm = (): boolean => {
     const errors: { [key: string]: string } = {};
-    if (!customerName.trim()) {
-      errors.customerName = "El nombre del cliente es requerido.";
-    }
-    if (!customerPhone.trim()) {
-      errors.customerPhone = "El teléfono del cliente es requerido.";
-    } else if (!/^\d{8}$/.test(customerPhone.trim())) {
-      errors.customerPhone = "El teléfono debe contener exactamente 8 dígitos.";
-    }
-    if (!deliveryDate) {
-      errors.deliveryDate = "La fecha de entrega es requerida.";
-    }
+
+    const nameError = validateField("customerName", customerName);
+    if (nameError) errors.customerName = nameError;
+
+    const phoneError = validateField("customerPhone", customerPhone);
+    if (phoneError) errors.customerPhone = phoneError;
+
+    const dateError = validateField("deliveryDate", deliveryDate);
+    if (dateError) errors.deliveryDate = dateError;
+
     if (orderItems.length === 0) {
       errors.form = "Añade al menos un producto al pedido.";
     }
@@ -142,6 +167,12 @@ const AdminCreateManualOrderForm: React.FC = () => {
     }
   };
 
+  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setClientErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -158,13 +189,8 @@ const AdminCreateManualOrderForm: React.FC = () => {
     };
 
     try {
-      const createdOrder = await createManualAdminOrder(payload);
-      showNotification(
-        `Pedido manual #${
-          createdOrder.orderNumber || createdOrder.id.substring(0, 8)
-        } creado exitosamente.`,
-        "success"
-      );
+      await createManualAdminOrder(payload);
+      showNotification("Pedido creado exitosamente", "success", 5000);
       navigate("/admin/orders");
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
@@ -182,7 +208,7 @@ const AdminCreateManualOrderForm: React.FC = () => {
   if (error) return <p className={styles.errorText}>{error}</p>;
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
+    <form onSubmit={handleSubmit} className={styles.form} noValidate>
       <div className={styles.layout}>
         <div className={styles.orderColumn}>
           <h2 className={styles.columnTitle}>Nuevo Pedido</h2>
@@ -196,6 +222,7 @@ const AdminCreateManualOrderForm: React.FC = () => {
                 type="text"
                 value={customerName}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 required
                 aria-invalid={!!clientErrors.customerName}
               />
@@ -213,6 +240,7 @@ const AdminCreateManualOrderForm: React.FC = () => {
                 type="tel"
                 value={customerPhone}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 required
                 maxLength={8}
                 aria-invalid={!!clientErrors.customerPhone}
@@ -306,6 +334,7 @@ const AdminCreateManualOrderForm: React.FC = () => {
                 type="date"
                 value={deliveryDate}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 required
                 min={(() => {
                   const today = new Date();

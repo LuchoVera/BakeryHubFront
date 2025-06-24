@@ -1,21 +1,21 @@
 @import url("https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap");
 
 :root {
-  --color-primary: #ff8fab;
-  --color-primary-dark: #fb6f92;
-  --color-primary-light: #ffb3c1;
-  --color-primary-rgb: 255, 143, 171;
-
-  --color-secondary: #ffe5ec;
-  --color-background: #fffafb;
+  --color-primary: #0077b6;
+  --color-primary-dark: #023e8a;
+  --color-primary-light: #ade8f4;
+  --color-primary-rgb: 0, 119, 182;
+  --color-secondary: #eaf8fb;
+  --color-background: #f4f8f9;
   --color-surface: #ffffff;
+  --color-accent: rgba(var(--color-primary-rgb), 0.25);
 
   --color-whatsapp: #25d366;
   --color-whatsapp-light: #adeecf;
   --color-whatsapp-dark: #1da851;
 
-  --color-text-primary: #343a40;
-  --color-text-secondary: #6c757d;
+  --color-text-primary: #333333;
+  --color-text-secondary: #5a5a5a;
   --color-text-on-primary: #ffffff;
 
   --color-success: #5cb85c;
@@ -25,8 +25,8 @@
   --color-warning: #f0ad4e;
   --color-info: #5bc0de;
 
-  --color-border: #e0e0e0;
-  --color-border-light: #f1f1f1;
+  --color-border: #dce4e8;
+  --color-border-light: #e8f1f5;
   --color-disabled-bg: #e9ecef;
   --color-overlay-bg: rgba(0, 0, 0, 0.6);
 
@@ -211,12 +211,12 @@ select {
     box-shadow var(--transition-speed) var(--transition-ease);
 }
 
-input:focus,
-textarea:focus,
+input:not(.MuiInputBase-input):focus,
+textarea:not(.MuiInputBase-input):focus,
 select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(255, 143, 171, 0.25);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 
 textarea {

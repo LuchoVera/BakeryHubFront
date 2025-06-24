@@ -22,7 +22,7 @@
 .dashboardGrid {
   display: grid;
   gap: var(--space-lg);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .widget {
@@ -59,7 +59,7 @@
 
 @media (min-width: 769px) {
   .dashboardGrid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .kpiContainer {
@@ -77,7 +77,7 @@
 
 @media (min-width: 1200px) {
   .dashboardGrid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .mainChartContainer {
     grid-column: 1 / 3;

@@ -10,6 +10,7 @@ import FilterPanel, {
 import { useAuth } from "../../AuthContext";
 import { useTenant } from "../../hooks/useTenant";
 import { LuFilter, LuX } from "react-icons/lu";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   fetchPublicTenantCategoriesPreferred,
   fetchPublicTenantProducts,
@@ -37,13 +38,16 @@ const TenantViewPage: React.FC = () => {
     error: tenantError,
   } = useTenant();
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [allTenantProducts, setAllTenantProducts] = useState<ProductDto[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryDto[]>([]);
   const [allTenantTags, setAllTenantTags] = useState<TagDto[]>([]);
-  const [isLoadingSecondaryData, setIsLoadingSecondaryData] =
+  const [isInitialDataLoading, setIsInitialDataLoading] =
     useState<boolean>(true);
+  const [isFiltering, setIsFiltering] = useState<boolean>(false);
   const [errorSecondaryData, setErrorSecondaryData] = useState<string | null>(
     null
   );
@@ -61,10 +65,19 @@ const TenantViewPage: React.FC = () => {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categoryIdFromUrl = params.get("category");
+    setAppliedFilters((prevFilters) => ({
+      ...prevFilters,
+      categoryId: categoryIdFromUrl,
+    }));
+  }, [location.search]);
+
+  useEffect(() => {
     if (!tenantInfo) return;
 
     const fetchPageData = async () => {
-      setIsLoadingSecondaryData(true);
+      setIsInitialDataLoading(true);
       setErrorSecondaryData(null);
       try {
         const categoriesPromise = isAuthenticated
@@ -79,11 +92,10 @@ const TenantViewPage: React.FC = () => {
         setAllCategories(categoriesData || []);
         setAllTenantTags(tagsData || []);
         setAllTenantProducts(allProductsData || []);
-        setProducts(allProductsData || []);
       } catch (err) {
         setErrorSecondaryData("No se pudieron cargar los datos de la tienda.");
       } finally {
-        setIsLoadingSecondaryData(false);
+        setIsInitialDataLoading(false);
       }
     };
     fetchPageData();
@@ -96,12 +108,13 @@ const TenantViewPage: React.FC = () => {
       !appliedFilters.minPrice &&
       !appliedFilters.maxPrice &&
       appliedFilters.tags.length === 0;
+
     if (noFilters) {
       setProducts(allTenantProducts);
       return;
     }
 
-    setIsLoadingSecondaryData(true);
+    setIsFiltering(true);
     setErrorSecondaryData(null);
     try {
       const params = new URLSearchParams();
@@ -118,15 +131,14 @@ const TenantViewPage: React.FC = () => {
     } catch (err) {
       setErrorSecondaryData("No se pudieron cargar los productos.");
     } finally {
-      setIsLoadingSecondaryData(false);
+      setIsFiltering(false);
     }
   }, [tenantInfo, subdomain, appliedFilters, allTenantProducts]);
 
   useEffect(() => {
-    if (!isLoadingTenant && tenantInfo && !isLoadingSecondaryData) {
-      performProductFetch();
-    }
-  }, [appliedFilters, isLoadingTenant, tenantInfo]);
+    if (isInitialDataLoading) return;
+    performProductFetch();
+  }, [appliedFilters, isInitialDataLoading, performProductFetch]);
 
   useEffect(() => {
     if (isAuthenticated && tenantInfo) {
@@ -173,7 +185,13 @@ const TenantViewPage: React.FC = () => {
   };
 
   const handleSelectCategory = (categoryId: string | null) => {
-    setAppliedFilters((prev) => ({ ...prev, categoryId: categoryId }));
+    const params = new URLSearchParams(location.search);
+    if (categoryId) {
+      params.set("category", categoryId);
+    } else {
+      params.delete("category");
+    }
+    navigate({ search: params.toString() }, { replace: true });
     setIsFilterPanelOpen(false);
   };
 
@@ -211,7 +229,7 @@ const TenantViewPage: React.FC = () => {
   }, [products, allCategories, appliedFilters.categoryId]);
 
   const renderContent = () => {
-    const isLoading = isLoadingTenant || isLoadingSecondaryData;
+    const isLoading = isLoadingTenant || isInitialDataLoading || isFiltering;
     if (isLoading) {
       return (
         <div className={styles.contentWrapper}>
@@ -322,7 +340,7 @@ const TenantViewPage: React.FC = () => {
                   onApplyFilters={handleApplyFilters}
                   onClearFilters={handleClearFilters}
                   showCategoryFilter={false}
-                  isLoading={isLoadingSecondaryData}
+                  isLoading={isInitialDataLoading}
                 />
               )}
             </div>

@@ -38,6 +38,7 @@ import AdminCreateManualOrderPage from "./pages/admin/AdminCreateManualOrderPage
 import { useAuth } from "./AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { usePrevious } from "./hooks/usePrevious";
+import AdminThemePage from "./pages/admin/AdminThemePage/AdminThemePage";
 
 const AuthRedirectHandler = () => {
   const { isAuthenticated } = useAuth();
@@ -158,6 +159,7 @@ function App() {
                   element={<AdminCreateManualOrderPage />}
                 />
                 <Route path="settings" element={<StoreSettingsPage />} />
+                <Route path="theme" element={<AdminThemePage />} />{" "}
               </Route>
             </Route>
             <Route path="*" element={<div>404 - Página No Encontrada</div>} />

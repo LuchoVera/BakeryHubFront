@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import { useDashboardData } from "../../../../../../hooks/useDashboardData";
@@ -19,6 +19,7 @@ export const ProductsBarChart: React.FC<{
   const isMobile = useIsMobile();
   const [rankingType, setRankingType] = useState<RankingType>("top");
   const [rankingMetric, setRankingMetric] = useState<RankingMetric>("revenue");
+  const echartRef = useRef<any>(null);
 
   const { data, isLoading, error } = useDashboardData({
     ...globalFilters,
@@ -27,6 +28,22 @@ export const ProductsBarChart: React.FC<{
     breakdownDimension: "product",
     includeProductsWithNoSales: true,
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (echartRef.current) {
+        setTimeout(() => {
+          echartRef.current.getEchartsInstance().resize();
+        }, 100);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const processedData = useMemo(() => {
     if (!data?.breakdown) return { chart: [], list: [] };
@@ -137,6 +154,7 @@ export const ProductsBarChart: React.FC<{
       ) : (
         <div className={styles.chartScrollContainer}>
           <ReactECharts
+            ref={echartRef}
             option={options}
             style={{
               height: isMobile ? 400 + chartData.length * 10 : 400,

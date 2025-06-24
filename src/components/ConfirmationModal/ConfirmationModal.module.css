@@ -126,6 +126,7 @@
   border-color: var(--color-error);
 }
 .modalButtonConfirm.danger:hover:not(:disabled) {
+  background-color: var(--color-error);
   filter: brightness(90%);
   border-color: var(--color-error);
 }
