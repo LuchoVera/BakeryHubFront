@@ -15,14 +15,89 @@ import {
   LuTag,
   LuMenu,
   LuX,
+  LuPalette,
 } from "react-icons/lu";
 import { useIsMobile } from "../../../hooks/useIsMobile";
+import { getAdminTheme } from "../../../services/apiService";
+import { TenantThemeDto } from "../../../types";
+import { hexToRgb } from "../../../utils/colorUtils";
 
 const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const applyTheme = (theme: TenantThemeDto) => {
+      const adminTheme = theme.adminTheme;
+      const root = document.documentElement;
+
+      if (!adminTheme) return;
+
+      const propertiesToSet: { [key: string]: string | null } = {
+        "--color-primary": adminTheme.colorPrimary,
+        "--color-primary-dark": adminTheme.colorPrimaryDark,
+        "--color-primary-light": adminTheme.colorPrimaryLight,
+        "--color-secondary": adminTheme.colorSecondary,
+        "--color-background": adminTheme.colorBackground,
+        "--color-surface": adminTheme.colorSurface,
+        "--color-text-primary": adminTheme.colorTextPrimary,
+        "--color-text-secondary": adminTheme.colorTextSecondary,
+        "--color-text-on-primary": adminTheme.colorTextOnPrimary,
+        "--color-border": adminTheme.colorBorder,
+        "--color-border-light": adminTheme.colorBorderLight,
+        "--color-disabled-bg": adminTheme.colorDisabledBg,
+      };
+
+      const primaryRgb = hexToRgb(adminTheme.colorPrimary);
+      if (primaryRgb) {
+        propertiesToSet["--color-primary-rgb"] = primaryRgb;
+      }
+
+      Object.entries(propertiesToSet).forEach(([property, value]) => {
+        if (value) {
+          root.style.setProperty(property, value);
+        }
+      });
+    };
+
+    const fetchAndApplyTheme = async () => {
+      try {
+        const themeData = await getAdminTheme();
+        if (isMounted) {
+          applyTheme(themeData);
+        }
+      } catch (error) {
+        console.error("Failed to load admin theme", error);
+      }
+    };
+
+    fetchAndApplyTheme();
+
+    return () => {
+      isMounted = false;
+      const root = document.documentElement;
+      const propertiesToRemove = [
+        "--color-primary",
+        "--color-primary-dark",
+        "--color-primary-light",
+        "--color-secondary",
+        "--color-background",
+        "--color-surface",
+        "--color-text-primary",
+        "--color-text-secondary",
+        "--color-text-on-primary",
+        "--color-border",
+        "--color-border-light",
+        "--color-disabled-bg",
+        "--color-primary-rgb",
+      ];
+      propertiesToRemove.forEach((prop) => root.style.removeProperty(prop));
+    };
+  }, []);
 
   useEffect(() => {
     if (isMobile) {
@@ -158,12 +233,24 @@ const AdminLayout: React.FC = () => {
           <li className={styles.navItem}>
             <NavLink
               to="/admin/settings"
+              end
               className={getNavLinkClass}
               title="Ajustes de Tienda"
               onClick={handleMobileLinkClick}
             >
               <LuSettings className={styles.navIcon} />
               <span className={styles.navText}>Ajustes de Tienda</span>
+            </NavLink>
+          </li>
+          <li className={styles.navItem}>
+            <NavLink
+              to="/admin/theme"
+              className={getNavLinkClass}
+              title="Apariencia del Tema"
+              onClick={handleMobileLinkClick}
+            >
+              <LuPalette className={styles.navIcon} />
+              <span className={styles.navText}>Apariencia</span>
             </NavLink>
           </li>
 
