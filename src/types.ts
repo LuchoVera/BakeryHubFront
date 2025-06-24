@@ -95,7 +95,28 @@ export interface ApiErrorResponse {
 export interface TenantPublicInfoDto {
   name: string;
   subdomain: string;
-  phoneNumber?: string | null;
+  phoneNumber?: string;
+  theme?: ThemeSettingsDto;
+}
+
+export interface ThemeSettingsDto {
+  colorPrimary: string;
+  colorPrimaryDark: string;
+  colorPrimaryLight: string;
+  colorSecondary: string;
+  colorBackground: string;
+  colorSurface: string;
+  colorTextPrimary: string;
+  colorTextSecondary: string;
+  colorTextOnPrimary: string;
+  colorBorder: string;
+  colorBorderLight: string;
+  colorDisabledBg: string;
+}
+
+export interface TenantThemeDto {
+  publicTheme: ThemeSettingsDto;
+  adminTheme: ThemeSettingsDto;
 }
 
 export interface CustomerRegisterDto {
