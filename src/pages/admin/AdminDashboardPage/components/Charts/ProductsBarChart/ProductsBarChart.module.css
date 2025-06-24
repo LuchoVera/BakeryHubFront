@@ -59,7 +59,7 @@
 }
 
 .chartScrollContainer > div {
-  width: 100% !important;
+  width: 100%;
 }
 
 .listContainer {
@@ -100,7 +100,7 @@
   }
 
   .chartScrollContainer > div {
-    min-width: 100% !important;
+    min-width: 100%;
   }
 
   .chartScrollContainer {

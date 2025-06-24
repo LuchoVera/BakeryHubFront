@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import styles from "./MainTrendChart.module.css";
@@ -37,17 +37,18 @@ type Granularity = "daily" | "monthly";
 const getChartOptions = (
   data: TimeSeriesDataPointDto[],
   metric: Metric,
-  isMobile: boolean
+  isMobile: boolean,
+  themeColors: { primary: string; primaryDark: string }
 ): EChartsOption => {
   const metricConfig = {
     revenue: {
       name: "Ingresos",
-      color: "#fb6f92",
+      color: themeColors.primaryDark,
       formatter: (value: number) => `Bs. ${value.toFixed(2)}`,
     },
     ordercount: {
       name: "Pedidos",
-      color: "#5bc0de",
+      color: themeColors.primary,
       formatter: (value: number) => `${value} pedidos`,
     },
   };
@@ -142,8 +143,44 @@ export const MainTrendChart: React.FC<MainTrendChartProps> = ({
 }) => {
   const [metric, setMetric] = useState<Metric>("revenue");
   const [granularity, setGranularity] = useState<Granularity>("daily");
+  const chartRef = useRef<HTMLDivElement>(null);
+  const echartRef = useRef<any>(null);
+  const [themeColors, setThemeColors] = useState({
+    primary: "#ff8fab",
+    primaryDark: "#fb6f92",
+  });
 
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (chartRef.current) {
+      const styles = getComputedStyle(chartRef.current);
+      const primaryColor = styles.getPropertyValue("--color-primary").trim();
+      const primaryDarkColor = styles
+        .getPropertyValue("--color-primary-dark")
+        .trim();
+      setThemeColors({
+        primary: primaryColor || "#ff8fab",
+        primaryDark: primaryDarkColor || "#fb6f92",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (echartRef.current) {
+        setTimeout(() => {
+          echartRef.current.getEchartsInstance().resize();
+        }, 100);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const { data, isLoading, error } = useDashboardData({
     ...globalFilters,
@@ -193,13 +230,18 @@ export const MainTrendChart: React.FC<MainTrendChartProps> = ({
     }
   };
 
-  const chartOptions = getChartOptions(data?.breakdown || [], metric, isMobile);
+  const chartOptions = getChartOptions(
+    data?.breakdown || [],
+    metric,
+    isMobile,
+    themeColors
+  );
 
   const dynamicChartTitle =
     metric === "revenue" ? "Evolución de Ingresos" : "Evolución de Pedidos";
 
   return (
-    <div className={styles.chartWidget}>
+    <div className={styles.chartWidget} ref={chartRef}>
       <div className={styles.chartHeader}>
         <h3 className={styles.chartTitle}>{dynamicChartTitle}</h3>
         <div className={styles.chartControls}>
@@ -251,6 +293,7 @@ export const MainTrendChart: React.FC<MainTrendChartProps> = ({
           data?.breakdown &&
           data.breakdown.length > 0 && (
             <ReactECharts
+              ref={echartRef}
               option={chartOptions}
               style={{ height: "400px", width: "100%" }}
               onEvents={{ click: handleDrillDown }}

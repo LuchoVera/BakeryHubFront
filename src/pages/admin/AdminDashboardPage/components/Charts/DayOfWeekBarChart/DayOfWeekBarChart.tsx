@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import { useDashboardData } from "../../../../../../hooks/useDashboardData";
@@ -34,12 +34,30 @@ const daySortOrder: Record<string, number> = {
 
 export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
   const isMobile = useIsMobile();
+  const echartRef = useRef<any>(null);
+
   const { data, isLoading, error } = useDashboardData({
     ...globalFilters,
     metric: "revenue",
     granularity: "day",
     breakdownDimension: "dayofweek",
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (echartRef.current) {
+        setTimeout(() => {
+          echartRef.current.getEchartsInstance().resize();
+        }, 100);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const processedData = useMemo(() => {
     if (!data?.breakdown) return [];
@@ -85,5 +103,7 @@ export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
   if (!data || data.breakdown.length === 0)
     return <div>No hay datos de ventas para este período.</div>;
 
-  return <ReactECharts option={options} style={{ height: 400 }} />;
+  return (
+    <ReactECharts ref={echartRef} option={options} style={{ height: 400 }} />
+  );
 };
