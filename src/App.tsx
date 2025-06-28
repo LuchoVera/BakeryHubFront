@@ -35,7 +35,7 @@ import UserProfilePage from "./pages/UserProfilePage/UserProfilePage";
 import ChangePasswordPage from "./pages/ChangePasswordPage/ChangePasswordPage";
 import AdminTagsPage from "./pages/admin/AdminTagsPage/AdminTagsPage";
 import AdminCreateManualOrderPage from "./pages/admin/AdminCreateManualOrderPage/AdminCreateManualOrderPage";
-import { useAuth } from "./AuthContext";
+import { useAuth, AuthProvider } from "./AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { usePrevious } from "./hooks/usePrevious";
 import AdminThemePage from "./pages/admin/AdminThemePage/AdminThemePage";
@@ -71,12 +71,19 @@ const ProtectedAdminRoute: React.FC = () => {
   return <Outlet />;
 };
 
-const TenantRoutes = () => {
+const TenantApp = () => {
   const host = window.location.hostname;
-  let subdomain: string | null = null;
   const parts = host.split(".");
-  if (parts.length > 1 && parts[0] !== "www") {
-    subdomain = parts[0];
+  let subdomain: string | null = null;
+
+  if (host.endsWith(".localhost")) {
+    if (parts.length > 1 && parts[0] !== "www") {
+      subdomain = parts[0];
+    }
+  } else {
+    if (parts.length > 2 && parts[0] !== "www") {
+      subdomain = parts[0];
+    }
   }
 
   if (!subdomain) {
@@ -85,25 +92,34 @@ const TenantRoutes = () => {
 
   return (
     <TenantProvider subdomain={subdomain}>
-      <Routes>
-        <Route path="/" element={<TenantViewPage />} />
-        <Route path="/products/:productId" element={<ProductDetailPage />} />
-        <Route path="/login" element={<TenantCustomerLoginPage />} />
-        <Route path="/signup" element={<TenantCustomerSignUpPage />} />
-        <Route path="/search" element={<SearchResultsPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/my-orders" element={<MyOrdersPage />} />
-        <Route
-          path="/my-orders/:orderId"
-          element={<CustomerOrderDetailPage />}
-        />
-        <Route path="/user-profile" element={<UserProfilePage />} />
-        <Route path="/change-password" element={<ChangePasswordPage />} />
-        <Route
-          path="*"
-          element={<div>404 - Página no Encontrada en esta tienda</div>}
-        />
-      </Routes>
+      <NotificationProvider>
+        <CartProvider>
+          <AuthRedirectHandler />
+          <Routes>
+            <Route path="/" element={<TenantViewPage />} />
+            <Route
+              path="/products/:productId"
+              element={<ProductDetailPage />}
+            />
+            <Route path="/login" element={<TenantCustomerLoginPage />} />
+            <Route path="/signup" element={<TenantCustomerSignUpPage />} />
+            <Route path="/search" element={<SearchResultsPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/my-orders" element={<MyOrdersPage />} />
+            <Route
+              path="/my-orders/:orderId"
+              element={<CustomerOrderDetailPage />}
+            />
+            <Route path="/user-profile" element={<UserProfilePage />} />
+            <Route path="/change-password" element={<ChangePasswordPage />} />
+            <Route
+              path="*"
+              element={<div>404 - Página no Encontrada en esta tienda</div>}
+            />
+          </Routes>
+          <NotificationPopup />
+        </CartProvider>
+      </NotificationProvider>
     </TenantProvider>
   );
 };
@@ -111,63 +127,65 @@ const TenantRoutes = () => {
 function App() {
   const host = window.location.hostname;
   const isSubdomain =
-    host.split(".").length > 1 &&
-    host.split(".")[0] !== "www" &&
-    host.split(".")[0] !== "localhost";
+    (host.split(".").length > 2 && host.split(".")[0] !== "www") ||
+    (host.endsWith(".localhost") &&
+      host.split(".").length > 1 &&
+      host.split(".")[0] !== "localhost");
 
-  const isDevSubdomain =
-    host.endsWith(".localhost") && host.split(".").length > 1;
-
-  if (isSubdomain || isDevSubdomain) {
+  if (isSubdomain) {
     return (
-      <CartProvider>
-        <NotificationProvider>
-          <Router>
-            <AuthRedirectHandler />
-            <TenantRoutes />
-            <NotificationPopup />
-          </Router>
-        </NotificationProvider>
-      </CartProvider>
+      <AuthProvider>
+        <Router>
+          <TenantApp />
+        </Router>
+      </AuthProvider>
     );
   }
 
   return (
-    <CartProvider>
+    <AuthProvider>
       <NotificationProvider>
-        <Router>
-          <AuthRedirectHandler />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register-admin" element={<AdminRegistrationPage />} />
-            <Route path="/admin" element={<ProtectedAdminRoute />}>
-              <Route element={<AdminLayout />}>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="categories" element={<CategoryListPage />} />
-                <Route path="tags" element={<AdminTagsPage />} />
-                <Route path="products" element={<ProductListPage />} />
-                <Route path="products/new" element={<AddProductPage />} />
-                <Route path="products/edit/:id" element={<EditProductPage />} />
-                <Route path="orders" element={<AdminOrdersPage />} />
-                <Route
-                  path="orders/:orderId"
-                  element={<AdminOrderDetailPage />}
-                />
-                <Route
-                  path="orders/new-manual"
-                  element={<AdminCreateManualOrderPage />}
-                />
-                <Route path="settings" element={<StoreSettingsPage />} />
-                <Route path="theme" element={<AdminThemePage />} />{" "}
+        <CartProvider>
+          <Router>
+            <AuthRedirectHandler />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/register-admin"
+                element={<AdminRegistrationPage />}
+              />
+              <Route path="/admin" element={<ProtectedAdminRoute />}>
+                <Route element={<AdminLayout />}>
+                  <Route index element={<AdminDashboardPage />} />
+                  <Route path="categories" element={<CategoryListPage />} />
+                  <Route path="tags" element={<AdminTagsPage />} />
+                  <Route path="products" element={<ProductListPage />} />
+                  <Route path="products/new" element={<AddProductPage />} />
+                  <Route
+                    path="products/edit/:id"
+                    element={<EditProductPage />}
+                  />
+                  <Route path="orders" element={<AdminOrdersPage />} />
+                  <Route
+                    path="orders/:orderId"
+                    element={<AdminOrderDetailPage />}
+                  />
+                  <Route
+                    path="orders/new-manual"
+                    element={<AdminCreateManualOrderPage />}
+                  />
+                  <Route path="settings" element={<StoreSettingsPage />} />
+                  <Route path="theme" element={<AdminThemePage />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<div>404 - Página No Encontrada</div>} />
-          </Routes>
-          <NotificationPopup />
-        </Router>
+              <Route path="*" element={<div>404 - Página No Encontrada</div>} />
+            </Routes>
+            <NotificationPopup />
+          </Router>
+        </CartProvider>
       </NotificationProvider>
-    </CartProvider>
+    </AuthProvider>
   );
 }
 
