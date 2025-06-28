@@ -109,4 +109,11 @@
     flex-grow: 1;
     justify-content: center;
   }
+
+  .loadingOverlay,
+  .errorOverlay {
+    position: static;
+    height: auto;
+    padding: var(--space-lg);
+  }
 }

@@ -46,6 +46,8 @@
   transition: all 0.2s ease;
   text-decoration: none;
   display: inline-block;
+  min-width: 180px;
+  text-align: center;
 }
 
 .buttonPrimary {
@@ -56,6 +58,7 @@
 .buttonPrimary:hover {
   background-color: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
+  color: var(--color-surface);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   text-decoration: none;
@@ -133,6 +136,7 @@
   .button {
     padding: var(--space-sm) var(--space-lg);
     font-size: 1rem;
+    min-width: 160px;
   }
   .featuresSection {
     padding: var(--space-lg) var(--space-md);
@@ -172,6 +176,7 @@
     max-width: 280px;
     margin-left: auto;
     margin-right: auto;
+    min-width: unset;
   }
   .featuresSection h2 {
     font-size: 1.6rem;

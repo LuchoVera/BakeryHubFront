@@ -4,11 +4,15 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
+  useContext,
 } from "react";
 import { ProductDto, CartItem } from "../types";
 import { useAuth } from "../AuthContext";
 import { usePrevious } from "../hooks/usePrevious";
 import { CartContext } from "./CartContext.definition";
+import { TenantContext } from "./TenantContext.definition";
+import { useNotification } from "../hooks/useNotification";
+import { fetchPublicTenantProducts } from "../services/apiService";
 
 const CART_STORAGE_KEY = "bakeryHubCart";
 
@@ -29,6 +33,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const { isAuthenticated } = useAuth();
   const prevIsAuthenticated = usePrevious(isAuthenticated);
 
+  const tenantContext = useContext(TenantContext);
+  const { tenantInfo, subdomain } = tenantContext || {};
+
+  const { showNotification } = useNotification();
+
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
@@ -38,6 +47,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       return [];
     }
   });
+
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     try {
@@ -52,6 +63,62 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       clearCartData(setCartItems);
     }
   }, [isAuthenticated, prevIsAuthenticated]);
+
+  const validateCartItems = useCallback(async () => {
+    if (!subdomain || cartItems.length === 0 || isValidating) return;
+
+    setIsValidating(true);
+    try {
+      const allAvailableProducts = await fetchPublicTenantProducts(subdomain);
+      const availableProductIds = new Set(
+        allAvailableProducts.map((p) => p.id)
+      );
+
+      const validCartItems: CartItem[] = [];
+      const removedProductNames: string[] = [];
+
+      for (const item of cartItems) {
+        if (availableProductIds.has(item.product.id)) {
+          validCartItems.push(item);
+        } else {
+          removedProductNames.push(item.product.name);
+        }
+      }
+
+      if (removedProductNames.length > 0) {
+        setCartItems(validCartItems);
+        showNotification(
+          `Algunos productos ya no están disponibles y se eliminaron de tu carrito: ${removedProductNames.join(
+            ", "
+          )}.`,
+          "info",
+          5000
+        );
+      }
+    } catch (error) {
+      console.error("Error al validar los items del carrito:", error);
+    } finally {
+      setIsValidating(false);
+    }
+  }, [subdomain, cartItems, showNotification, isValidating]);
+
+  useEffect(() => {
+    if (!tenantInfo) return;
+
+    validateCartItems();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        validateCartItems();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [tenantInfo, validateCartItems]);
 
   const addItemToCart = useCallback((product: ProductDto) => {
     setCartItems((prevItems) => {

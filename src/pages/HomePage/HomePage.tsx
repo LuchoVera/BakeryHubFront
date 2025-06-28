@@ -27,10 +27,11 @@ const HomePage: React.FC = () => {
             online. Administra productos, pedidos y clientes fácilmente.
           </p>
           <div className={styles.heroActions}>
-            <Link to="/login">
-              <button className={`${styles.button} ${styles.buttonPrimary}`}>
-                Iniciar Sesión
-              </button>
+            <Link
+              to="/login"
+              className={`${styles.button} ${styles.buttonPrimary}`}
+            >
+              Iniciar Sesión
             </Link>
             <Link
               to="/register-admin"

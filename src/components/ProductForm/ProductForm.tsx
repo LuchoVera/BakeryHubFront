@@ -516,428 +516,425 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       <div className={styles.formFeedback}>Cargando datos del producto...</div>
     );
   return (
-    <div className={styles.formContainer}>
-      <form onSubmit={handleSubmit} className={styles.productForm} noValidate>
-        <h2 className={styles.formTitle}>
-          {isEditing ? "Editar Producto" : "Crear Nuevo Producto"}
-        </h2>
+    <form onSubmit={handleSubmit} className={styles.productForm} noValidate>
+      <h2 className={styles.formTitle}>
+        {isEditing ? "Editar Producto" : "Crear Nuevo Producto"}
+      </h2>
 
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Información Básica</legend>
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Información Básica</legend>
 
-          <div className={styles.formRow}>
-            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-              <label htmlFor="name" className={styles.label}>
-                Nombre del Producto
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className={`${styles.input} ${
-                  getClientFieldError("name") ? styles.inputError : ""
-                }`}
-                aria-invalid={!!getClientFieldError("name")}
-                aria-describedby={
-                  getClientFieldError("name") ? "name-error" : undefined
-                }
-              />
-              {getClientFieldError("name") && (
-                <span id="name-error" className={styles.validationError}>
-                  {getClientFieldError("name")}
-                </span>
-              )}
-            </div>
+        <div className={styles.formRow}>
+          <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+            <label htmlFor="name" className={styles.label}>
+              Nombre del Producto
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className={`${styles.input} ${
+                getClientFieldError("name") ? styles.inputError : ""
+              }`}
+              aria-invalid={!!getClientFieldError("name")}
+              aria-describedby={
+                getClientFieldError("name") ? "name-error" : undefined
+              }
+            />
+            {getClientFieldError("name") && (
+              <span id="name-error" className={styles.validationError}>
+                {getClientFieldError("name")}
+              </span>
+            )}
           </div>
+        </div>
 
-          <div className={styles.formRow}>
-            <div className={`${styles.formGroup} ${styles.formGroupHalf}`}>
-              <label htmlFor="price" className={styles.label}>
-                Precio (Bs.)
-              </label>
-              <input
-                type="number"
-                step="1"
-                min="1"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                required
-                className={`${styles.input} ${
-                  getClientFieldError("price") ? styles.inputError : ""
-                }`}
-                aria-invalid={!!getClientFieldError("price")}
-                aria-describedby={
-                  getClientFieldError("price") ? "price-error" : undefined
-                }
-              />
-              {getClientFieldError("price") && (
-                <span id="price-error" className={styles.validationError}>
-                  {getClientFieldError("price")}
-                </span>
-              )}
-            </div>
-            <div className={`${styles.formGroup} ${styles.formGroupHalf}`}>
-              <label htmlFor="categoryId" className={styles.label}>
-                Categoría
-              </label>
-              <select
-                id="categoryId"
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleInputChange}
-                required
-                className={`${styles.select} ${
-                  getClientFieldError("categoryId") ? styles.inputError : ""
-                }`}
-                aria-invalid={!!getClientFieldError("categoryId")}
-                aria-describedby={
-                  getClientFieldError("categoryId")
-                    ? "categoryId-error"
-                    : undefined
-                }
-              >
-                <option value="" disabled>
-                  -- Selecciona Categoría --
+        <div className={styles.formRow}>
+          <div className={`${styles.formGroup} ${styles.formGroupHalf}`}>
+            <label htmlFor="price" className={styles.label}>
+              Precio (Bs.)
+            </label>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              id="price"
+              name="price"
+              value={formData.price}
+              onChange={handleInputChange}
+              required
+              className={`${styles.input} ${
+                getClientFieldError("price") ? styles.inputError : ""
+              }`}
+              aria-invalid={!!getClientFieldError("price")}
+              aria-describedby={
+                getClientFieldError("price") ? "price-error" : undefined
+              }
+            />
+            {getClientFieldError("price") && (
+              <span id="price-error" className={styles.validationError}>
+                {getClientFieldError("price")}
+              </span>
+            )}
+          </div>
+          <div className={`${styles.formGroup} ${styles.formGroupHalf}`}>
+            <label htmlFor="categoryId" className={styles.label}>
+              Categoría
+            </label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              value={formData.categoryId}
+              onChange={handleInputChange}
+              required
+              className={`${styles.select} ${
+                getClientFieldError("categoryId") ? styles.inputError : ""
+              }`}
+              aria-invalid={!!getClientFieldError("categoryId")}
+              aria-describedby={
+                getClientFieldError("categoryId")
+                  ? "categoryId-error"
+                  : undefined
+              }
+            >
+              <option value="" disabled>
+                -- Selecciona Categoría --
+              </option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
                 </option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-              {getClientFieldError("categoryId") && (
-                <span id="categoryId-error" className={styles.validationError}>
-                  {getClientFieldError("categoryId")}
-                </span>
-              )}
-            </div>
+              ))}
+            </select>
+            {getClientFieldError("categoryId") && (
+              <span id="categoryId-error" className={styles.validationError}>
+                {getClientFieldError("categoryId")}
+              </span>
+            )}
           </div>
+        </div>
 
-          <div className={styles.formRow}>
-            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-              <label htmlFor="description" className={styles.label}>
-                Descripción (Opcional)
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description ?? ""}
-                onChange={handleInputChange}
-                rows={4}
-                className={`${styles.textarea} ${
-                  getClientFieldError("description") ? styles.inputError : ""
-                }`}
-                aria-invalid={!!getClientFieldError("description")}
-                aria-describedby={
-                  getClientFieldError("description")
-                    ? "description-error"
-                    : undefined
-                }
-              />
-              {getClientFieldError("description") && (
-                <span id="description-error" className={styles.validationError}>
-                  {getClientFieldError("description")}
-                </span>
-              )}
-            </div>
+        <div className={styles.formRow}>
+          <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+            <label htmlFor="description" className={styles.label}>
+              Descripción (Opcional)
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description ?? ""}
+              onChange={handleInputChange}
+              rows={4}
+              className={`${styles.textarea} ${
+                getClientFieldError("description") ? styles.inputError : ""
+              }`}
+              aria-invalid={!!getClientFieldError("description")}
+              aria-describedby={
+                getClientFieldError("description")
+                  ? "description-error"
+                  : undefined
+              }
+            />
+            {getClientFieldError("description") && (
+              <span id="description-error" className={styles.validationError}>
+                {getClientFieldError("description")}
+              </span>
+            )}
           </div>
+        </div>
 
-          <div className={styles.formRow}>
-            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-              <label htmlFor="tags-autocomplete" className={styles.label}>
-                Etiquetas (máx. {MAX_TAGS})
-              </label>
-              <Autocomplete
-                multiple
-                id="tags-autocomplete"
-                value={currentTags}
-                componentsProps={{ clearIndicator: { title: "Limpiar" } }}
-                onChange={handleTagsChange}
-                options={allTenantTags}
-                getOptionLabel={(option: string | TagDto) =>
-                  typeof option === "string" ? option : option.name
-                }
-                isOptionEqualToValue={(option: TagDto, value: TagDto) =>
-                  option.id === value.id ||
-                  option.name.toLowerCase() === value.name.toLowerCase()
-                }
-                freeSolo
-                filterSelectedOptions
-                disabled={loadingTenantTags}
-                loading={loadingTenantTags}
-                loadingText="Cargando etiquetas..."
-                noOptionsText="No hay etiquetas. Escribe para añadir."
-                renderTags={(value: readonly TagDto[], getTagProps) =>
-                  value.map((tag: TagDto, index: number) => (
-                    <Chip
-                      label={tag.name}
-                      {...getTagProps({ index })}
-                      key={tag.id || tag.name + index}
-                      deleteIcon={<LuXIcon />}
-                      sx={{
-                        backgroundColor: "var(--color-secondary)",
-                        color: "var(--color-primary-dark)",
-                        height: "28px",
-                        fontSize: "0.8rem",
-                        "& .MuiChip-deleteIcon": {
-                          color: "var(--color-primary-dark)",
-                          fontSize: "0.9rem",
-                          "&:hover": {
-                            color: "var(--color-error)",
-                          },
-                        },
-                      }}
-                    />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    variant="outlined"
-                    placeholder={
-                      currentTags.length >= MAX_TAGS
-                        ? ""
-                        : currentTags.length > 0
-                        ? "Añadir más etiquetas..."
-                        : "Añadir etiquetas..."
-                    }
-                    error={!!tagsErrorText}
-                    helperText={tagsErrorText}
-                    disabled={
-                      (currentTags.length >= MAX_TAGS &&
-                        params.inputProps?.value === "") ||
-                      loadingTenantTags
-                    }
-                    InputProps={{
-                      ...params.InputProps,
-                    }}
+        <div className={styles.formRow}>
+          <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+            <label htmlFor="tags-autocomplete" className={styles.label}>
+              Etiquetas (máx. {MAX_TAGS})
+            </label>
+            <Autocomplete
+              multiple
+              id="tags-autocomplete"
+              value={currentTags}
+              componentsProps={{ clearIndicator: { title: "Limpiar" } }}
+              onChange={handleTagsChange}
+              options={allTenantTags}
+              getOptionLabel={(option: string | TagDto) =>
+                typeof option === "string" ? option : option.name
+              }
+              isOptionEqualToValue={(option: TagDto, value: TagDto) =>
+                option.id === value.id ||
+                option.name.toLowerCase() === value.name.toLowerCase()
+              }
+              freeSolo
+              filterSelectedOptions
+              disabled={loadingTenantTags}
+              loading={loadingTenantTags}
+              loadingText="Cargando etiquetas..."
+              noOptionsText="No hay etiquetas. Escribe para añadir."
+              renderTags={(value: readonly TagDto[], getTagProps) =>
+                value.map((tag: TagDto, index: number) => (
+                  <Chip
+                    label={tag.name}
+                    {...getTagProps({ index })}
+                    key={tag.id || tag.name + index}
+                    deleteIcon={<LuXIcon />}
                     sx={{
-                      "& .MuiOutlinedInput-root": {
-                        padding: "2px 9px !important",
-                        minHeight: "50px",
-                        display: "flex",
-                        flexWrap: "wrap",
-                        backgroundColor: "var(--color-surface)",
-                        fontFamily: "var(--font-primary)",
-                        fontSize: "1rem",
-                        "& .MuiAutocomplete-input": {
-                          display:
-                            currentTags.length >= MAX_TAGS ? "none" : "block",
-                          minHeight: "36px",
-                          padding:
-                            "calc(var(--space-xs) + 2px) var(--space-sm)",
-                          minWidth: "100px !important",
-                          flexGrow: 1,
-                          fontFamily: "var(--font-primary)",
-                          fontSize: "1rem",
-                          color: "var(--color-text-primary)",
+                      backgroundColor: "var(--color-secondary)",
+                      color: "var(--color-primary-dark)",
+                      height: "28px",
+                      fontSize: "0.8rem",
+                      "& .MuiChip-deleteIcon": {
+                        color: "var(--color-primary-dark)",
+                        fontSize: "0.9rem",
+                        "&:hover": {
+                          color: "var(--color-error)",
                         },
-                        "&.Mui-disabled": {
-                          backgroundColor: "#f0f0f0",
-                        },
-                      },
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: tagsErrorText
-                          ? "var(--color-error)"
-                          : "var(--color-border) !important",
-                      },
-                      "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                        {
-                          borderColor: tagsErrorText
-                            ? "var(--color-error)"
-                            : "var(--color-primary-dark) !important",
-                        },
-                      "& .MuiFormHelperText-root": {
-                        color: tagsErrorText
-                          ? "var(--color-error)"
-                          : "var(--color-text-secondary)",
-                        fontSize: "0.8em",
-                        marginTop: "var(--space-xs)",
-                        marginLeft: "var(--space-xs)",
                       },
                     }}
                   />
-                )}
-              />
-            </div>
-          </div>
-
-          <div className={styles.formRow}>
-            <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
-              <label htmlFor="leadTimeInput" className={styles.label}>
-                Antelación de Pedido (Días)
-              </label>
-              <select
-                id="leadTimeInput"
-                name="leadTimeInput"
-                onChange={handleInputChange}
-                value={formData.leadTimeInput ?? ""}
-                className={`${styles.select} ${
-                  getClientFieldError("leadTimeInput") ? styles.inputError : ""
-                }`}
-              >
-                <option value="">No requiere antelación</option>
-                {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={String(day)}>
-                    {day} día{day > 1 ? "s" : ""}
-                  </option>
-                ))}
-              </select>
-              {getClientFieldError("leadTimeInput") && (
-                <span className={styles.validationError}>
-                  {getClientFieldError("leadTimeInput")}
-                </span>
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="outlined"
+                  placeholder={
+                    currentTags.length >= MAX_TAGS
+                      ? ""
+                      : currentTags.length > 0
+                      ? "Añadir más etiquetas..."
+                      : "Añadir etiquetas..."
+                  }
+                  error={!!tagsErrorText}
+                  helperText={tagsErrorText}
+                  disabled={
+                    (currentTags.length >= MAX_TAGS &&
+                      params.inputProps?.value === "") ||
+                    loadingTenantTags
+                  }
+                  InputProps={{
+                    ...params.InputProps,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      padding: "2px 9px !important",
+                      minHeight: "50px",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      backgroundColor: "var(--color-surface)",
+                      fontFamily: "var(--font-primary)",
+                      fontSize: "1rem",
+                      "& .MuiAutocomplete-input": {
+                        display:
+                          currentTags.length >= MAX_TAGS ? "none" : "block",
+                        minHeight: "36px",
+                        padding: "calc(var(--space-xs) + 2px) var(--space-sm)",
+                        minWidth: "100px !important",
+                        flexGrow: 1,
+                        fontFamily: "var(--font-primary)",
+                        fontSize: "1rem",
+                        color: "var(--color-text-primary)",
+                      },
+                      "&.Mui-disabled": {
+                        backgroundColor: "#f0f0f0",
+                      },
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: tagsErrorText
+                        ? "var(--color-error)"
+                        : "var(--color-border) !important",
+                    },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: tagsErrorText
+                          ? "var(--color-error)"
+                          : "var(--color-primary-dark) !important",
+                      },
+                    "& .MuiFormHelperText-root": {
+                      color: tagsErrorText
+                        ? "var(--color-error)"
+                        : "var(--color-text-secondary)",
+                      fontSize: "0.8em",
+                      marginTop: "var(--space-xs)",
+                      marginLeft: "var(--space-xs)",
+                    },
+                  }}
+                />
               )}
-            </div>
+            />
           </div>
-        </fieldset>
+        </div>
 
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Multimedia</legend>
-          <div className={styles.formGroup}>
-            <label htmlFor="product-images-input" className={styles.label}>
-              Imágenes del Producto (Máx. {MAX_IMAGES}, la primera será la
-              portada)
+        <div className={styles.formRow}>
+          <div className={`${styles.formGroup} ${styles.formGroupFull}`}>
+            <label htmlFor="leadTimeInput" className={styles.label}>
+              Antelación de Pedido (Días)
             </label>
-            <div
-              className={`${styles.imageUploadArea} ${
-                isDragging ? styles.dragging : ""
-              } ${
-                imagePreviews.length >= MAX_IMAGES
-                  ? styles.disabledUploadArea
-                  : ""
+            <select
+              id="leadTimeInput"
+              name="leadTimeInput"
+              onChange={handleInputChange}
+              value={formData.leadTimeInput ?? ""}
+              className={`${styles.select} ${
+                getClientFieldError("leadTimeInput") ? styles.inputError : ""
               }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
             >
-              <LuCloudUpload className={styles.uploadIcon} />
-              <span className={styles.uploadText}>
-                {imagePreviews.length >= MAX_IMAGES
-                  ? "Límite de imágenes alcanzado"
-                  : isDragging
-                  ? "Suelta las imágenes aquí"
-                  : "Arrastra y suelta imágenes aquí o"}
+              <option value="">No requiere antelación</option>
+              {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
+                <option key={day} value={String(day)}>
+                  {day} día{day > 1 ? "s" : ""}
+                </option>
+              ))}
+            </select>
+            {getClientFieldError("leadTimeInput") && (
+              <span className={styles.validationError}>
+                {getClientFieldError("leadTimeInput")}
               </span>
-              <input
-                type="file"
-                id="product-images-input"
-                name="product-images"
-                accept="image/png, image/jpeg, image/jpg, image/webp"
-                multiple
-                onChange={handleFileChange}
-                disabled={
-                  isUploading || loading || imagePreviews.length >= MAX_IMAGES
-                }
-                className={styles.fileInput}
-                aria-describedby="image-upload-instructions"
-              />
-              {imagePreviews.length < MAX_IMAGES && (
-                <label
-                  htmlFor="product-images-input"
-                  className={styles.fileInputLabel}
-                  role="button"
-                >
-                  <LuImagePlus /> Seleccionar Archivos
-                </label>
-              )}
-              {imagePreviews.length >= MAX_IMAGES && !isUploading && (
-                <p className={styles.maxImagesText}>
-                  Has alcanzado el límite de {MAX_IMAGES} imágenes.
-                </p>
-              )}
-            </div>
+            )}
+          </div>
+        </div>
+      </fieldset>
 
-            {isUploading && (
-              <div className={styles.formFeedback}>
-                Subiendo {imageFiles.length} imagen(es)...
-              </div>
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Multimedia</legend>
+        <div className={styles.formGroup}>
+          <label htmlFor="product-images-input" className={styles.label}>
+            Imágenes del Producto (Máx. {MAX_IMAGES}, la primera será la
+            portada)
+          </label>
+          <div
+            className={`${styles.imageUploadArea} ${
+              isDragging ? styles.dragging : ""
+            } ${
+              imagePreviews.length >= MAX_IMAGES
+                ? styles.disabledUploadArea
+                : ""
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <LuCloudUpload className={styles.uploadIcon} />
+            <span className={styles.uploadText}>
+              {imagePreviews.length >= MAX_IMAGES
+                ? "Límite de imágenes alcanzado"
+                : isDragging
+                ? "Suelta las imágenes aquí"
+                : "Arrastra y suelta imágenes aquí o"}
+            </span>
+            <input
+              type="file"
+              id="product-images-input"
+              name="product-images"
+              accept="image/png, image/jpeg, image/jpg, image/webp"
+              multiple
+              onChange={handleFileChange}
+              disabled={
+                isUploading || loading || imagePreviews.length >= MAX_IMAGES
+              }
+              className={styles.fileInput}
+              aria-describedby="image-upload-instructions"
+            />
+            {imagePreviews.length < MAX_IMAGES && (
+              <label
+                htmlFor="product-images-input"
+                className={styles.fileInputLabel}
+                role="button"
+              >
+                <LuImagePlus /> Seleccionar Archivos
+              </label>
             )}
-            {uploadError && (
-              <div className={`${styles.formFeedback} ${styles.errorText}`}>
-                {uploadError}
-              </div>
-            )}
-
-            {imagePreviews.length > 0 && (
-              <div className={styles.imagePreviewGrid}>
-                {imagePreviews.map((previewUrl, index) => (
-                  <div
-                    key={previewUrl + index}
-                    className={styles.imagePreviewItem}
-                  >
-                    <img
-                      src={previewUrl}
-                      alt={`Previsualización ${index + 1}`}
-                      className={styles.imagePreviewImg}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className={styles.removeImageButton}
-                      disabled={isUploading || loading}
-                      title="Quitar imagen"
-                      aria-label={`Quitar imagen ${index + 1}`}
-                    >
-                      <LuTrash2 />
-                    </button>
-                    {index === 0 && (
-                      <span className={styles.coverLabel}>Portada</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {imagePreviews.length === 0 && !isUploading && (
-              <p className={styles.noImagesText}>
-                Aún no has seleccionado imágenes.
+            {imagePreviews.length >= MAX_IMAGES && !isUploading && (
+              <p className={styles.maxImagesText}>
+                Has alcanzado el límite de {MAX_IMAGES} imágenes.
               </p>
             )}
           </div>
-        </fieldset>
 
-        {error && (
-          <div className={`${styles.formFeedback} ${styles.errorText}`}>
-            {error}
-          </div>
-        )}
+          {isUploading && (
+            <div className={styles.formFeedback}>
+              Subiendo {imageFiles.length} imagen(es)...
+            </div>
+          )}
+          {uploadError && (
+            <div className={`${styles.formFeedback} ${styles.errorText}`}>
+              {uploadError}
+            </div>
+          )}
 
-        <div className={styles.formActions}>
-          <button
-            type="submit"
-            className={`${styles.button} ${styles.submitButton}`}
-            disabled={
-              loading ||
-              loadingData ||
-              isUploading ||
-              imagePreviews.length > MAX_IMAGES
-            }
-          >
-            <LuSaveAll />
-            {loading
-              ? isEditing
-                ? "Guardando Cambios..."
-                : "Creando Producto..."
-              : isEditing
-              ? "Guardar Cambios"
-              : "Crear Producto"}
-          </button>
-          <button
-            type="button"
-            className={`${styles.button} ${styles.cancelButton}`}
-            onClick={() => navigate("/admin/products")}
-            disabled={loading || isUploading}
-          >
-            <LuCircleX /> Cancelar
-          </button>
+          {imagePreviews.length > 0 && (
+            <div className={styles.imagePreviewGrid}>
+              {imagePreviews.map((previewUrl, index) => (
+                <div
+                  key={previewUrl + index}
+                  className={styles.imagePreviewItem}
+                >
+                  <img
+                    src={previewUrl}
+                    alt={`Previsualización ${index + 1}`}
+                    className={styles.imagePreviewImg}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className={styles.removeImageButton}
+                    disabled={isUploading || loading}
+                    title="Quitar imagen"
+                    aria-label={`Quitar imagen ${index + 1}`}
+                  >
+                    <LuTrash2 />
+                  </button>
+                  {index === 0 && (
+                    <span className={styles.coverLabel}>Portada</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {imagePreviews.length === 0 && !isUploading && (
+            <p className={styles.noImagesText}>
+              Aún no has seleccionado imágenes.
+            </p>
+          )}
         </div>
-      </form>
-    </div>
+      </fieldset>
+
+      {error && (
+        <div className={`${styles.formFeedback} ${styles.errorText}`}>
+          {error}
+        </div>
+      )}
+
+      <div className={styles.formActions}>
+        <button
+          type="submit"
+          className={`${styles.button} ${styles.submitButton}`}
+          disabled={
+            loading ||
+            loadingData ||
+            isUploading ||
+            imagePreviews.length > MAX_IMAGES
+          }
+        >
+          <LuSaveAll />
+          {loading
+            ? isEditing
+              ? "Guardando Cambios..."
+              : "Creando Producto..."
+            : isEditing
+            ? "Guardar Cambios"
+            : "Crear Producto"}
+        </button>
+        <button
+          type="button"
+          className={`${styles.button} ${styles.cancelButton}`}
+          onClick={() => navigate("/admin/products")}
+          disabled={loading || isUploading}
+        >
+          <LuCircleX /> Cancelar
+        </button>
+      </div>
+    </form>
   );
 };
 
