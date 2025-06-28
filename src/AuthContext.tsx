@@ -37,7 +37,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const checkUserSession = async () => {
       setIsLoading(true);
       try {
-        const userData = await getCurrentUser();
+        const host = window.location.hostname;
+        const parts = host.split(".");
+        let subdomainForApi: string | null = null;
+
+        if (
+          host.endsWith(".bakery-hub.org") &&
+          parts.length > 2 &&
+          parts[0] !== "www"
+        ) {
+          subdomainForApi = parts[0];
+        } else if (
+          host.endsWith(".localhost") &&
+          parts.length > 1 &&
+          parts[0] !== "localhost"
+        ) {
+          subdomainForApi = parts[0];
+        }
+        const userData = await getCurrentUser(subdomainForApi);
+
         if (isMounted) {
           login(userData);
         }

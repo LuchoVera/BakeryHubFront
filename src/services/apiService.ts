@@ -59,8 +59,13 @@ export const login = async (loginData: LoginDto): Promise<AuthResponseDto> => {
   return response.data;
 };
 
-export const getCurrentUser = async (): Promise<AuthUser> => {
-  const response = await apiClient.get<AuthUser>("/accounts/me");
+export const getCurrentUser = async (
+  subdomain?: string | null
+): Promise<AuthUser> => {
+  const url = subdomain
+    ? `/accounts/me?subdomain=${subdomain}`
+    : "/accounts/me";
+  const response = await apiClient.get<AuthUser>(url);
   return response.data;
 };
 
@@ -92,10 +97,19 @@ export const changePassword = async (
 export const updateUserProfile = async (
   profileData: UpdateUserProfileDto
 ): Promise<AuthUser> => {
-  const response = await apiClient.put<AuthUser>(
-    "/accounts/me/update-profile",
-    profileData
-  );
+  const host = window.location.hostname;
+  const parts = host.split(".");
+  let subdomainForApi: string | null = null;
+  if (!host.endsWith("bakery-hub.org") && !host.endsWith("localhost")) {
+    subdomainForApi = parts[0];
+  } else if (host.endsWith(".localhost") && parts.length > 1) {
+    subdomainForApi = parts[0];
+  }
+  const url = subdomainForApi
+    ? `/accounts/me/update-profile?subdomain=${subdomainForApi}`
+    : "/accounts/me/update-profile";
+
+  const response = await apiClient.put<AuthUser>(url, profileData);
   return response.data;
 };
 
