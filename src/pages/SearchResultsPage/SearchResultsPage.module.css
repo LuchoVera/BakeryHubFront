@@ -185,6 +185,7 @@
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: var(--space-lg);
   margin-bottom: var(--space-xl);
+  align-items: start;
 }
 
 .message {

@@ -64,26 +64,28 @@ const ProductCardComponent: React.FC<ProductCardProps> = ({ product }) => {
         </div>
       </Link>
       <div className={styles.content}>
-        <p className={styles.category}>
-          Categoría: {product.categoryName || "N/D"}
-        </p>
-        {product.description && (
-          <p className={styles.description}>{product.description}</p>
-        )}
+        <div className={styles.cardBody}>
+          <p className={styles.category}>
+            Categoría: {product.categoryName || "N/D"}
+          </p>
+          {product.description && (
+            <p className={styles.description}>{product.description}</p>
+          )}
 
-        {product.tagNames && product.tagNames.length > 0 && (
-          <div className={styles.tagsContainer}>
-            {product.tagNames.map((tagName) => (
-              <span key={tagName} className={styles.tagBadge}>
-                <LuTag className={styles.tagIcon} /> {tagName}
-              </span>
-            ))}
-          </div>
-        )}
+          {product.tagNames && product.tagNames.length > 0 && (
+            <div className={styles.tagsContainer}>
+              {product.tagNames.map((tagName) => (
+                <span key={tagName} className={styles.tagBadge}>
+                  <LuTag className={styles.tagIcon} /> {tagName}
+                </span>
+              ))}
+            </div>
+          )}
 
-        <p className={styles.leadTimeDisplay}>
-          {leadTimeText ? `Antelación: ${leadTimeText}` : "\u00A0"}{" "}
-        </p>
+          <p className={styles.leadTimeDisplay}>
+            {leadTimeText ? `Antelación: ${leadTimeText}` : "\u00A0"}{" "}
+          </p>
+        </div>
         <div className={styles.footer}>
           <span className={styles.price} title={fullPriceString}>
             {fullPriceString}
