@@ -126,9 +126,15 @@ const AdminLayout: React.FC = () => {
   };
 
   const tenantSubdomain = user?.administeredTenantSubdomain;
-  const tenantUrl = tenantSubdomain
-    ? `${window.location.protocol}//${tenantSubdomain}.localhost:5173/`
-    : null;
+  let tenantUrl = null;
+
+  if (tenantSubdomain) {
+    if (window.location.hostname === "localhost") {
+      tenantUrl = `${window.location.protocol}//${tenantSubdomain}.localhost:5173/`;
+    } else {
+      tenantUrl = `${window.location.protocol}//${tenantSubdomain}.bakery-hub.org/`;
+    }
+  }
 
   const layoutContainerClass = `${styles.layoutContainer} ${
     isSidebarCollapsed ? styles.layoutContainerCollapsed : ""
