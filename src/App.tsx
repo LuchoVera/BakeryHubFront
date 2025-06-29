@@ -39,6 +39,7 @@ import { useAuth, AuthProvider } from "./AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
 import { usePrevious } from "./hooks/usePrevious";
 import AdminThemePage from "./pages/admin/AdminThemePage/AdminThemePage";
+import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
 const AuthRedirectHandler = () => {
   const { isAuthenticated } = useAuth();
@@ -94,6 +95,7 @@ const TenantApp = () => {
     <TenantProvider subdomain={subdomain}>
       <NotificationProvider>
         <CartProvider>
+          <ScrollToTop />
           <AuthRedirectHandler />
           <Routes>
             <Route path="/" element={<TenantViewPage />} />

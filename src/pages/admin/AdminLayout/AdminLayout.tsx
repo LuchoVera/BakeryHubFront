@@ -21,6 +21,7 @@ import { useIsMobile } from "../../../hooks/useIsMobile";
 import { getAdminTheme } from "../../../services/apiService";
 import { TenantThemeDto } from "../../../types";
 import { hexToRgb } from "../../../utils/colorUtils";
+import ScrollToTop from "../../../components/ScrollToTop/ScrollToTop";
 
 const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -142,6 +143,7 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className={layoutContainerClass}>
+      <ScrollToTop />
       <div className={styles.mobileTopBar}>
         <button
           onClick={toggleMobileMenu}
