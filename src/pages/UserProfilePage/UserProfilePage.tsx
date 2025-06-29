@@ -49,6 +49,7 @@ const UserProfilePage: React.FC = () => {
     tenantInfo,
     isLoading: isLoadingTenant,
     error: tenantError,
+    subdomain,
   } = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
@@ -158,7 +159,10 @@ const UserProfilePage: React.FC = () => {
     };
 
     try {
-      const updatedUser = await apiUpdateUserProfile(profileDataForBackend);
+      const updatedUser = await apiUpdateUserProfile(
+        profileDataForBackend,
+        subdomain
+      );
       updateUserAuthContext(updatedUser);
 
       showAppFeedbackModal(
