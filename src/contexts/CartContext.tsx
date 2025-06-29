@@ -70,23 +70,34 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     setIsValidating(true);
     try {
       const allAvailableProducts = await fetchPublicTenantProducts(subdomain);
-      const availableProductIds = new Set(
-        allAvailableProducts.map((p) => p.id)
+      const availableProductsMap = new Map(
+        allAvailableProducts.map((p) => [p.id, p])
       );
 
-      const validCartItems: CartItem[] = [];
+      const updatedCartItems: CartItem[] = [];
       const removedProductNames: string[] = [];
+      let hasChanges = false;
 
       for (const item of cartItems) {
-        if (availableProductIds.has(item.product.id)) {
-          validCartItems.push(item);
+        const freshProduct = availableProductsMap.get(item.product.id);
+        if (freshProduct) {
+          updatedCartItems.push({
+            product: freshProduct,
+            quantity: item.quantity,
+          });
+          if (JSON.stringify(item.product) !== JSON.stringify(freshProduct)) {
+            hasChanges = true;
+          }
         } else {
           removedProductNames.push(item.product.name);
+          hasChanges = true;
         }
+      }
+      if (hasChanges) {
+        setCartItems(updatedCartItems);
       }
 
       if (removedProductNames.length > 0) {
-        setCartItems(validCartItems);
         showNotification(
           `Algunos productos ya no están disponibles y se eliminaron de tu carrito: ${removedProductNames.join(
             ", "
