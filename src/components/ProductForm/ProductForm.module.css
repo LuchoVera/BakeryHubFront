@@ -1,5 +1,7 @@
 .formContainer {
   padding: var(--space-lg) 0;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .productForm {
@@ -11,6 +13,8 @@
   background-color: var(--color-surface);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
+  box-sizing: border-box;
+  min-height: auto;
 }
 
 .formTitle {
@@ -27,6 +31,7 @@
   padding: var(--space-lg);
   margin: 0 0 var(--space-xl) 0;
   background-color: #fdfdfd;
+  box-sizing: border-box;
 }
 
 .legend {
@@ -52,6 +57,7 @@
   flex-direction: column;
   gap: var(--space-xs);
   flex-grow: 1;
+  min-width: 0;
 }
 .formGroupFull {
   flex-basis: 100%;
@@ -121,6 +127,7 @@
   min-height: 100px;
   resize: vertical;
   font-family: var(--font-primary);
+  max-width: 100%;
 }
 
 .select {
@@ -144,6 +151,7 @@
   justify-content: center;
   gap: var(--space-sm);
   min-height: 150px;
+  box-sizing: border-box;
 }
 .imageUploadArea.dragging {
   background-color: var(--color-accent);
@@ -210,6 +218,7 @@
   padding: var(--space-sm);
   border-radius: var(--border-radius-sm);
   background-color: var(--color-background);
+  box-sizing: border-box;
 }
 
 .imagePreviewItem {
@@ -293,6 +302,8 @@
   border-radius: var(--border-radius-sm);
   font-size: 0.9em;
   text-align: center;
+  word-wrap: break-word;
+  box-sizing: border-box;
 }
 .formFeedback.errorText {
   background-color: rgba(217, 83, 79, 0.1);
@@ -308,6 +319,7 @@
   margin-top: var(--space-xl);
   padding-top: var(--space-lg);
   border-top: 1px solid var(--color-border);
+  box-sizing: border-box;
 }
 
 .button {
@@ -322,6 +334,7 @@
   gap: var(--space-sm);
   min-width: 150px;
   justify-content: center;
+  box-sizing: border-box;
 }
 .button svg {
   font-size: 1.2em;
@@ -381,4 +394,16 @@
   .formTitle {
     font-size: 1.6rem;
   }
+}
+
+.productForm {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible;
+}
+
+.formContainer {
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
