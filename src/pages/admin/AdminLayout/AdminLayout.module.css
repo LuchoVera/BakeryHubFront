@@ -1,7 +1,8 @@
 .layoutContainer {
   display: grid;
   grid-template-columns: 280px 1fr;
-  height: 100vh;
+  grid-template-rows: 100vh;
+  overflow: hidden;
   transition: grid-template-columns 0.3s ease;
 }
 
