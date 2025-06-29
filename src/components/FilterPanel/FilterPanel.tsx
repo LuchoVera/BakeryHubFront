@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, FocusEvent } from "react";
 import { CategoryDto, TagDto } from "../../types";
 import Autocomplete from "@mui/material/Autocomplete";
 import Chip from "@mui/material/Chip";
@@ -21,6 +21,8 @@ interface FilterPanelProps {
   showCategoryFilter?: boolean;
   isLoading?: boolean;
 }
+
+const MAX_PRICE_ALLOWED = 9999999.99;
 
 const FilterPanel: React.FC<FilterPanelProps> = ({
   allCategories,
@@ -54,6 +56,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   const sanitizePrice = (value: string): string => {
     const parsed = parseFloat(value);
     if (isNaN(parsed) || parsed < 0) return "";
+    if (parsed > MAX_PRICE_ALLOWED) {
+      return MAX_PRICE_ALLOWED.toFixed(2);
+    }
     return parsed.toFixed(2);
   };
 
@@ -77,6 +82,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       maxPrice: maxSanitized || null,
       tags: selectedTags.map((tag) => tag.name.trim()),
     });
+  };
+
+  const handleMinPriceBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const minValue = parseFloat(e.target.value);
+    const maxValue = parseFloat(tempMaxPrice);
+    if (!isNaN(minValue) && !isNaN(maxValue) && minValue > maxValue) {
+      setTempMaxPrice(e.target.value);
+    }
+  };
+
+  const handleMaxPriceBlur = (e: FocusEvent<HTMLInputElement>) => {
+    const maxValue = parseFloat(e.target.value);
+    const minValue = parseFloat(tempMinPrice);
+    if (!isNaN(maxValue) && !isNaN(minValue) && maxValue < minValue) {
+      setTempMaxPrice(tempMinPrice);
+    }
   };
 
   return (
@@ -110,28 +131,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         <input
           type="number"
           inputMode="decimal"
-          pattern="[0-9]*[.,]?[0-9]*"
           id="filterMinPrice"
           placeholder="Ej: 10"
           min="0"
           step="1"
           value={tempMinPrice}
           onChange={(e) => {
-            const val = e.target.value;
-            if (/^\d*\.?\d*$/.test(val)) {
-              setTempMinPrice(val);
-
-              const parsedMin = parseFloat(val);
-              const parsedMax = parseFloat(tempMaxPrice);
-              if (
-                !isNaN(parsedMin) &&
-                !isNaN(parsedMax) &&
-                parsedMin > parsedMax
-              ) {
-                setTempMaxPrice(val);
-              }
+            if (/^\d*\.?\d*$/.test(e.target.value)) {
+              setTempMinPrice(e.target.value);
             }
           }}
+          onBlur={handleMinPriceBlur}
           onKeyDown={(e) => {
             if (e.key === "-" || e.key === "e") {
               e.preventDefault();
@@ -139,6 +149,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           }}
           className={styles.filterInput}
           disabled={isLoading}
+          maxLength={10}
         />
       </div>
 
@@ -149,28 +160,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         <input
           type="number"
           inputMode="decimal"
-          pattern="[0-9]*[.,]?[0-9]*"
           id="filterMaxPrice"
           placeholder="Ej: 100"
           min="0"
           step="1"
           value={tempMaxPrice}
           onChange={(e) => {
-            const val = e.target.value;
-            if (/^\d*\.?\d*$/.test(val)) {
-              const parsedVal = parseFloat(val);
-              const parsedMin = parseFloat(tempMinPrice);
-              if (
-                !isNaN(parsedVal) &&
-                !isNaN(parsedMin) &&
-                parsedVal < parsedMin
-              ) {
-                setTempMaxPrice(tempMinPrice);
-              } else {
-                setTempMaxPrice(val);
-              }
+            if (/^\d*\.?\d*$/.test(e.target.value)) {
+              setTempMaxPrice(e.target.value);
             }
           }}
+          onBlur={handleMaxPriceBlur}
           onKeyDown={(e) => {
             if (e.key === "-" || e.key === "e") {
               e.preventDefault();
@@ -178,6 +178,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           }}
           className={styles.filterInput}
           disabled={isLoading}
+          maxLength={10}
         />
       </div>
 
