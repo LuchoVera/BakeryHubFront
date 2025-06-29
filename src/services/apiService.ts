@@ -95,18 +95,11 @@ export const changePassword = async (
 };
 
 export const updateUserProfile = async (
-  profileData: UpdateUserProfileDto
+  profileData: UpdateUserProfileDto,
+  subdomain: string | null
 ): Promise<AuthUser> => {
-  const host = window.location.hostname;
-  const parts = host.split(".");
-  let subdomainForApi: string | null = null;
-  if (!host.endsWith("bakery-hub.org") && !host.endsWith("localhost")) {
-    subdomainForApi = parts[0];
-  } else if (host.endsWith(".localhost") && parts.length > 1) {
-    subdomainForApi = parts[0];
-  }
-  const url = subdomainForApi
-    ? `/accounts/me/update-profile?subdomain=${subdomainForApi}`
+  const url = subdomain
+    ? `/accounts/me/update-profile?subdomain=${subdomain}`
     : "/accounts/me/update-profile";
 
   const response = await apiClient.put<AuthUser>(url, profileData);
