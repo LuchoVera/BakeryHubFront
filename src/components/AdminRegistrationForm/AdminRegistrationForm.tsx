@@ -467,7 +467,7 @@ const AdminRegistrationForm: React.FC = () => {
           }
         />
         <span className={styles.previewText}>
-          Vista previa: http://{formData.subdomain || "tu-eleccion"}.bakery-hub.org
+          Vista previa: https://{formData.subdomain || "tu-eleccion"}.bakery-hub.org
         </span>
         {getFieldError("subdomain") && (
           <span id="subdomain-error" className={styles.validationError}>

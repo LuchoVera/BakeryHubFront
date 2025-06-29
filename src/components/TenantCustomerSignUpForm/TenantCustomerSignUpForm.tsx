@@ -145,11 +145,7 @@ const TenantCustomerSignUpForm: React.FC = () => {
       const result = await apiCheckEmail(email);
       setEmailCheckResult(result);
       if (result.exists && result.isAdmin) {
-        setError("No se pudo registrar como cliente.");
-      } else if (result.exists && !result.isCustomer) {
-        setError(
-          "Ya existe una cuenta con este email, pero no está marcada como cliente."
-        );
+        setError("No se pudo registrar.");
       }
     } catch (err) {
       setError(

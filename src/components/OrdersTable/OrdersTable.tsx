@@ -93,7 +93,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
               <td data-label="Fecha Entrega:">
                 <span>{formatDate(order.deliveryDate)}</span>
               </td>
-              <td data-label="Cliente:">
+              <td data-label="Cliente:" title={order.customerName ?? "N/A"}>
                 <span>{order.customerName ?? "N/A"}</span>
               </td>
               <td data-label="Tipos Productos:">
