@@ -1,6 +1,7 @@
 import React from "react";
 import ProductForm from "../../../components/ProductForm/ProductForm";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import styles from "../../../components/ProductForm/ProductForm.module.css";
 
 const EditProductPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const EditProductPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className={styles.formContainer}>
       <Link to="/admin/products">{"< Volver a la Lista de Productos"}</Link>
       <ProductForm productId={id} onSuccess={handleSuccess} />
     </div>
