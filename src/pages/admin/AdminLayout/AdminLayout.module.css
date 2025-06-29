@@ -133,7 +133,6 @@
   grid-column: 2 / 3;
   padding: var(--space-lg);
   background-color: var(--color-background);
-  min-height: 100vh;
   box-sizing: border-box;
   overflow-y: auto;
   min-width: 0;
