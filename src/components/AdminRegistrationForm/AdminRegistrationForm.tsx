@@ -441,10 +441,10 @@ const AdminRegistrationForm: React.FC = () => {
       </div>
       <div className={styles.formGroup}>
         <label htmlFor="subdomain" className={styles.labelWithTooltip}>
-          <span>Elige la Dirección de tu Sitio (.localhost)</span>
+          <span>Elige la Dirección de tu Sitio (.bakery-hub.org)</span>
           <LuCircleHelp
             className={styles.tooltipTrigger}
-            title="Será la dirección web única de tu tienda (ej: mi-pasteleria.localhost). Solo minúsculas, números y guiones."
+            title="Será la dirección web única de tu tienda (ej: mi-pasteleria.bakery-hub.org). Solo minúsculas, números y guiones."
             aria-label="Información sobre dirección del sitio"
           />
         </label>
@@ -467,7 +467,7 @@ const AdminRegistrationForm: React.FC = () => {
           }
         />
         <span className={styles.previewText}>
-          Vista previa: http://{formData.subdomain || "tu-eleccion"}.localhost
+          Vista previa: http://{formData.subdomain || "tu-eleccion"}.bakery-hub.org
         </span>
         {getFieldError("subdomain") && (
           <span id="subdomain-error" className={styles.validationError}>
