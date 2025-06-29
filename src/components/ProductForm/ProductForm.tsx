@@ -42,6 +42,7 @@ import {
   uploadImageToCloudinary,
 } from "../../services/apiService";
 import { AxiosError } from "axios";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -65,6 +66,7 @@ const MAX_PRICE_ALLOWED = 9999999.99;
 const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const isEditing = !!productId;
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState<ProductFormState>({
     name: "",
     description: "",
@@ -93,26 +95,26 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
 
   const MAX_IMAGES = 14;
   const MAX_TAGS = 10;
+  const MAX_TAG_LENGTH_MOBILE = 15;
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoadingTenantTags(true);
       try {
-        const fetchedCategories = await fetchAdminCategories();
-        setCategories(fetchedCategories);
-        if (
-          !isEditing &&
-          fetchedCategories.length > 0 &&
-          !formData.categoryId
-        ) {
+        const [fetchedCategories, fetchedTags] = await Promise.all([
+          fetchAdminCategories(),
+          fetchAdminTags(),
+        ]);
+
+        setCategories(fetchedCategories || []);
+        setAllTenantTags(fetchedTags || []);
+
+        if (!isEditing && fetchedCategories && fetchedCategories.length > 0) {
           setFormData((prev) => ({
             ...prev,
-            categoryId: fetchedCategories[0].id,
+            categoryId: prev.categoryId || fetchedCategories[0].id,
           }));
         }
-
-        const fetchedTags = await fetchAdminTags();
-        setAllTenantTags(fetchedTags);
       } catch (fetchError) {
         setError("No se pudieron cargar las categorías o etiquetas.");
       } finally {
@@ -120,7 +122,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       }
     };
     fetchInitialData();
-  }, [isEditing, formData.categoryId]);
+  }, [isEditing]);
 
   useEffect(() => {
     if (
@@ -707,27 +709,35 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
               loadingText="Cargando etiquetas..."
               noOptionsText="No hay etiquetas. Escribe para añadir."
               renderTags={(value: readonly TagDto[], getTagProps) =>
-                value.map((tag: TagDto, index: number) => (
-                  <Chip
-                    label={tag.name}
-                    {...getTagProps({ index })}
-                    key={tag.id || tag.name + index}
-                    deleteIcon={<LuXIcon />}
-                    sx={{
-                      backgroundColor: "var(--color-secondary)",
-                      color: "var(--color-primary-dark)",
-                      height: "28px",
-                      fontSize: "0.8rem",
-                      "& .MuiChip-deleteIcon": {
+                value.map((tag: TagDto, index: number) => {
+                  const label =
+                    isMobile && tag.name.length > MAX_TAG_LENGTH_MOBILE
+                      ? `${tag.name.substring(0, MAX_TAG_LENGTH_MOBILE)}...`
+                      : tag.name;
+
+                  return (
+                    <Chip
+                      label={label}
+                      title={tag.name}
+                      {...getTagProps({ index })}
+                      key={tag.id || tag.name + index}
+                      deleteIcon={<LuXIcon />}
+                      sx={{
+                        backgroundColor: "var(--color-secondary)",
                         color: "var(--color-primary-dark)",
-                        fontSize: "0.9rem",
-                        "&:hover": {
-                          color: "var(--color-error)",
+                        height: "28px",
+                        fontSize: "0.8rem",
+                        "& .MuiChip-deleteIcon": {
+                          color: "var(--color-primary-dark)",
+                          fontSize: "0.9rem",
+                          "&:hover": {
+                            color: "var(--color-error)",
+                          },
                         },
-                      },
-                    }}
-                  />
-                ))
+                      }}
+                    />
+                  );
+                })
               }
               renderInput={(params) => (
                 <TextField
