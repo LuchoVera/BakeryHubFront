@@ -98,21 +98,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     const fetchInitialData = async () => {
       setLoadingTenantTags(true);
       try {
-        const fetchedCategories = await fetchAdminCategories();
-        setCategories(fetchedCategories);
-        if (
-          !isEditing &&
-          fetchedCategories.length > 0 &&
-          !formData.categoryId
-        ) {
+        const [fetchedCategories, fetchedTags] = await Promise.all([
+          fetchAdminCategories(),
+          fetchAdminTags(),
+        ]);
+
+        setCategories(fetchedCategories || []);
+        setAllTenantTags(fetchedTags || []);
+
+        if (!isEditing && fetchedCategories && fetchedCategories.length > 0) {
           setFormData((prev) => ({
             ...prev,
-            categoryId: fetchedCategories[0].id,
+            categoryId: prev.categoryId || fetchedCategories[0].id,
           }));
         }
-
-        const fetchedTags = await fetchAdminTags();
-        setAllTenantTags(fetchedTags);
       } catch (fetchError) {
         setError("No se pudieron cargar las categorías o etiquetas.");
       } finally {
@@ -120,7 +119,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       }
     };
     fetchInitialData();
-  }, [isEditing, formData.categoryId]);
+  }, [isEditing]);
 
   useEffect(() => {
     if (
