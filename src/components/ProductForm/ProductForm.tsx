@@ -5,6 +5,7 @@ import React, {
   FormEvent,
   DragEvent,
   SyntheticEvent,
+  FocusEvent,
 } from "react";
 
 import {
@@ -50,18 +51,24 @@ interface ProductFormProps {
   onSuccess: () => void;
 }
 
-type ProductFormData = Omit<
-  CreateProductDto & Partial<UpdateProductDto>,
-  "isAvailable" | "tags"
->;
+interface ProductFormState {
+  name: string;
+  description: string;
+  price: string;
+  images: string[];
+  leadTimeInput: string;
+  categoryId: string;
+}
+
+const MAX_PRICE_ALLOWED = 9999999.99;
 
 const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const isEditing = !!productId;
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<ProductFormData>({
+  const [formData, setFormData] = useState<ProductFormState>({
     name: "",
     description: "",
-    price: 1,
+    price: "1",
     images: [],
     leadTimeInput: "",
     categoryId: "",
@@ -113,7 +120,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       }
     };
     fetchInitialData();
-  }, [isEditing]);
+  }, [isEditing, formData.categoryId]);
 
   useEffect(() => {
     if (
@@ -130,7 +137,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
           setFormData({
             name: product.name,
             description: product.description ?? "",
-            price: product.price,
+            price: String(product.price),
             images: existingUrls,
             leadTimeInput: product.leadTimeDisplay ?? "",
             categoryId: product.categoryId,
@@ -158,7 +165,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   }, [isEditing, productId, allTenantTags, loadingTenantTags]);
 
   const validateField = (
-    name: keyof ProductFormData | "tags",
+    name: keyof ProductFormState | "tags",
     value: any
   ): string => {
     let errorMsg = "";
@@ -202,13 +209,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     let isValid = true;
-    (Object.keys(formData) as Array<keyof ProductFormData>).forEach((key) => {
+    (Object.keys(formData) as Array<keyof ProductFormState>).forEach((key) => {
       if (key === "description" || key === "images" || key === "leadTimeInput")
         return;
 
       const errorMsg = validateField(
         key,
-        formData[key as keyof ProductFormData]
+        formData[key as keyof ProductFormState]
       );
       if (errorMsg) {
         errors[key] = errorMsg;
@@ -361,9 +368,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    const fieldNameTyped = name as keyof ProductFormData;
+    if (name === "price") {
+      if (/^\d*\.?\d*$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    const fieldNameTyped = name as keyof ProductFormState;
     if (clientValidationErrors[fieldNameTyped]) {
       setClientValidationErrors((prev) => {
         const newErrors = { ...prev };
@@ -372,6 +386,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
       });
     }
     if (error) setError(null);
+  };
+
+  const handlePriceBlur = (e: FocusEvent<HTMLInputElement>) => {
+    let valueStr = e.target.value;
+    let numValue = parseFloat(valueStr);
+
+    if (isNaN(numValue) || numValue <= 0) {
+      valueStr = "1";
+    } else if (numValue > MAX_PRICE_ALLOWED) {
+      valueStr = MAX_PRICE_ALLOWED.toFixed(2);
+    }
+
+    setFormData((prev) => ({ ...prev, price: valueStr }));
+
+    const errorMsg = validateField("price", valueStr);
+    setClientValidationErrors((prev) => ({ ...prev, price: errorMsg }));
   };
 
   const handleTagsChange = (
@@ -452,7 +482,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
     const productPayload: CreateProductDto | UpdateProductDto = {
       name: formData.name || "",
       description: formData.description || null,
-      price: parseFloat(String(formData.price)),
+      price: parseFloat(formData.price),
       images: finalImageUrls.length > 0 ? finalImageUrls : null,
       leadTimeInput: formData.leadTimeInput || null,
       categoryId: formData.categoryId || "",
@@ -500,7 +530,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
   };
 
   const getClientFieldError = (
-    fieldName: keyof ProductFormData | "tags"
+    fieldName: keyof ProductFormState | "tags"
   ): string | undefined => {
     return clientValidationErrors[fieldName];
   };
@@ -558,13 +588,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
               Precio (Bs.)
             </label>
             <input
-              type="number"
-              step="1"
-              min="1"
+              type="text"
+              inputMode="decimal"
               id="price"
               name="price"
               value={formData.price}
               onChange={handleInputChange}
+              onBlur={handlePriceBlur}
+              onKeyDown={(e) => {
+                if (["-", "e", "E", "+", ","].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               required
               className={`${styles.input} ${
                 getClientFieldError("price") ? styles.inputError : ""
