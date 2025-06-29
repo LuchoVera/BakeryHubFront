@@ -7,6 +7,7 @@ import { useAuth } from "../../AuthContext";
 import { useCart } from "../../hooks/useCart";
 import { useNotification } from "../../hooks/useNotification";
 import { useTenant } from "../../hooks/useTenant";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { LuTag } from "react-icons/lu";
 import { fetchPublicProductDetail } from "../../services/apiService";
 import { AxiosError } from "axios";
@@ -27,6 +28,8 @@ const ProductDetailPage: React.FC = () => {
   const { user } = useAuth();
   const { addItemToCart } = useCart();
   const { showNotification } = useNotification();
+  const isMobile = useIsMobile();
+  const MAX_TAG_LENGTH_MOBILE = 25;
 
   useEffect(() => {
     if (!productId || !subdomain) {
@@ -166,11 +169,21 @@ const ProductDetailPage: React.FC = () => {
             </p>
             {product.tagNames && product.tagNames.length > 0 && (
               <div className={styles.productTagsContainer}>
-                {product.tagNames.map((tagName) => (
-                  <span key={tagName} className={styles.tagBadge}>
-                    <LuTag className={styles.tagIcon} /> {tagName}
-                  </span>
-                ))}
+                {product.tagNames.map((tagName) => {
+                  const truncatedTagName =
+                    isMobile && tagName.length > MAX_TAG_LENGTH_MOBILE
+                      ? `${tagName.substring(0, MAX_TAG_LENGTH_MOBILE)}...`
+                      : tagName;
+                  return (
+                    <span
+                      key={tagName}
+                      className={styles.tagBadge}
+                      title={tagName}
+                    >
+                      <LuTag className={styles.tagIcon} /> {truncatedTagName}
+                    </span>
+                  );
+                })}
               </div>
             )}
             <p className={styles.productPrice}>
