@@ -2,12 +2,11 @@
   display: block;
   width: 100%;
   max-width: 800px;
-  margin: var(--space-lg) auto;
-  padding: var(--space-md);
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-md);
   background-color: var(--color-surface);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
-  box-sizing: border-box;
 }
 
 .formTitle {
