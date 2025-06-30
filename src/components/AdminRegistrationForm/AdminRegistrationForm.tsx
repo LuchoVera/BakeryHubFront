@@ -114,7 +114,7 @@ const AdminRegistrationForm: React.FC = () => {
         error =
           validateRequired(cleanedValue) ||
           validateMinLength(cleanedValue, 3) ||
-          validateMaxLength(cleanedValue, 10) ||
+          validateMaxLength(cleanedValue, 30) ||
           validatePattern(
             cleanedValue,
             subdomainRegex,
@@ -123,8 +123,8 @@ const AdminRegistrationForm: React.FC = () => {
         if (error.includes("required")) return "La dirección es requerida.";
         if (error.includes("at least 3"))
           return "La dirección debe tener al menos 3 caracteres.";
-        if (error.includes("no more than 10"))
-          return "La dirección no debe exceder los 10 caracteres.";
+        if (error.includes("no more than 30"))
+          return "La dirección no debe exceder los 30 caracteres.";
         return error;
       default:
         return "";
@@ -458,7 +458,7 @@ const AdminRegistrationForm: React.FC = () => {
           onBlur={handleBlur}
           required
           minLength={3}
-          maxLength={10}
+          maxLength={30}
           pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
           title="Solo minúsculas, números y guiones."
           aria-invalid={!!getFieldError("subdomain")}
@@ -467,7 +467,8 @@ const AdminRegistrationForm: React.FC = () => {
           }
         />
         <span className={styles.previewText}>
-          Vista previa: https://{formData.subdomain || "tu-eleccion"}.bakery-hub.org
+          Vista previa: https://{formData.subdomain || "tu-eleccion"}
+          .bakery-hub.org
         </span>
         {getFieldError("subdomain") && (
           <span id="subdomain-error" className={styles.validationError}>
