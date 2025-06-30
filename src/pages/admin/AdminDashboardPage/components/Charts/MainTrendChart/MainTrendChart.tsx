@@ -128,7 +128,7 @@ const getChartOptions = (
       },
     ],
     toolbox: {
-      show: !isMobile,
+      show: false,
       feature: {
         saveAsImage: { title: "Guardar" },
       },
