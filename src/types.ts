@@ -312,3 +312,15 @@ export interface ResetPasswordDto {
   newPassword: string;
   confirmNewPassword: string;
 }
+
+export interface UpdateAdminProfileDto {
+  adminName: string;
+  phoneNumber: string;
+  businessName: string;
+}
+
+export interface TenantDto {
+  id: string;
+  subdomain: string;
+  name: string;
+}

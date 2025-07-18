@@ -21,8 +21,10 @@ import {
   ProductDto,
   ResetPasswordDto,
   TagDto,
+  TenantDto,
   TenantPublicInfoDto,
   TenantThemeDto,
+  UpdateAdminProfileDto,
   UpdateCategoryDto,
   UpdateProductDto,
   UpdateTagDto,
@@ -456,4 +458,19 @@ export const resetPassword = async (
   resetPasswordData: ResetPasswordDto
 ): Promise<void> => {
   await apiClient.post("/api/accounts/reset-password", resetPasswordData);
+};
+
+export const fetchAdminTenantDetails = async (): Promise<TenantDto> => {
+  const response = await apiClient.get<TenantDto>("/api/tenants/mine");
+  return response.data;
+};
+
+export const updateAdminProfile = async (
+  profileData: UpdateAdminProfileDto
+): Promise<AuthUser> => {
+  const response = await apiClient.put<AuthUser>(
+    "/api/accounts/me/admin-profile",
+    profileData
+  );
+  return response.data;
 };
