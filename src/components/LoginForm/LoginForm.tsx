@@ -1,6 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent, FocusEvent } from "react";
 
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { LoginDto, ApiErrorResponse, AuthUser } from "../../types";
 import { validateRequired, validateEmail } from "../../utils/validationUtils";
@@ -218,7 +218,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ subdomainContext = null }) => {
           Recordarme
         </label>
       </div>
-
+      <div className={styles.forgotPasswordLink}>
+        <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+      </div>
       {(getFieldError("form") || serverError) && (
         <p className={styles.error}>{getFieldError("form") || serverError}</p>
       )}
