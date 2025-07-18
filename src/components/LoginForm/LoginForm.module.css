@@ -134,6 +134,21 @@ input[aria-invalid="true"]:focus {
   line-height: 1;
 }
 
+.forgotPasswordLink {
+  font-size: 0.85em;
+  margin-top: calc(-1 * var(--space-sm));
+  margin-bottom: var(--space-md);
+}
+
+.forgotPasswordLink a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+.forgotPasswordLink a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   .submitButton {
     width: 100%;

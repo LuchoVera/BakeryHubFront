@@ -40,6 +40,8 @@ import { TenantProvider } from "./contexts/TenantContext";
 import { usePrevious } from "./hooks/usePrevious";
 import AdminThemePage from "./pages/admin/AdminThemePage/AdminThemePage";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
 
 const AuthRedirectHandler = () => {
   const { isAuthenticated } = useAuth();
@@ -153,6 +155,8 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route
                 path="/register-admin"
                 element={<AdminRegistrationPage />}

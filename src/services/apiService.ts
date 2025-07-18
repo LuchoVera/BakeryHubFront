@@ -14,10 +14,12 @@ import {
   DashboardQueryParametersDto,
   DashboardResponseDto,
   EmailCheckResultDto,
+  ForgotPasswordDto,
   LinkCustomerDto,
   LoginDto,
   OrderDto,
   ProductDto,
+  ResetPasswordDto,
   TagDto,
   TenantPublicInfoDto,
   TenantThemeDto,
@@ -53,7 +55,7 @@ apiClient.interceptors.response.use(
 
 export const login = async (loginData: LoginDto): Promise<AuthResponseDto> => {
   const response = await apiClient.post<AuthResponseDto>(
-    "/accounts/login",
+    "/api/accounts/login",
     loginData
   );
   return response.data;
@@ -63,27 +65,27 @@ export const getCurrentUser = async (
   subdomain?: string | null
 ): Promise<AuthUser> => {
   const url = subdomain
-    ? `/accounts/me?subdomain=${subdomain}`
-    : "/accounts/me";
+    ? `/api/accounts/me?subdomain=${subdomain}`
+    : "/api/accounts/me";
   const response = await apiClient.get<AuthUser>(url);
   return response.data;
 };
 
 export const logout = async (): Promise<void> => {
-  await apiClient.post("/accounts/logout");
+  await apiClient.post("/api/accounts/logout");
 };
 
 export const registerAdmin = async (
   registrationData: AdminRegisterDto
 ): Promise<void> => {
-  await apiClient.post("/accounts/register-admin", registrationData);
+  await apiClient.post("/api/accounts/register-admin", registrationData);
 };
 
 export const checkEmail = async (
   email: string
 ): Promise<EmailCheckResultDto> => {
   const response = await apiClient.get<EmailCheckResultDto>(
-    `/accounts/check-email?email=${encodeURIComponent(email)}`
+    `/api/accounts/check-email?email=${encodeURIComponent(email)}`
   );
   return response.data;
 };
@@ -91,7 +93,7 @@ export const checkEmail = async (
 export const changePassword = async (
   passwordData: ChangePasswordDto
 ): Promise<void> => {
-  await apiClient.post("/accounts/change-password", passwordData);
+  await apiClient.post("/api/accounts/change-password", passwordData);
 };
 
 export const updateUserProfile = async (
@@ -99,15 +101,15 @@ export const updateUserProfile = async (
   subdomain: string | null
 ): Promise<AuthUser> => {
   const url = subdomain
-    ? `/accounts/me/update-profile?subdomain=${subdomain}`
-    : "/accounts/me/update-profile";
+    ? `/api/accounts/me/update-profile?subdomain=${subdomain}`
+    : "/api/accounts/me/update-profile";
 
   const response = await apiClient.put<AuthUser>(url, profileData);
   return response.data;
 };
 
 export const fetchAdminCategories = async (): Promise<CategoryDto[]> => {
-  const response = await apiClient.get<CategoryDto[]>("/categories");
+  const response = await apiClient.get<CategoryDto[]>("/api/categories");
   return response.data;
 };
 
@@ -115,7 +117,7 @@ export const createAdminCategory = async (categoryData: {
   name: string;
 }): Promise<CategoryDto> => {
   const response = await apiClient.post<CategoryDto>(
-    "/categories",
+    "/api/categories",
     categoryData
   );
   return response.data;
@@ -126,25 +128,25 @@ export const updateAdminCategory = async (
   categoryData: UpdateCategoryDto
 ): Promise<CategoryDto> => {
   const response = await apiClient.put<CategoryDto>(
-    `/categories/${id}`,
+    `/api/categories/${id}`,
     categoryData
   );
   return response.data;
 };
 
 export const deleteAdminCategory = async (id: string): Promise<void> => {
-  await apiClient.delete(`/categories/${id}`);
+  await apiClient.delete(`/api/categories/${id}`);
 };
 
 export const fetchAdminTags = async (): Promise<TagDto[]> => {
-  const response = await apiClient.get<TagDto[]>("/tags");
+  const response = await apiClient.get<TagDto[]>("/api/tags");
   return response.data;
 };
 
 export const createAdminTag = async (
   tagData: CreateTagDto
 ): Promise<TagDto> => {
-  const response = await apiClient.post<TagDto>("/tags", tagData);
+  const response = await apiClient.post<TagDto>("/api/tags", tagData);
   return response.data;
 };
 
@@ -152,30 +154,35 @@ export const updateAdminTag = async (
   id: string,
   tagData: UpdateTagDto
 ): Promise<TagDto> => {
-  const response = await apiClient.put<TagDto>(`/tags/${id}`, tagData);
+  const response = await apiClient.put<TagDto>(`/api/tags/${id}`, tagData);
   return response.data;
 };
 
 export const deleteAdminTag = async (id: string): Promise<void> => {
-  await apiClient.delete(`/tags/${id}`);
+  await apiClient.delete(`/api/tags/${id}`);
 };
 
 export const fetchAdminProducts = async (): Promise<ProductDto[]> => {
-  const response = await apiClient.get<ProductDto[]>("/products");
+  const response = await apiClient.get<ProductDto[]>("/api/products");
   return response.data;
 };
 
 export const fetchAdminProductById = async (
   productId: string
 ): Promise<ProductDto> => {
-  const response = await apiClient.get<ProductDto>(`/products/${productId}`);
+  const response = await apiClient.get<ProductDto>(
+    `/api/products/${productId}`
+  );
   return response.data;
 };
 
 export const createAdminProduct = async (
   productData: CreateProductDto
 ): Promise<ProductDto> => {
-  const response = await apiClient.post<ProductDto>("/products", productData);
+  const response = await apiClient.post<ProductDto>(
+    "/api/products",
+    productData
+  );
   return response.data;
 };
 
@@ -184,34 +191,40 @@ export const updateAdminProduct = async (
   productData: UpdateProductDto
 ): Promise<ProductDto> => {
   const response = await apiClient.put<ProductDto>(
-    `/products/${productId}`,
+    `/api/products/${productId}`,
     productData
   );
   return response.data;
 };
 
 export const deleteAdminProduct = async (productId: string): Promise<void> => {
-  await apiClient.delete(`/products/${productId}`);
+  await apiClient.delete(`/api/products/${productId}`);
 };
 
 export const updateAdminProductAvailability = async (
   productId: string,
   isAvailable: boolean
 ): Promise<void> => {
-  await apiClient.patch(`/products/${productId}/availability`, isAvailable, {
-    headers: { "Content-Type": "application/json" },
-  });
+  await apiClient.patch(
+    `/api/products/${productId}/availability`,
+    isAvailable,
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
 };
 
 export const fetchAdminOrders = async (): Promise<OrderDto[]> => {
-  const response = await apiClient.get<OrderDto[]>("/admin/orders/my");
+  const response = await apiClient.get<OrderDto[]>("/api/admin/orders/my");
   return response.data;
 };
 
 export const fetchAdminOrderById = async (
   orderId: string
 ): Promise<OrderDto> => {
-  const response = await apiClient.get<OrderDto>(`/admin/orders/${orderId}`);
+  const response = await apiClient.get<OrderDto>(
+    `/api/admin/orders/${orderId}`
+  );
   return response.data;
 };
 
@@ -219,7 +232,7 @@ export const updateAdminOrderStatus = async (
   orderId: string,
   newStatus: string
 ): Promise<void> => {
-  await apiClient.put(`/admin/orders/${orderId}/status`, {
+  await apiClient.put(`/api/admin/orders/${orderId}/status`, {
     NewStatus: newStatus,
   });
 };
@@ -228,7 +241,7 @@ export const fetchPublicTenantInfo = async (
   subdomain: string
 ): Promise<TenantPublicInfoDto> => {
   const response = await apiClient.get<TenantPublicInfoDto>(
-    `/public/tenants/${subdomain}`
+    `/api/public/tenants/${subdomain}`
   );
   return response.data;
 };
@@ -239,7 +252,7 @@ export const fetchPublicTenantProducts = async (
 ): Promise<ProductDto[]> => {
   const queryString = params ? `?${params.toString()}` : "";
   const response = await apiClient.get<ProductDto[]>(
-    `/public/tenants/${subdomain}/products${queryString}`
+    `/api/public/tenants/${subdomain}/products${queryString}`
   );
   return response.data;
 };
@@ -249,7 +262,7 @@ export const fetchPublicProductDetail = async (
   productId: string
 ): Promise<ProductDto> => {
   const response = await apiClient.get<ProductDto>(
-    `/Products/${subdomain}/products/${productId}`
+    `/api/Products/${subdomain}/products/${productId}`
   );
   return response.data;
 };
@@ -258,7 +271,7 @@ export const fetchPublicTenantCategoriesPreferred = async (
   subdomain: string
 ): Promise<CategoryDto[]> => {
   const response = await apiClient.get<CategoryDto[]>(
-    `/public/tenants/${subdomain}/categories/preferred`
+    `/api/public/tenants/${subdomain}/categories/preferred`
   );
   return response.data;
 };
@@ -267,7 +280,7 @@ export const fetchPublicTenantTags = async (
   subdomain: string
 ): Promise<TagDto[]> => {
   const response = await apiClient.get<TagDto[]>(
-    `/public/tenants/${subdomain}/tags`
+    `/api/public/tenants/${subdomain}/tags`
   );
   return response.data;
 };
@@ -276,7 +289,7 @@ export const fetchPublicTenantRecommendations = async (
   subdomain: string
 ): Promise<ProductDto[]> => {
   const response = await apiClient.get<ProductDto[]>(
-    `/public/tenants/${subdomain}/recommendations`
+    `/api/public/tenants/${subdomain}/recommendations`
   );
   return response.data;
 };
@@ -286,7 +299,7 @@ export const searchPublicTenantProducts = async (
   params: URLSearchParams
 ): Promise<ProductDto[]> => {
   const response = await apiClient.get<ProductDto[]>(
-    `/public/tenants/${subdomain}/search?${params.toString()}`
+    `/api/public/tenants/${subdomain}/search?${params.toString()}`
   );
   return response.data;
 };
@@ -299,7 +312,7 @@ export const registerTenantCustomer = async (
     message: string;
     status: string;
     userId?: string;
-  }>(`/public/tenants/${subdomain}/register-customer`, registrationData);
+  }>(`/api/public/tenants/${subdomain}/register-customer`, registrationData);
   return response.data;
 };
 
@@ -311,7 +324,7 @@ export const linkTenantCustomer = async (
     message: string;
     status: string;
     userId?: string;
-  }>(`/public/tenants/${subdomain}/link-customer`, linkData);
+  }>(`/api/public/tenants/${subdomain}/link-customer`, linkData);
   return response.data;
 };
 
@@ -320,7 +333,7 @@ export const createTenantOrder = async (
   orderData: CreateOrderDto
 ): Promise<OrderDto> => {
   const response = await apiClient.post<OrderDto>(
-    `/public/tenants/${subdomain}/orders`,
+    `/api/public/tenants/${subdomain}/orders`,
     orderData
   );
   return response.data;
@@ -330,7 +343,7 @@ export const fetchTenantOrders = async (
   subdomain: string
 ): Promise<OrderDto[]> => {
   const response = await apiClient.get<OrderDto[]>(
-    `/public/tenants/${subdomain}/orders`
+    `/api/public/tenants/${subdomain}/orders`
   );
   return response.data;
 };
@@ -340,7 +353,7 @@ export const fetchTenantOrderById = async (
   orderId: string
 ): Promise<OrderDto> => {
   const response = await apiClient.get<OrderDto>(
-    `/public/tenants/${subdomain}/orders/${orderId}`
+    `/api/public/tenants/${subdomain}/orders/${orderId}`
   );
   return response.data;
 };
@@ -388,9 +401,8 @@ export const fetchAdminDashboardStatistics = async (
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(([, v]) => v !== null && v !== "")
   );
-
   const response = await apiClient.get<DashboardResponseDto>(
-    "/admin/dashboard/order-statistics",
+    "/api/admin/dashboard/order-statistics",
     { params: cleanParams }
   );
   return response.data;
@@ -400,7 +412,7 @@ export const createManualAdminOrder = async (
   orderData: CreateManualOrderDto
 ): Promise<OrderDto> => {
   const response = await apiClient.post<OrderDto>(
-    "/admin/orders/manual",
+    "/api/admin/orders/manual",
     orderData
   );
   return response.data;
@@ -410,26 +422,38 @@ export const fetchPublicTenantCategories = async (
   subdomain: string
 ): Promise<CategoryDto[]> => {
   const response = await apiClient.get<CategoryDto[]>(
-    `/public/tenants/${subdomain}/categories`
+    `/api/public/tenants/${subdomain}/categories`
   );
   return response.data;
 };
 
 export const getAdminTheme = async (): Promise<TenantThemeDto> => {
-  const response = await apiClient.get<TenantThemeDto>("/admin/theme");
+  const response = await apiClient.get<TenantThemeDto>("/api/admin/theme");
   return response.data;
 };
 
 export const updateAdminTheme = async (
   themeData: TenantThemeDto
 ): Promise<void> => {
-  await apiClient.put("/admin/theme", themeData);
+  await apiClient.put("/api/admin/theme", themeData);
 };
 
 export const resetPublicTheme = async (): Promise<void> => {
-  await apiClient.post("/admin/theme/reset-public");
+  await apiClient.post("/api/admin/theme/reset-public");
 };
 
 export const resetAdminTheme = async (): Promise<void> => {
-  await apiClient.post("/admin/theme/reset-admin");
+  await apiClient.post("/api/admin/theme/reset-admin");
+};
+
+export const forgotPassword = async (
+  forgotPasswordData: ForgotPasswordDto
+): Promise<void> => {
+  await apiClient.post("/api/accounts/forgot-password", forgotPasswordData);
+};
+
+export const resetPassword = async (
+  resetPasswordData: ResetPasswordDto
+): Promise<void> => {
+  await apiClient.post("/api/accounts/reset-password", resetPasswordData);
 };
