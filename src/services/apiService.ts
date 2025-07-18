@@ -14,10 +14,12 @@ import {
   DashboardQueryParametersDto,
   DashboardResponseDto,
   EmailCheckResultDto,
+  ForgotPasswordDto,
   LinkCustomerDto,
   LoginDto,
   OrderDto,
   ProductDto,
+  ResetPasswordDto,
   TagDto,
   TenantPublicInfoDto,
   TenantThemeDto,
@@ -78,23 +80,6 @@ export const registerAdmin = async (
 ): Promise<void> => {
   await apiClient.post("/api/accounts/register-admin", registrationData);
 };
-
-// --- Funciones de recuperación de contraseña añadidas ---
-export const forgotPassword = async (forgotPasswordData: {
-  email: string;
-}): Promise<void> => {
-  await apiClient.post("/api/accounts/forgot-password", forgotPasswordData);
-};
-
-export const resetPassword = async (resetPasswordData: {
-  email: string;
-  token: string;
-  newPassword: string;
-  confirmNewPassword: string;
-}): Promise<void> => {
-  await apiClient.post("/api/accounts/reset-password", resetPasswordData);
-};
-// --------------------------------------------------------
 
 export const checkEmail = async (
   email: string
@@ -459,4 +444,16 @@ export const resetPublicTheme = async (): Promise<void> => {
 
 export const resetAdminTheme = async (): Promise<void> => {
   await apiClient.post("/api/admin/theme/reset-admin");
+};
+
+export const forgotPassword = async (
+  forgotPasswordData: ForgotPasswordDto
+): Promise<void> => {
+  await apiClient.post("/api/accounts/forgot-password", forgotPasswordData);
+};
+
+export const resetPassword = async (
+  resetPasswordData: ResetPasswordDto
+): Promise<void> => {
+  await apiClient.post("/api/accounts/reset-password", resetPasswordData);
 };
