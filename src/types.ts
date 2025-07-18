@@ -301,3 +301,14 @@ export interface CreateManualOrderDto {
   items: OrderItemDto[];
   totalAmount: number;
 }
+
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  email: string;
+  token: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
