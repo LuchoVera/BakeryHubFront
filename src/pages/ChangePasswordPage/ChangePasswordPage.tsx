@@ -6,7 +6,7 @@ import React, {
   ReactNode,
   FocusEvent,
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
@@ -40,11 +40,14 @@ interface FeedbackModalData {
 }
 
 const ChangePasswordPage: React.FC = () => {
-  const {
-    tenantInfo,
-    isLoading: isLoadingTenant,
-    error: errorTenant,
-  } = useTenant();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
+
+  const tenantContext = !isAdminContext ? useTenant() : null;
+  const tenantInfo = tenantContext?.tenantInfo;
+  const isLoadingTenant = tenantContext?.isLoading ?? false;
+  const errorTenant = tenantContext?.error;
+
   const { isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -70,9 +73,9 @@ const ChangePasswordPage: React.FC = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
-      navigate(`/login?redirect=/change-password`);
+      navigate(`/login?redirect=${location.pathname}`);
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, location.pathname]);
 
   const validateField = (
     name: keyof typeof formData,
@@ -277,19 +280,22 @@ const ChangePasswordPage: React.FC = () => {
     }
   };
 
+  const backLinkUrl = isAdminContext ? "/admin/settings" : "/user-profile";
+  const backLinkText = isAdminContext ? "Volver a Ajustes" : "Volver al Perfil";
+
   if (authLoading || isLoadingTenant) {
     return <div className={styles.loadingMessage}>Cargando...</div>;
   }
-  if (errorTenant && !tenantInfo) {
+  if (errorTenant && !tenantInfo && !isAdminContext) {
     return <div className={styles.errorMessage}>{errorTenant}</div>;
   }
 
   return (
     <div className={styles.pageContainer}>
-      {tenantInfo && <TenantHeader />}
+      {!isAdminContext && tenantInfo && <TenantHeader />}
       <main className={styles.mainContent}>
-        <Link to="/user-profile" className={styles.backLink}>
-          <LuChevronLeft /> Volver al Perfil
+        <Link to={backLinkUrl} className={styles.backLink}>
+          <LuChevronLeft /> {backLinkText}
         </Link>
 
         <form
@@ -442,7 +448,7 @@ const ChangePasswordPage: React.FC = () => {
               <LuSave /> {isSubmitting ? "Guardando..." : "Guardar Cambios"}
             </button>
             <Link
-              to="/user-profile"
+              to={backLinkUrl}
               className={`${styles.button} ${styles.cancelButtonLink}`}
             >
               Cancelar

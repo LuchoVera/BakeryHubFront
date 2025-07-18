@@ -107,6 +107,8 @@ const TenantApp = () => {
             />
             <Route path="/login" element={<TenantCustomerLoginPage />} />
             <Route path="/signup" element={<TenantCustomerSignUpPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
@@ -182,6 +184,10 @@ function App() {
                     element={<AdminCreateManualOrderPage />}
                   />
                   <Route path="settings" element={<StoreSettingsPage />} />
+                  <Route
+                    path="change-password"
+                    element={<ChangePasswordPage />}
+                  />
                   <Route path="theme" element={<AdminThemePage />} />
                 </Route>
               </Route>
