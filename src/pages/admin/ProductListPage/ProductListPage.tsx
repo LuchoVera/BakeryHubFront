@@ -153,13 +153,15 @@ const ProductListPage: React.FC = () => {
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       let userErrorMessage = `No se pudo borrar el producto "${product.name}".`;
-      if (
-        axiosError.response?.status === 400 ||
-        axiosError.response?.status === 409
-      ) {
-        userErrorMessage +=
-          " Es probable que esté asociado a pedidos registrados.";
+      const backendMessage = axiosError.response?.data?.message;
+
+      if (backendMessage?.includes("part of one or more active orders")) {
+        userErrorMessage =
+          "Este producto no se puede eliminar porque forma parte de una o más órdenes activas.";
+      } else if (backendMessage) {
+        userErrorMessage = backendMessage;
       }
+
       setModalInfo({
         type: "error",
         title: "Error al Eliminar",
