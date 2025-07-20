@@ -233,23 +233,24 @@ const ChangePasswordPage: React.FC = () => {
       if (axiosError.response) {
         const status = axiosError.response.status;
         const responseData = axiosError.response.data;
-        if (status === 400) {
-          if (responseData?.errors) {
-            const errorMessages = Object.values(responseData.errors).flat();
-            errorMessage = errorMessages.map((msg, idx) => (
-              <div key={idx}>{msg}</div>
-            ));
-          } else if (
-            responseData?.detail
-              ?.toLowerCase()
-              .includes("current password is incorrect")
-          ) {
+
+        if (
+          status === 400 &&
+          typeof responseData === "object" &&
+          responseData !== null
+        ) {
+          if ("SameAsOldPassword" in responseData) {
+            errorMessage =
+              "La nueva contraseña no puede ser igual a la actual.";
+          } else if ("PasswordMismatch" in responseData) {
             errorMessage = "La contraseña actual es incorrecta.";
           } else {
-            errorMessage =
-              responseData?.detail ||
-              responseData?.title ||
-              "La contraseña actual es incorrecta.";
+            const errorMessages = Object.values(responseData).flat();
+            if (errorMessages.length > 0) {
+              errorMessage = errorMessages.map((msg, idx) => (
+                <div key={idx}>{msg}</div>
+              ));
+            }
           }
         } else if (status === 401) {
           errorTitle = "Error de Autenticación";
