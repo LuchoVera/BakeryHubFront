@@ -6,7 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { ProductDto, ApiErrorResponse } from "../../../types";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import styles from "./ProductListPage.module.css";
 import ProductTable from "../../../components/ProductTable/ProductTable";
 import ConfirmationModal from "../../../components/ConfirmationModal/ConfirmationModal";
@@ -37,10 +37,27 @@ const ProductListPage: React.FC = () => {
   const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
   const [modalInfo, setModalInfo] = useState<ModalInfo | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [adminSearchTerm, setAdminSearchTerm] = useState<string>("");
+
+  const getTabFromUrl = useCallback((): "available" | "unavailable" => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    return tab === "unavailable" ? "unavailable" : "available";
+  }, [location.search]);
+
   const [activeTab, setActiveTab] = useState<"available" | "unavailable">(
-    "available"
+    getTabFromUrl()
   );
+
+  useEffect(() => {
+    setActiveTab(getTabFromUrl());
+  }, [location.search, getTabFromUrl]);
+
+  const handleTabChange = (tab: "available" | "unavailable") => {
+    setActiveTab(tab);
+    navigate(`/admin/products?tab=${tab}`);
+  };
 
   const fetchProducts = useCallback(async () => {
     setError(null);
@@ -226,7 +243,7 @@ const ProductListPage: React.FC = () => {
   };
 
   const handleEdit = (productId: string) => {
-    navigate(`/admin/products/edit/${productId}`);
+    navigate(`/admin/products/edit/${productId}?sourceTab=${activeTab}`);
   };
 
   const getToggleButtonLabel = (isAvailable: boolean): string => {
@@ -236,7 +253,10 @@ const ProductListPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <h2>Gestion de Productos</h2>
-      <Link to="/admin/products/new" className="button button-primary">
+      <Link
+        to={`/admin/products/new?sourceTab=${activeTab}`}
+        className="button button-primary"
+      >
         Añadir Nuevo Producto
       </Link>
 
@@ -260,7 +280,7 @@ const ProductListPage: React.FC = () => {
               className={`${styles.tabButton} ${
                 activeTab === "available" ? styles.activeTab : ""
               }`}
-              onClick={() => setActiveTab("available")}
+              onClick={() => handleTabChange("available")}
             >
               Disponibles ({filteredAvailableProducts.length})
             </button>
@@ -268,7 +288,7 @@ const ProductListPage: React.FC = () => {
               className={`${styles.tabButton} ${
                 activeTab === "unavailable" ? styles.activeTab : ""
               }`}
-              onClick={() => setActiveTab("unavailable")}
+              onClick={() => handleTabChange("unavailable")}
             >
               No Disponibles ({filteredUnavailableProducts.length})
             </button>

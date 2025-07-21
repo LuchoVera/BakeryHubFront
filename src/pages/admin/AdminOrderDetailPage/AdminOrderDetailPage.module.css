@@ -12,13 +12,15 @@
   color: var(--color-text-secondary);
   text-decoration: none;
   font-size: 0.9em;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
 }
 .backLink:hover {
   text-decoration: underline;
   color: var(--color-text-primary);
-}
-.backLink svg {
-  margin-bottom: -2px;
 }
 
 .pageTitle {
