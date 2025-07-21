@@ -154,9 +154,6 @@ const TenantViewPage: React.FC = () => {
   }, [isAuthenticated, tenantInfo, subdomain]);
 
   const categoriesWithProducts = useMemo(() => {
-    if (allTenantProducts.length === 0) {
-      return allCategories;
-    }
     const activeCategoryIds = new Set(
       allTenantProducts.map((p) => p.categoryId)
     );

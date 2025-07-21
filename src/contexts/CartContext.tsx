@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useEffect,
   useContext,
+  useRef,
 } from "react";
 import { ProductDto, CartItem } from "../types";
 import { useAuth } from "../AuthContext";
@@ -48,6 +49,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   });
 
+  const cartItemsRef = useRef(cartItems);
+  useEffect(() => {
+    cartItemsRef.current = cartItems;
+  }, [cartItems]);
+
   const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
@@ -65,7 +71,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   }, [isAuthenticated, prevIsAuthenticated]);
 
   const validateCartItems = useCallback(async () => {
-    if (!subdomain || cartItems.length === 0 || isValidating) return;
+    if (!subdomain || cartItemsRef.current.length === 0 || isValidating) return;
 
     setIsValidating(true);
     try {
@@ -78,7 +84,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       const removedProductNames: string[] = [];
       let hasChanges = false;
 
-      for (const item of cartItems) {
+      for (const item of cartItemsRef.current) {
         const freshProduct = availableProductsMap.get(item.product.id);
         if (freshProduct) {
           updatedCartItems.push({
@@ -111,7 +117,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     } finally {
       setIsValidating(false);
     }
-  }, [subdomain, cartItems, showNotification, isValidating]);
+  }, [subdomain, showNotification]);
 
   useEffect(() => {
     if (!tenantInfo) return;
