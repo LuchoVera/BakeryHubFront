@@ -206,6 +206,21 @@ const CartPage: React.FC = () => {
     const tempD = new Date(tempSelectedDate + "T00:00:00");
     const minD = new Date(minDeliveryDateISO + "T00:00:00");
 
+    if (isNaN(tempD.getTime())) {
+      showNotification("El formato de la fecha es inválido.", "error", 0);
+      return;
+    }
+
+    const maxYear = new Date().getFullYear() + 10;
+    if (tempD.getFullYear() > maxYear) {
+      showNotification(
+        `La fecha no puede ser posterior al año ${maxYear}.`,
+        "error",
+        0
+      );
+      return;
+    }
+
     if (tempD < minD) {
       showNotification(
         `La fecha seleccionada no puede ser anterior al ${minD.toLocaleDateString(

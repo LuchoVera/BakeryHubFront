@@ -129,6 +129,28 @@ const AdminCreateManualOrderForm: React.FC = () => {
         return "";
       case "deliveryDate":
         if (!value) return "La fecha de entrega es requerida.";
+
+        const selectedDate = new Date(value);
+        const adjustedDate = new Date(
+          selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000
+        );
+
+        if (isNaN(adjustedDate.getTime())) {
+          return "El formato de la fecha es inválido.";
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (adjustedDate < today) {
+          return "La fecha de entrega no puede ser en el pasado.";
+        }
+
+        const maxYear = new Date().getFullYear() + 10;
+        if (adjustedDate.getFullYear() > maxYear) {
+          return `La fecha no puede ser posterior al año ${maxYear}.`;
+        }
+
         return "";
       default:
         return "";
