@@ -1,11 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import AdminCreateManualOrderForm from "../../../components/AdminCreateManualOrderForm/AdminCreateManualOrderForm";
+import styles from "./AdminCreateManualOrderPage.module.css";
 
 const AdminCreateManualOrderPage: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
-    <div>
-      <Link to="/admin/orders">&larr; Volver a la lista de Pedidos</Link>
+    <div className={styles.pageContainer}>
+      <button onClick={() => navigate(-1)} className={styles.backButton}>
+        &larr; Volver a la lista de Pedidos
+      </button>
       <AdminCreateManualOrderForm />
     </div>
   );

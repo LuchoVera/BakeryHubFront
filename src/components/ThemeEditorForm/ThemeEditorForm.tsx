@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { TenantThemeDto, ThemeSettingsDto } from "../../types";
 import { useNotification } from "../../hooks/useNotification";
 import {
@@ -26,7 +27,18 @@ const themeFieldKeys: (keyof ThemeSettingsDto)[] = [
 ];
 
 const ThemeEditorForm: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"public" | "admin">("public");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getTabFromUrl = (): "public" | "admin" => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    return tab === "admin" ? "admin" : "public";
+  };
+
+  const [activeTab, setActiveTab] = useState<"public" | "admin">(
+    getTabFromUrl()
+  );
   const [theme, setTheme] = useState<TenantThemeDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,6 +63,11 @@ const ThemeEditorForm: React.FC = () => {
   useEffect(() => {
     fetchTheme();
   }, [fetchTheme]);
+
+  const handleTabChange = (tab: "public" | "admin") => {
+    setActiveTab(tab);
+    navigate(`/admin/theme?tab=${tab}`, { replace: true });
+  };
 
   const handleThemeChange = (
     themeType: "publicTheme" | "adminTheme",
@@ -206,7 +223,7 @@ const ThemeEditorForm: React.FC = () => {
           className={`${styles.tabButton} ${
             activeTab === "public" ? styles.activeTab : ""
           }`}
-          onClick={() => setActiveTab("public")}
+          onClick={() => handleTabChange("public")}
         >
           Apariencia de la Tienda
         </button>
@@ -215,7 +232,7 @@ const ThemeEditorForm: React.FC = () => {
           className={`${styles.tabButton} ${
             activeTab === "admin" ? styles.activeTab : ""
           }`}
-          onClick={() => setActiveTab("admin")}
+          onClick={() => handleTabChange("admin")}
         >
           Apariencia del Panel
         </button>

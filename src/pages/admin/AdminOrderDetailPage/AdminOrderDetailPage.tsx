@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, ChangeEvent } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   OrderDto,
   ApiErrorResponse,
@@ -80,6 +80,7 @@ const AdminOrderDetailPage: React.FC = () => {
     useState<StatusConfirmModalData | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) {
@@ -204,9 +205,9 @@ const AdminOrderDetailPage: React.FC = () => {
     return (
       <div className={`${styles.message} ${styles.error}`}>
         <p>{error}</p>
-        <Link to="/admin/orders" className={styles.backLink}>
+        <button onClick={() => navigate(-1)} className={styles.backLink}>
           <LuArrowLeft /> Volver a la Lista
-        </Link>
+        </button>
       </div>
     );
   }
@@ -219,9 +220,9 @@ const AdminOrderDetailPage: React.FC = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <Link to="/admin/orders" className={styles.backLink}>
+      <button onClick={() => navigate(-1)} className={styles.backLink}>
         <LuArrowLeft /> Volver a la Lista de Pedidos
-      </Link>
+      </button>
 
       <h1 className={styles.pageTitle}>
         Detalle del Pedido #

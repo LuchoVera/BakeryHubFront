@@ -1,17 +1,20 @@
 import React from "react";
 import ProductForm from "../../../components/ProductForm/ProductForm";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import styles from "./AddProductPage.module.css";
 
 const AddProductPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSuccess = () => {
-    navigate("/admin/products");
+    navigate("/admin/products?tab=available", { replace: true });
   };
 
   return (
     <div>
-      <Link to="/admin/products">&larr; Volver a la lista de Productos</Link>
+      <button onClick={() => navigate(-1)} className={styles.backButton}>
+        &larr; Volver a la lista de Productos
+      </button>
       <ProductForm onSuccess={handleSuccess} />
     </div>
   );

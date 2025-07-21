@@ -27,7 +27,7 @@ import {
   fetchPublicTenantInfo,
 } from "../../../services/apiService";
 import { AxiosError } from "axios";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const STATUS_ORDER: OrderStatus[] = [
   "Pending",
@@ -52,7 +52,18 @@ const AdminOrdersPage: React.FC = () => {
   const [allOrders, setAllOrders] = useState<OrderDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<OrderStatus>("Pending");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getFilterFromUrl = useCallback((): OrderStatus => {
+    const params = new URLSearchParams(location.search);
+    const status = params.get("status") as OrderStatus;
+    return STATUS_ORDER.includes(status) ? status : "Pending";
+  }, [location.search]);
+
+  const [activeFilter, setActiveFilter] = useState<OrderStatus>(
+    getFilterFromUrl()
+  );
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
   const [confirmModalData, setConfirmModalData] =
     useState<StatusConfirmModalData | null>(null);
@@ -60,6 +71,10 @@ const AdminOrdersPage: React.FC = () => {
   const { user } = useAuth();
   const [tenantBusinessInfo, setTenantBusinessInfo] =
     useState<TenantPublicInfoDto | null>(null);
+
+  useEffect(() => {
+    setActiveFilter(getFilterFromUrl());
+  }, [location.search, getFilterFromUrl]);
 
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
@@ -103,6 +118,11 @@ const AdminOrdersPage: React.FC = () => {
       fetchTenantInfo();
     }
   }, [user?.administeredTenantSubdomain]);
+
+  const handleFilterChange = (status: OrderStatus) => {
+    setActiveFilter(status);
+    navigate(`/admin/orders?status=${status}`);
+  };
 
   const groupedOrders = useMemo(() => {
     const groups: Record<string, OrderDto[]> = {};
@@ -244,7 +264,7 @@ const AdminOrdersPage: React.FC = () => {
           return (
             <button
               key={status}
-              onClick={() => setActiveFilter(status)}
+              onClick={() => handleFilterChange(status)}
               className={`${styles.filterTab} ${
                 activeFilter === status ? styles.activeFilterTab : ""
               }`}
