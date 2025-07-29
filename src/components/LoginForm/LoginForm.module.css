@@ -137,7 +137,6 @@ input[aria-invalid="true"]:focus {
 .forgotPasswordLink {
   font-size: 0.85em;
   margin-top: calc(-1 * var(--space-sm));
-  margin-bottom: var(--space-md);
 }
 
 .forgotPasswordLink a {

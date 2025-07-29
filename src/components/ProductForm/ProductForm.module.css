@@ -30,7 +30,7 @@
   border-radius: var(--border-radius-md);
   padding: var(--space-lg);
   margin: 0 0 var(--space-xl) 0;
-  background-color: #fdfdfd;
+  background-color: var(--color-background);
   box-sizing: border-box;
 }
 
@@ -93,7 +93,7 @@
 .textarea:hover,
 .select:hover {
   border-color: var(--color-primary);
-  background-color: #fafafa;
+  background-color: var(--color-background);
 }
 
 .input:focus,
