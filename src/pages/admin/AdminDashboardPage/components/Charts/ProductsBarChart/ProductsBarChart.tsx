@@ -20,6 +20,19 @@ export const ProductsBarChart: React.FC<{
   const [rankingType, setRankingType] = useState<RankingType>("top");
   const [rankingMetric, setRankingMetric] = useState<RankingMetric>("revenue");
   const echartRef = useRef<any>(null);
+  const [textColor, setTextColor] = useState("#5a5a5a");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const color = rootStyles
+        .getPropertyValue("--color-text-secondary")
+        .trim();
+      if (color) {
+        setTextColor(color);
+      }
+    }
+  }, []);
 
   const { data, isLoading, error } = useDashboardData({
     ...globalFilters,
@@ -95,6 +108,7 @@ export const ProductsBarChart: React.FC<{
           axisLabel: {
             interval: 0,
             rotate: 65,
+            color: textColor,
             formatter: (value: string): string => {
               const maxLength = 15;
               if (value.length > maxLength) {
@@ -107,10 +121,16 @@ export const ProductsBarChart: React.FC<{
       : {
           type: "value",
           boundaryGap: [0, 0.01],
+          axisLabel: {
+            color: textColor,
+          },
         },
     yAxis: isMobile
       ? {
           type: "value",
+          axisLabel: {
+            color: textColor,
+          },
         }
       : {
           type: "category",
@@ -118,6 +138,7 @@ export const ProductsBarChart: React.FC<{
           axisLabel: {
             overflow: "truncate",
             width: 250,
+            color: textColor,
           },
         },
     series: [

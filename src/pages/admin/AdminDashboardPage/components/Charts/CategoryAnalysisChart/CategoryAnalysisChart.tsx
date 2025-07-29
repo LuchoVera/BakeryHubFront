@@ -49,73 +49,105 @@ export const CategoryAnalysisChart: React.FC<ChartProps> = ({
 
   const sortedData = getChartData();
 
-  const getBarChartOptions = (): EChartsOption => ({
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      formatter: "{b}:<br/><strong>Bs. {c}</strong>",
-    },
-    grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-    xAxis: { type: "value" },
-    yAxis: {
-      type: "category",
-      data: sortedData.map((item) => item.label).reverse(),
-      axisLabel: { fontSize: 10 },
-    },
-    series: [
-      {
-        name: "Ingresos",
-        type: "bar",
-        data: sortedData
-          .map((item) => ({
-            value: item.value,
-            name: item.label,
-            id: item.id,
-          }))
-          .reverse(),
-        itemStyle: { color: "#f7a6b7" },
-      },
-    ],
-  });
+  const getThemeColors = () => {
+    if (typeof window === "undefined") {
+      return {
+        palette: ["#0077b6", "#023e8a", "#eaf8fb", "#ade8f4"],
+        legendTextColor: "#5a5a5a",
+      };
+    }
+    const rootStyles = getComputedStyle(document.documentElement);
+    const palette = [
+      rootStyles.getPropertyValue("--color-primary").trim(),
+      rootStyles.getPropertyValue("--color-primary-dark").trim(),
+      rootStyles.getPropertyValue("--color-secondary").trim(),
+      rootStyles.getPropertyValue("--color-primary-light").trim(),
+    ].filter(Boolean);
 
-  const getDonutChartOptions = (): EChartsOption => ({
-    tooltip: {
-      trigger: "item",
-      formatter: "{b}:<br/><strong>Bs. {c}</strong> ({d}%)",
-    },
-    legend: {
-      orient: "vertical",
-      top: "middle",
-      left: "left",
-      type: "scroll",
-      itemGap: 15,
-    },
-    series: [
-      {
-        name: "Ingresos",
-        type: "pie",
-        center: ["60%", "50%"],
-        radius: ["50%", "70%"],
-        avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 8, borderColor: "#fff", borderWidth: 2 },
-        label: { show: false },
-        labelLine: { show: false },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 16,
-            fontWeight: "bold",
-            formatter: "{b}\n{d}%",
-          },
-        },
-        data: sortedData.map((item) => ({
-          name: item.label,
-          value: item.value,
-          id: item.id,
-        })),
+    return {
+      palette: palette.length > 0 ? palette : ["#0077b6"],
+      legendTextColor:
+        rootStyles.getPropertyValue("--color-text-secondary").trim() ||
+        "#5a5a5a",
+    };
+  };
+
+  const getBarChartOptions = (): EChartsOption => {
+    const { palette } = getThemeColors();
+    return {
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: "{b}:<br/><strong>Bs. {c}</strong>",
       },
-    ],
-  });
+      grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
+      xAxis: { type: "value" },
+      yAxis: {
+        type: "category",
+        data: sortedData.map((item) => item.label).reverse(),
+        axisLabel: { fontSize: 10 },
+      },
+      series: [
+        {
+          name: "Ingresos",
+          type: "bar",
+          data: sortedData
+            .map((item) => ({
+              value: item.value,
+              name: item.label,
+              id: item.id,
+            }))
+            .reverse(),
+          itemStyle: { color: palette[0] || "#f7a6b7" },
+        },
+      ],
+    };
+  };
+
+  const getDonutChartOptions = (): EChartsOption => {
+    const { palette, legendTextColor } = getThemeColors();
+    return {
+      tooltip: {
+        trigger: "item",
+        formatter: "{b}:<br/><strong>Bs. {c}</strong> ({d}%)",
+      },
+      legend: {
+        orient: "vertical",
+        top: "middle",
+        left: "left",
+        type: "scroll",
+        itemGap: 15,
+        textStyle: {
+          color: legendTextColor,
+        },
+      },
+      color: palette,
+      series: [
+        {
+          name: "Ingresos",
+          type: "pie",
+          center: ["60%", "50%"],
+          radius: ["50%", "70%"],
+          avoidLabelOverlap: false,
+          itemStyle: { borderRadius: 4, borderColor: "#FFF", borderWidth: 1.5 },
+          label: { show: false },
+          labelLine: { show: false },
+          emphasis: {
+            label: {
+              fontSize: 16,
+              fontWeight: "bold",
+              formatter: "{b}\n{d}%",
+            },
+          },
+          data: sortedData.map((item) => ({
+            name: item.label,
+            value: item.value,
+            id: item.id,
+          })),
+        },
+      ],
+    };
+  };
 
   if (isLoading) return <div>Cargando datos por categoría...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -130,6 +162,7 @@ export const CategoryAnalysisChart: React.FC<ChartProps> = ({
           style={{ height: 400 }}
           onEvents={{ click: handleDrillDown }}
           notMerge={true}
+          lazyUpdate={true}
         />
       </div>
       <div className={styles.mobileChart}>
@@ -138,6 +171,7 @@ export const CategoryAnalysisChart: React.FC<ChartProps> = ({
           style={{ height: 400 }}
           onEvents={{ click: handleDrillDown }}
           notMerge={true}
+          lazyUpdate={true}
         />
       </div>
     </>

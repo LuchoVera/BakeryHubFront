@@ -38,7 +38,11 @@ const getChartOptions = (
   data: TimeSeriesDataPointDto[],
   metric: Metric,
   isMobile: boolean,
-  themeColors: { primary: string; primaryDark: string }
+  themeColors: {
+    primary: string;
+    primaryDark: string;
+    text: string;
+  }
 ): EChartsOption => {
   const metricConfig = {
     revenue: {
@@ -91,11 +95,13 @@ const getChartOptions = (
       axisLabel: {
         rotate: isMobile ? 30 : 0,
         interval: "auto",
+        color: themeColors.text,
       },
     },
     yAxis: {
       type: "value",
       axisLabel: {
+        color: themeColors.text,
         formatter: (value: number) => {
           if (metric === "revenue") {
             if (value >= 1000) return `Bs. ${value / 1000}k`;
@@ -148,20 +154,23 @@ export const MainTrendChart: React.FC<MainTrendChartProps> = ({
   const [themeColors, setThemeColors] = useState({
     primary: "#ff8fab",
     primaryDark: "#fb6f92",
+    text: "#5a5a5a",
+    title: "#333333",
   });
 
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (chartRef.current) {
-      const styles = getComputedStyle(chartRef.current);
-      const primaryColor = styles.getPropertyValue("--color-primary").trim();
-      const primaryDarkColor = styles
-        .getPropertyValue("--color-primary-dark")
-        .trim();
+      const styles = getComputedStyle(document.documentElement);
       setThemeColors({
-        primary: primaryColor || "#ff8fab",
-        primaryDark: primaryDarkColor || "#fb6f92",
+        primary: styles.getPropertyValue("--color-primary").trim() || "#ff8fab",
+        primaryDark:
+          styles.getPropertyValue("--color-primary-dark").trim() || "#fb6f92",
+        text:
+          styles.getPropertyValue("--color-text-secondary").trim() || "#5a5a5a",
+        title:
+          styles.getPropertyValue("--color-text-primary").trim() || "#333333",
       });
     }
   }, []);
@@ -243,7 +252,9 @@ export const MainTrendChart: React.FC<MainTrendChartProps> = ({
   return (
     <div className={styles.chartWidget} ref={chartRef}>
       <div className={styles.chartHeader}>
-        <h3 className={styles.chartTitle}>{dynamicChartTitle}</h3>
+        <h3 className={styles.chartTitle} style={{ color: themeColors.title }}>
+          {dynamicChartTitle}
+        </h3>
         <div className={styles.chartControls}>
           <div className={styles.controlGroup}>
             <button
