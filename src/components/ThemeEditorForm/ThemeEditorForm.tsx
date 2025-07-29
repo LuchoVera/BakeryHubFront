@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { TenantThemeDto, ThemeSettingsDto } from "../../types";
 import { useNotification } from "../../hooks/useNotification";
 import {
@@ -9,7 +9,11 @@ import {
   resetAdminTheme,
 } from "../../services/apiService";
 import styles from "./ThemeEditorForm.module.css";
-import { LuSaveAll } from "react-icons/lu";
+import { LuSaveAll, LuArrowLeft } from "react-icons/lu";
+
+interface ThemeEditorFormProps {
+  onSwitchToBasic: () => void;
+}
 
 const themeFieldKeys: (keyof ThemeSettingsDto)[] = [
   "colorPrimary",
@@ -26,19 +30,20 @@ const themeFieldKeys: (keyof ThemeSettingsDto)[] = [
   "colorDisabledBg",
 ];
 
-const ThemeEditorForm: React.FC = () => {
+const ThemeEditorForm: React.FC<ThemeEditorFormProps> = ({
+  onSwitchToBasic,
+}) => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
-  const getTabFromUrl = (): "public" | "admin" => {
+  const getTabFromUrl = useCallback((): "public" | "admin" => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     return tab === "admin" ? "admin" : "public";
-  };
+  }, [location.search]);
 
-  const [activeTab, setActiveTab] = useState<"public" | "admin">(
-    getTabFromUrl()
-  );
+  const activeTab = getTabFromUrl();
+
   const [theme, setTheme] = useState<TenantThemeDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +51,6 @@ const ThemeEditorForm: React.FC = () => {
     null
   );
   const [error, setError] = useState<string | null>(null);
-  const { showNotification } = useNotification();
 
   const fetchTheme = useCallback(async () => {
     setIsLoading(true);
@@ -64,18 +68,12 @@ const ThemeEditorForm: React.FC = () => {
     fetchTheme();
   }, [fetchTheme]);
 
-  const handleTabChange = (tab: "public" | "admin") => {
-    setActiveTab(tab);
-    navigate(`/admin/theme?tab=${tab}`, { replace: true });
-  };
-
   const handleThemeChange = (
     themeType: "publicTheme" | "adminTheme",
     field: keyof ThemeSettingsDto,
     value: string
   ) => {
     const formattedValue = value.startsWith("#") ? value : `#${value}`;
-
     setTheme((prev) =>
       prev
         ? {
@@ -94,7 +92,7 @@ const ThemeEditorForm: React.FC = () => {
       await updateAdminTheme(theme);
       showNotification("Tema guardado con éxito.", "success");
       if (activeTab === "admin") {
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1000);
       }
     } catch (err) {
       showNotification("Error al guardar el tema.", "error");
@@ -106,11 +104,9 @@ const ThemeEditorForm: React.FC = () => {
   const handleReset = async (themeType: "public" | "admin") => {
     setIsResetting(themeType);
     try {
-      if (themeType === "public") {
-        await resetPublicTheme();
-      } else {
-        await resetAdminTheme();
-      }
+      if (themeType === "public") await resetPublicTheme();
+      else await resetAdminTheme();
+
       await fetchTheme();
       showNotification(
         `El tema ${
@@ -118,6 +114,7 @@ const ThemeEditorForm: React.FC = () => {
         } ha sido restaurado.`,
         "info"
       );
+
       if (themeType === "admin") {
         window.location.reload();
       }
@@ -129,114 +126,97 @@ const ThemeEditorForm: React.FC = () => {
   };
 
   const getColorLabel = (key: keyof ThemeSettingsDto): string => {
-    const colorLabels: Record<keyof ThemeSettingsDto, string> = {
+    const labels: Record<keyof ThemeSettingsDto, string> = {
       colorPrimary: "Color Principal",
-      colorPrimaryDark: "Color Principal Oscuro",
-      colorPrimaryLight: "Color Principal Claro",
+      colorPrimaryDark: "Principal Oscuro",
+      colorPrimaryLight: "Principal Claro",
       colorSecondary: "Color Secundario",
-      colorBackground: "Color de Fondo",
-      colorSurface: "Color de Superficie",
-      colorTextPrimary: "Color de Texto Principal",
-      colorTextSecondary: "Color de Texto Secundario",
-      colorTextOnPrimary: "Color de Texto sobre Principal",
-      colorBorder: "Color de Bordes",
-      colorBorderLight: "Color de Bordes Claros",
-      colorDisabledBg: "Color de Fondo Deshabilitado",
+      colorBackground: "Fondo",
+      colorSurface: "Superficie",
+      colorTextPrimary: "Texto Principal",
+      colorTextSecondary: "Texto Secundario",
+      colorTextOnPrimary: "Texto sobre Principal",
+      colorBorder: "Bordes",
+      colorBorderLight: "Bordes Claros",
+      colorDisabledBg: "Fondo Deshabilitado",
     };
-    return colorLabels[key];
+    return labels[key];
   };
 
   const renderThemeSection = (
     themeType: "publicTheme" | "adminTheme",
     title: string
-  ) => {
-    return (
-      <div className={styles.themeSection}>
-        <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>{title}</h3>
-          <button
-            type="button"
-            onClick={() =>
-              handleReset(themeType === "publicTheme" ? "public" : "admin")
-            }
-            disabled={isSaving || !!isResetting}
-            className={styles.resetButton}
-          >
-            {isResetting === (themeType === "publicTheme" ? "public" : "admin")
-              ? "Restaurando..."
-              : "Restaurar por Defecto"}
-          </button>
-        </div>
-        <div className={styles.colorGrid}>
-          {themeFieldKeys.map((key) => (
-            <div key={`${themeType}-${key}`} className={styles.colorInputGroup}>
-              <label htmlFor={`${themeType}-${key}`}>
-                {getColorLabel(key)}
-              </label>
-              <div className={styles.colorInputWrapper}>
-                <input
-                  type="color"
-                  id={`${themeType}-${key}`}
-                  value={theme?.[themeType]?.[key] || "#000000"}
-                  onChange={(e) =>
-                    handleThemeChange(themeType, key, e.target.value)
-                  }
-                  className={styles.colorPicker}
-                  disabled={isSaving || !!isResetting}
-                />
-                <span
-                  style={{
-                    fontFamily: "monospace",
-                    color: "var(--color-text-secondary)",
-                  }}
-                >
-                  #
-                </span>
-                <input
-                  type="text"
-                  aria-label={`Valor hexadecimal para ${getColorLabel(key)}`}
-                  value={(theme?.[themeType]?.[key] || "").substring(1)}
-                  onChange={(e) =>
-                    handleThemeChange(themeType, key, e.target.value)
-                  }
-                  className={styles.hexInput}
-                  disabled={isSaving || !!isResetting}
-                  maxLength={6}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+  ) => (
+    <div className={styles.themeSection}>
+      <div className={styles.sectionHeader}>
+        <h3 className={styles.sectionTitle}>{title}</h3>
+        <button
+          type="button"
+          onClick={() =>
+            handleReset(themeType === "publicTheme" ? "public" : "admin")
+          }
+          disabled={isSaving || !!isResetting}
+          className={styles.resetButton}
+        >
+          {isResetting === (themeType === "publicTheme" ? "public" : "admin")
+            ? "Restaurando..."
+            : "Restaurar por Defecto"}
+        </button>
       </div>
-    );
-  };
+      <div className={styles.colorGrid}>
+        {themeFieldKeys.map((key) => (
+          <div key={`${themeType}-${key}`} className={styles.colorInputGroup}>
+            <label htmlFor={`${themeType}-${key}`}>{getColorLabel(key)}</label>
+            <div className={styles.colorInputWrapper}>
+              <input
+                type="color"
+                id={`${themeType}-${key}`}
+                value={theme?.[themeType]?.[key] || "#000000"}
+                onChange={(e) =>
+                  handleThemeChange(themeType, key, e.target.value)
+                }
+                className={styles.colorPicker}
+                disabled={isSaving || !!isResetting}
+              />
+              <span
+                style={{
+                  fontFamily: "monospace",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                #
+              </span>
+              <input
+                type="text"
+                aria-label={`Valor hexadecimal para ${getColorLabel(key)}`}
+                value={(theme?.[themeType]?.[key] || "").substring(1)}
+                onChange={(e) =>
+                  handleThemeChange(themeType, key, e.target.value)
+                }
+                className={styles.hexInput}
+                disabled={isSaving || !!isResetting}
+                maxLength={6}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   if (isLoading)
-    return <p className={styles.loadingOrError}>Cargando tema...</p>;
+    return <p className={styles.loadingOrError}>Cargando editor...</p>;
   if (error) return <p className={styles.loadingOrError}>{error}</p>;
 
   return (
     <form onSubmit={handleSave} className={styles.form}>
-      <div className={styles.tabContainer}>
-        <button
-          type="button"
-          className={`${styles.tabButton} ${
-            activeTab === "public" ? styles.activeTab : ""
-          }`}
-          onClick={() => handleTabChange("public")}
-        >
-          Apariencia de la Tienda
-        </button>
-        <button
-          type="button"
-          className={`${styles.tabButton} ${
-            activeTab === "admin" ? styles.activeTab : ""
-          }`}
-          onClick={() => handleTabChange("admin")}
-        >
-          Apariencia del Panel
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onSwitchToBasic}
+        className={styles.backToBasicButton}
+      >
+        <LuArrowLeft /> Volver a Modo Básico
+      </button>
 
       <div className={styles.tabContent}>
         {activeTab === "public" &&
@@ -254,7 +234,7 @@ const ThemeEditorForm: React.FC = () => {
           className={`${styles.button} ${styles.saveButton}`}
           disabled={isSaving || !!isResetting}
         >
-          <LuSaveAll />
+          <LuSaveAll />{" "}
           {isSaving ? "Guardando..." : "Guardar Todos los Cambios"}
         </button>
       </div>

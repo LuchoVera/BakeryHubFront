@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import { useDashboardData } from "../../../../../../hooks/useDashboardData";
@@ -35,6 +35,19 @@ const daySortOrder: Record<string, number> = {
 export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
   const isMobile = useIsMobile();
   const echartRef = useRef<any>(null);
+  const [textColor, setTextColor] = useState("#5a5a5a");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const color = rootStyles
+        .getPropertyValue("--color-text-secondary")
+        .trim();
+      if (color) {
+        setTextColor(color);
+      }
+    }
+  }, []);
 
   const { data, isLoading, error } = useDashboardData({
     ...globalFilters,
@@ -85,9 +98,15 @@ export const DayOfWeekBarChart: React.FC<ChartProps> = ({ globalFilters }) => {
       axisLabel: {
         interval: isMobile ? "auto" : 0,
         rotate: isMobile ? 30 : 0,
+        color: textColor,
       },
     },
-    yAxis: { type: "value" },
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        color: textColor,
+      },
+    },
     series: [
       {
         name: "Ingresos",

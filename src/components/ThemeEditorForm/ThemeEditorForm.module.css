@@ -15,36 +15,25 @@
   color: var(--color-text-secondary);
 }
 
-.tabContainer {
-  display: flex;
-  border-bottom: 2px solid var(--color-border);
+.backToBasicButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   margin-bottom: var(--space-lg);
-  gap: var(--space-sm);
-}
-
-.tabButton {
-  padding: var(--space-sm) var(--space-xs);
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
   color: var(--color-text-secondary);
-  border-bottom: 3px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease;
-  margin-bottom: -2px;
-  flex-grow: 1;
-  text-align: center;
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.tabButton:hover {
-  color: var(--color-primary);
-}
-
-.activeTab {
-  color: var(--color-primary-dark);
-  border-bottom-color: var(--color-primary-dark);
-  font-weight: 600;
+.backToBasicButton:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
 }
 
 .tabContent {
@@ -223,12 +212,6 @@
   .colorGrid {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-lg);
-  }
-
-  .tabButton {
-    flex-grow: 0;
-    font-size: 1rem;
-    padding: var(--space-sm) var(--space-md);
   }
 
   .formActions {

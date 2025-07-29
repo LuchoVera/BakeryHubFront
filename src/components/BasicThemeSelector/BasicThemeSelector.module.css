@@ -1,0 +1,91 @@
+.container {
+  padding: var(--space-md);
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-headings);
+  color: var(--color-primary-dark);
+  font-size: 2rem;
+  margin-bottom: var(--space-xs);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.paletteGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.paletteCard {
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  background-color: var(--color-surface);
+}
+
+.paletteCard:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.palettePreview {
+  display: flex;
+  height: 80px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.colorBlock {
+  flex: 1;
+}
+
+.paletteName {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.actions {
+  margin-top: var(--space-lg);
+}
+
+.advancedButton {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.advancedButton:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+  border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
+}
+
+.advancedButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

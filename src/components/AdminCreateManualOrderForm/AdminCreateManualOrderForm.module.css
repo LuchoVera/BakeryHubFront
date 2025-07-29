@@ -79,9 +79,14 @@
     background-color 0.2s ease;
 }
 
+.formGroup input[type="date"] {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .formGroup input:hover {
   border-color: var(--color-primary);
-  background-color: #fafafa;
+  background-color: var(--color-background);
 }
 
 .formGroup input:focus {
