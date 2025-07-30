@@ -31,7 +31,7 @@
 
 .formGroup input:hover:not(:disabled):not([aria-invalid="true"]) {
   border-color: var(--color-primary);
-  background-color: #fafafa;
+  background-color: var(--color-background);
 }
 
 .formGroup input:focus:not([aria-invalid="true"]) {
