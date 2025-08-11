@@ -48,6 +48,16 @@ const STATUS_LABELS: Record<string, string> = {
   Unknown: "Estado Desconocido",
 };
 
+const STATUS_LABELS_DETAIL: Record<string, string> = {
+  Pending: "Pendiente",
+  Confirmed: "Confirmado",
+  Preparing: "En Preparación",
+  Ready: "Listo para Entrega",
+  Received: "Entregado",
+  Cancelled: "Cancelado",
+  Unknown: "Desconocido",
+};
+
 const AdminOrdersPage: React.FC = () => {
   const [allOrders, setAllOrders] = useState<OrderDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -160,14 +170,15 @@ const AdminOrdersPage: React.FC = () => {
   const requestStatusChange = (orderId: string, newStatus: string) => {
     const order = allOrders.find((o) => o.id === orderId);
     if (!order) return;
-    const currentStatus = order.status;
+
     const orderNumber = order.orderNumber ?? order.id.substring(0, 8);
-    if (newStatus === "Received" || newStatus === "Cancelled") {
-      setConfirmModalData({ orderId, orderNumber, currentStatus, newStatus });
-      setIsConfirmModalOpen(true);
-    } else {
-      executeUpdateStatus(orderId, newStatus);
-    }
+    setConfirmModalData({
+      orderId,
+      orderNumber,
+      currentStatus: order.status,
+      newStatus,
+    });
+    setIsConfirmModalOpen(true);
   };
 
   const handleModalConfirm = () => {
@@ -179,15 +190,6 @@ const AdminOrdersPage: React.FC = () => {
   };
 
   const handleModalCancel = () => {
-    if (confirmModalData) {
-      setAllOrders((prevOrders) =>
-        prevOrders.map((o) =>
-          o.id === confirmModalData.orderId
-            ? { ...o, status: confirmModalData.currentStatus }
-            : o
-        )
-      );
-    }
     setIsConfirmModalOpen(false);
     setConfirmModalData(null);
   };
@@ -200,7 +202,7 @@ const AdminOrdersPage: React.FC = () => {
         como{" "}
         <strong>
           "
-          {STATUS_LABELS[confirmModalData.newStatus] ??
+          {STATUS_LABELS_DETAIL[confirmModalData.newStatus] ??
             confirmModalData.newStatus}
           "
         </strong>
@@ -210,17 +212,13 @@ const AdminOrdersPage: React.FC = () => {
   };
 
   const getModalWarning = (): ReactNode | undefined => {
-    if (
-      !confirmModalData ||
-      (confirmModalData.newStatus !== "Received" &&
-        confirmModalData.newStatus !== "Cancelled")
-    ) {
-      return undefined;
-    }
+    if (!confirmModalData) return undefined;
     const message =
       confirmModalData.newStatus === "Cancelled"
         ? "Esta acción no se puede deshacer."
-        : "Una vez marcado como entregado, no podrás cambiar el estado.";
+        : `Una vez marcado como "${
+            STATUS_LABELS_DETAIL[confirmModalData.newStatus]
+          }", no podrás cambiar el estado.`;
     return (
       <>
         {message}

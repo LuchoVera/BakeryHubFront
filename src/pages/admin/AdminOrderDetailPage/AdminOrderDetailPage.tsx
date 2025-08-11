@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, ChangeEvent } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   OrderDto,
@@ -15,6 +15,8 @@ import {
   LuHash,
   LuClipboardList,
   LuTriangleAlert,
+  LuChevronRight,
+  LuX,
 } from "react-icons/lu";
 import {
   generateWhatsAppMessageForOrder,
@@ -32,13 +34,12 @@ const formatCurrency = (amount: number): string => {
   return `Bs. ${amount.toFixed(2)}`;
 };
 
-const statusOptions: { value: OrderStatus | string; label: string }[] = [
-  { value: "Pending", label: "Pendiente" },
-  { value: "Confirmed", label: "Confirmado" },
-  { value: "Preparing", label: "En Preparación" },
-  { value: "Ready", label: "Listo" },
-  { value: "Received", label: "Entregado" },
-  { value: "Cancelled", label: "Cancelado" },
+const statusOrder: OrderStatus[] = [
+  "Pending",
+  "Confirmed",
+  "Preparing",
+  "Ready",
+  "Received",
 ];
 
 const STATUS_LABELS_DETAIL: Record<string, string> = {
@@ -51,8 +52,30 @@ const STATUS_LABELS_DETAIL: Record<string, string> = {
   Unknown: "Desconocido",
 };
 
-const getStatusClass = (status: OrderStatus | string): string => {
-  switch (status?.toLowerCase()) {
+const getStatusClass = (
+  status: OrderStatus | string,
+  timelineContext: "timeline" | "badge" = "badge"
+): string => {
+  const statusLower = status?.toLowerCase();
+  if (timelineContext === "timeline") {
+    switch (statusLower) {
+      case "pending":
+        return styles.timelinePending;
+      case "confirmed":
+        return styles.timelineConfirmed;
+      case "preparing":
+        return styles.timelinePreparing;
+      case "ready":
+        return styles.timelineReady;
+      case "received":
+        return styles.timelineReceived;
+      case "cancelled":
+        return styles.timelineCancelled;
+      default:
+        return "";
+    }
+  }
+  switch (statusLower) {
     case "pending":
       return styles.statusPending;
     case "confirmed":
@@ -140,17 +163,13 @@ const AdminOrderDetailPage: React.FC = () => {
     const currentStatus = orderData.status;
     if (newStatus === currentStatus) return;
     const orderNumber = orderData.orderNumber ?? orderData.id.substring(0, 8);
-    if (newStatus === "Received" || newStatus === "Cancelled") {
-      setConfirmModalData({
-        orderId: orderData.id,
-        orderNumber,
-        currentStatus,
-        newStatus,
-      });
-      setIsConfirmModalOpen(true);
-    } else {
-      executeUpdateStatus(orderData.id, newStatus);
-    }
+    setConfirmModalData({
+      orderId: orderData.id,
+      orderNumber,
+      currentStatus,
+      newStatus,
+    });
+    setIsConfirmModalOpen(true);
   };
 
   const handleModalConfirm = () => {
@@ -161,21 +180,10 @@ const AdminOrderDetailPage: React.FC = () => {
     setConfirmModalData(null);
   };
   const handleModalCancel = () => {
-    if (confirmModalData && orderData) {
-      setOrderData({ ...orderData, status: confirmModalData.currentStatus });
-    }
     setIsConfirmModalOpen(false);
     setConfirmModalData(null);
   };
 
-  const handleSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const newStatus = event.target.value;
-    const currentStatusInState = orderData?.status;
-    if (currentStatusInState && newStatus !== currentStatusInState) {
-      setOrderData((prev) => (prev ? { ...prev, status: newStatus } : null));
-      requestStatusChange(newStatus);
-    }
-  };
   const handleWhatsAppClick = () => {
     if (!orderData || !orderData.customerPhoneNumber) {
       alert(
@@ -194,6 +202,17 @@ const AdminOrderDetailPage: React.FC = () => {
     const whatsappUrl = getWhatsAppLink(orderData.customerPhoneNumber, message);
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   };
+
+  const currentStatusIndex = orderData
+    ? statusOrder.indexOf(orderData.status as OrderStatus)
+    : -1;
+  const nextStatus =
+    currentStatusIndex !== -1 && currentStatusIndex < statusOrder.length - 1
+      ? statusOrder[currentStatusIndex + 1]
+      : null;
+
+  const isFinalState =
+    orderData?.status === "Received" || orderData?.status === "Cancelled";
 
   if (isLoading) {
     return (
@@ -217,7 +236,6 @@ const AdminOrderDetailPage: React.FC = () => {
       <div className={styles.message}>No se encontraron datos del pedido.</div>
     );
   }
-
   return (
     <div className={styles.pageContainer}>
       <button onClick={() => navigate(-1)} className={styles.backLink}>
@@ -228,6 +246,68 @@ const AdminOrderDetailPage: React.FC = () => {
         Detalle del Pedido #
         {orderData.orderNumber ?? orderData.id.substring(0, 8)}
       </h1>
+
+      <section
+        className={`${styles.detailSection} ${styles.statusTimelineSection}`}
+      >
+        <h2 className={styles.sectionTitle}>Estado del Pedido</h2>
+        <div className={styles.timelineContainer}>
+          {statusOrder.map((status, index) => (
+            <div
+              key={status}
+              className={`${styles.timelineStep} ${
+                index <= currentStatusIndex ? styles.completed : ""
+              } ${index === currentStatusIndex ? styles.active : ""}`}
+            >
+              <div
+                className={`${styles.timelineCircle} ${getStatusClass(
+                  status,
+                  "timeline"
+                )}`}
+              ></div>
+              <div className={styles.timelineLabel}>
+                {STATUS_LABELS_DETAIL[status]}
+              </div>
+            </div>
+          ))}
+          {orderData.status === "Cancelled" && (
+            <div
+              className={`${styles.timelineStep} ${styles.completed} ${styles.active}`}
+            >
+              <div
+                className={`${styles.timelineCircle} ${getStatusClass(
+                  "Cancelled",
+                  "timeline"
+                )}`}
+              ></div>
+              <div className={styles.timelineLabel}>Cancelado</div>
+            </div>
+          )}
+        </div>
+        {!isFinalState && (
+          <div className={styles.statusActions}>
+            {nextStatus && (
+              <button
+                onClick={() => requestStatusChange(nextStatus)}
+                className={styles.advanceButton}
+                disabled={isUpdatingStatus}
+              >
+                {isUpdatingStatus
+                  ? "Actualizando..."
+                  : `Avanzar a: ${STATUS_LABELS_DETAIL[nextStatus]}`}
+                <LuChevronRight />
+              </button>
+            )}
+            <button
+              onClick={() => requestStatusChange("Cancelled")}
+              className={styles.cancelButton}
+              disabled={isUpdatingStatus}
+            >
+              <LuX /> Cancelar Pedido
+            </button>
+          </div>
+        )}
+      </section>
 
       <div className={styles.detailGrid}>
         <section className={styles.detailSection}>
@@ -248,38 +328,6 @@ const AdminOrderDetailPage: React.FC = () => {
             <div>
               <strong>Fecha Entrega:</strong>{" "}
               <span>{formatDate(orderData.deliveryDate)}</span>
-            </div>
-            <div className={styles.statusSelectContainer}>
-              <strong>Estado Actual:</strong>
-              <select
-                value={orderData.status}
-                onChange={handleSelectChange}
-                className={`${styles.statusSelect} ${getStatusClass(
-                  orderData.status
-                )}`}
-                disabled={
-                  isUpdatingStatus ||
-                  orderData.status === "Received" ||
-                  orderData.status === "Cancelled"
-                }
-              >
-                {statusOptions.map((opt) => (
-                  <option
-                    key={opt.value}
-                    value={opt.value}
-                    disabled={
-                      (orderData.status === "Received" ||
-                        orderData.status === "Cancelled") &&
-                      orderData.status !== opt.value
-                    }
-                  >
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              {isUpdatingStatus && (
-                <span className={styles.statusSpinner}> (Guardando...)</span>
-              )}
             </div>
           </div>
         </section>
@@ -380,8 +428,10 @@ const AdminOrderDetailPage: React.FC = () => {
           confirmModalData ? (
             <>
               {confirmModalData.newStatus === "Cancelled"
-                ? "Esta acción generalmente no se puede deshacer."
-                : "Una vez marcado como entregado, no deberías cambiar el estado."}
+                ? "Esta acción no se puede deshacer."
+                : `Una vez marcado como "${
+                    STATUS_LABELS_DETAIL[confirmModalData.newStatus]
+                  }", no podrás cambiar el estado.`}
               <br />
               ¿Estás seguro de continuar?
             </>
