@@ -87,43 +87,144 @@
   word-break: break-word;
 }
 
-.statusBadge {
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--border-radius-sm);
+.statusTimelineSection {
+  grid-column: 1 / -1;
+  margin-bottom: var(--space-xl);
+}
+
+.timelineContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  margin: var(--space-lg) 0;
+}
+.timelineContainer::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 5%;
+  right: 5%;
+  height: 2px;
+  background-color: var(--color-border);
+  z-index: 1;
+}
+
+.timelineStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 18%;
+  position: relative;
+  z-index: 2;
+}
+
+.timelineCircle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background-color: var(--color-background);
+  transition: all 0.3s ease;
+  margin-bottom: var(--space-sm);
+}
+
+.timelineLabel {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.timelineStep.completed .timelineCircle {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+}
+.timelineStep.active .timelineCircle {
+  transform: scale(1.2);
+  border-width: 3px;
+}
+.timelineStep.active .timelineLabel {
   font-weight: 600;
-  font-size: 0.9em;
-  color: var(--color-surface);
-  text-transform: capitalize;
-
-  display: inline-block;
-  vertical-align: middle;
+  color: var(--color-text-primary);
 }
 
-.pending {
+.timelinePending {
+  border-color: var(--color-warning);
+}
+.timelineStep.completed .timelinePending {
   background-color: var(--color-warning);
+  border-color: var(--color-warning);
 }
-.confirmed {
-  background-color: var(--color-info, #5bc0de);
+.timelineConfirmed {
+  border-color: var(--color-info);
 }
-.preparing {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  border: 1px solid var(--color-primary);
+.timelineStep.completed .timelineConfirmed {
+  background-color: var(--color-info);
+  border-color: var(--color-info);
 }
-.ready {
-  background-color: var(--color-success-light, #dff0d8);
-  color: var(--color-success-dark, #3c763d);
-  border: 1px solid var(--color-success);
+.timelinePreparing {
+  border-color: var(--color-primary);
 }
-.received {
+.timelineStep.completed .timelinePreparing {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.timelineReady,
+.timelineReceived {
+  border-color: var(--color-success);
+}
+.timelineStep.completed .timelineReady,
+.timelineStep.completed .timelineReceived {
   background-color: var(--color-success);
+  border-color: var(--color-success);
 }
-.cancelled {
+.timelineCancelled {
+  border-color: var(--color-text-secondary);
   background-color: var(--color-text-secondary);
-  text-decoration: line-through;
 }
-.unknown {
-  background-color: gray;
+.statusActions {
+  margin-top: var(--space-xl);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.advanceButton,
+.cancelButton {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.advanceButton:disabled,
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.advanceButton {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+.advanceButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.cancelButton {
+  background-color: transparent;
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+}
+.cancelButton:hover:not(:disabled) {
+  background-color: rgba(var(--color-error-rgb), 0.1);
 }
 
 .whatsappButton {
@@ -193,86 +294,7 @@
 .message.error {
   color: var(--color-error);
 }
-.backButton {
-  background-color: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-text-secondary);
-  border-radius: var(--border-radius-md);
-  padding: var(--space-sm) var(--space-md);
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease,
-    border-color 0.2s ease;
-}
-.backButton:hover {
-  background-color: #f8f9fa;
-  color: var(--color-text-primary);
-  border-color: var(--color-text-primary);
-}
-.statusSelectContainer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: var(--space-sm);
-  border-bottom: 1px dotted var(--color-border-light);
-  line-height: 1.5;
-}
 
-.statusSelectContainer strong {
-  color: var(--color-text-primary);
-  margin-right: var(--space-sm);
-  flex-shrink: 0;
-}
-
-.statusSelect {
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  font-weight: 500;
-  cursor: pointer;
-  background-color: var(--color-surface);
-  min-width: 150px;
-  flex-grow: 1;
-  max-width: 200px;
-  text-align: center;
-}
-
-.statusSelect:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-  background-color: var(--color-border-light);
-}
-
-.statusPending {
-  border-left: 4px solid var(--color-warning);
-}
-.statusConfirmed {
-  border-left: 4px solid var(--color-info, #5bc0de);
-}
-.statusPreparing {
-  border-left: 4px solid var(--color-error);
-}
-.statusReady {
-  border-left: 4px solid var(--color-success-light, #dff0d8);
-}
-.statusReceived {
-  border-left: 4px solid var(--color-success);
-}
-.statusCancelled {
-  border-left: 4px solid var(--color-text-secondary);
-  text-decoration: line-through;
-  opacity: 0.8;
-}
-.statusDefault {
-  border-left: 4px solid var(--color-border);
-}
-
-.statusSpinner {
-  font-size: 0.8em;
-  color: var(--color-text-secondary);
-  margin-left: var(--space-xs);
-  font-style: italic;
-}
 @media (max-width: 768px) {
   .pageContainer {
     padding: var(--space-md);
@@ -294,6 +316,31 @@
   .infoList {
     font-size: 0.95rem;
     gap: var(--space-sm);
+  }
+  .timelineContainer {
+    justify-content: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  .timelineContainer::before {
+    display: none;
+  }
+  .timelineStep {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-sm);
+  }
+  .timelineCircle {
+    margin-bottom: 0;
+  }
+  .statusActions {
+    flex-direction: column;
+  }
+  .advanceButton,
+  .cancelButton {
+    width: 100%;
+    justify-content: center;
   }
   .itemsTable {
     font-size: 0.9em;

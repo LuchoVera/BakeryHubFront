@@ -3,6 +3,7 @@ import styles from "./OrdersTable.module.css";
 import { OrderDto, OrderStatus } from "../../types";
 import { useNavigate } from "react-router-dom";
 import { FaWhatsapp } from "react-icons/fa";
+import { LuChevronRight } from "react-icons/lu";
 import { formatDate } from "../../utils/dateUtils";
 
 interface OrdersTableProps {
@@ -11,13 +12,12 @@ interface OrdersTableProps {
   onWhatsAppClick: (order: OrderDto) => void;
 }
 
-const statusOptions: { value: OrderStatus | string; label: string }[] = [
-  { value: "Pending", label: "Pendiente" },
-  { value: "Confirmed", label: "Confirmado" },
-  { value: "Preparing", label: "En Preparación" },
-  { value: "Ready", label: "Listo" },
-  { value: "Received", label: "Entregado" },
-  { value: "Cancelled", label: "Cancelado" },
+const statusOrder: OrderStatus[] = [
+  "Pending",
+  "Confirmed",
+  "Preparing",
+  "Ready",
+  "Received",
 ];
 
 const getStatusClass = (status: OrderStatus | string): string => {
@@ -39,20 +39,21 @@ const getStatusClass = (status: OrderStatus | string): string => {
   }
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  Pending: "Pendiente",
+  Confirmed: "Confirmado",
+  Preparing: "En Preparación",
+  Ready: "Listo",
+  Received: "Entregado",
+  Cancelled: "Cancelado",
+};
+
 const OrdersTable: React.FC<OrdersTableProps> = ({
   orders,
   onStatusChange,
   onWhatsAppClick,
 }) => {
   const navigate = useNavigate();
-
-  const handleLocalStatusChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-    orderId: string
-  ) => {
-    const newStatus = event.target.value as OrderStatus | string;
-    onStatusChange(orderId, newStatus);
-  };
 
   const handleRowClick = (orderId: string) => {
     navigate(`/admin/orders/${orderId}`);
@@ -71,82 +72,87 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
             <th>Fecha Pedido</th>
             <th>Fecha Entrega</th>
             <th>Cliente</th>
-            <th>Tipos Productos</th>
+            <th>Items</th>
             <th>Total (Bs.)</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
-            <tr
-              key={order.id}
-              onClick={() => handleRowClick(order.id)}
-              className={styles.clickableRow}
-            >
-              <td data-label="# Pedido:">
-                <span>{order.orderNumber ?? order.id.substring(0, 8)}</span>
-              </td>
-              <td data-label="Fecha Pedido:">
-                <span>{formatDate(order.orderDate)}</span>
-              </td>
-              <td data-label="Fecha Entrega:">
-                <span>{formatDate(order.deliveryDate)}</span>
-              </td>
-              <td data-label="Cliente:" title={order.customerName ?? "N/A"}>
-                <span>{order.customerName ?? "N/A"}</span>
-              </td>
-              <td data-label="Tipos Productos:">
-                <span>{order.items?.length ?? 0}</span>
-              </td>
-              <td data-label="Total (Bs.):">
-                <span>{order.totalAmount.toFixed(2)}</span>
-              </td>
-              <td data-label="Estado:" onClick={stopPropagation}>
-                <select
-                  value={order.status}
-                  onChange={(e) => handleLocalStatusChange(e, order.id)}
-                  className={`${styles.statusSelect} ${getStatusClass(
-                    order.status
-                  )}`}
-                  disabled={
-                    order.status === "Received" || order.status === "Cancelled"
-                  }
-                >
-                  {statusOptions.map((opt) => (
-                    <option
-                      key={opt.value}
-                      value={opt.value}
-                      disabled={
-                        (order.status === "Received" ||
-                          order.status === "Cancelled") &&
-                        order.status !== opt.value
-                      }
-                    >
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td data-label="Acciones:" onClick={stopPropagation}>
-                <div className={styles.actionButtons}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onWhatsAppClick(order);
-                    }}
-                    className={`${styles.actionButton} ${styles.whatsappButton}`}
-                    title="Contactar cliente por WhatsApp"
-                    disabled={!order.customerPhoneNumber}
-                    aria-label="Contactar cliente por WhatsApp"
+          {orders.map((order) => {
+            const currentStatusIndex = statusOrder.indexOf(
+              order.status as OrderStatus
+            );
+            const nextStatus =
+              currentStatusIndex !== -1 &&
+              currentStatusIndex < statusOrder.length - 1
+                ? statusOrder[currentStatusIndex + 1]
+                : null;
+            const isFinalState =
+              order.status === "Received" || order.status === "Cancelled";
+
+            return (
+              <tr
+                key={order.id}
+                onClick={() => handleRowClick(order.id)}
+                className={styles.clickableRow}
+              >
+                <td data-label="# Pedido:">
+                  <span>{order.orderNumber ?? order.id.substring(0, 8)}</span>
+                </td>
+                <td data-label="Fecha Pedido:">
+                  <span>{formatDate(order.orderDate)}</span>
+                </td>
+                <td data-label="Fecha Entrega:">
+                  <span>{formatDate(order.deliveryDate)}</span>
+                </td>
+                <td data-label="Cliente:" title={order.customerName ?? "N/A"}>
+                  <span>{order.customerName ?? "N/A"}</span>
+                </td>
+                <td data-label="Items:">
+                  <span>{order.items?.length ?? 0}</span>
+                </td>
+                <td data-label="Total (Bs.):">
+                  <span>{order.totalAmount.toFixed(2)}</span>
+                </td>
+                <td data-label="Estado:">
+                  <span
+                    className={`${styles.statusBadge} ${getStatusClass(
+                      order.status
+                    )}`}
                   >
-                    <FaWhatsapp />
-                    <span className={styles.whatsappText}>Contactar</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                    {STATUS_LABELS[order.status] || order.status}
+                  </span>
+                </td>
+                <td data-label="Acciones:" onClick={stopPropagation}>
+                  <div className={styles.actionButtons}>
+                    {!isFinalState && nextStatus && (
+                      <button
+                        onClick={() => onStatusChange(order.id, nextStatus)}
+                        className={`${styles.actionButton} ${styles.advanceButton}`}
+                        title={`Avanzar a: ${STATUS_LABELS[nextStatus]}`}
+                      >
+                        <span className={styles.advanceButtonText}>
+                          Avanzar
+                        </span>
+                        <LuChevronRight />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onWhatsAppClick(order)}
+                      className={`${styles.actionButton} ${styles.whatsappButton}`}
+                      title="Contactar por WhatsApp"
+                      disabled={!order.customerPhoneNumber}
+                      aria-label="Contactar por WhatsApp"
+                    >
+                      <FaWhatsapp />
+                      <span className={styles.whatsappText}>Contactar</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
