@@ -430,11 +430,26 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
         }
         return { id: tagId, name: tagName };
       })
-      .filter((tag) => tag.name.length > 0 && tag.name.length <= 50);
+      .filter((tag) => tag.name.length >= 2 && tag.name.length <= 50);
+
+    const filteredOutTags = newValue.filter((option) => {
+      const tagName =
+        typeof option === "string"
+          ? option.trim().replace(/,$/, "").trim()
+          : option.name.trim();
+      return tagName.length < 2 || tagName.length > 50;
+    });
+
+    if (filteredOutTags.length > 0) {
+      setClientValidationErrors((prev) => ({
+        ...prev,
+        tags: "Las etiquetas deben tener entre 2 y 50 caracteres.",
+      }));
+    }
 
     if (newTagObjects.length <= MAX_TAGS) {
       setCurrentTags(newTagObjects);
-      if (clientValidationErrors["tags"]) {
+      if (clientValidationErrors["tags"] && filteredOutTags.length === 0) {
         setClientValidationErrors((prev) => ({ ...prev, tags: "" }));
       }
     } else {
@@ -698,10 +713,33 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSuccess }) => {
               getOptionLabel={(option: string | TagDto) =>
                 typeof option === "string" ? option : option.name
               }
-              isOptionEqualToValue={(option: TagDto, value: TagDto) =>
-                option.id === value.id ||
-                option.name.toLowerCase() === value.name.toLowerCase()
-              }
+              isOptionEqualToValue={(
+                option: TagDto | string,
+                value: TagDto | string
+              ) => {
+                const getNameFromOption = (opt: TagDto | string): string => {
+                  if (typeof opt === "string") return opt.trim();
+                  return opt?.name?.trim() || "";
+                };
+
+                const optionName = getNameFromOption(option);
+                const valueName = getNameFromOption(value);
+
+                if (optionName && valueName) {
+                  return optionName.toLowerCase() === valueName.toLowerCase();
+                }
+
+                if (
+                  typeof option === "object" &&
+                  typeof value === "object" &&
+                  option?.id &&
+                  value?.id
+                ) {
+                  return option.id === value.id;
+                }
+
+                return false;
+              }}
               freeSolo
               filterSelectedOptions
               disabled={loadingTenantTags}

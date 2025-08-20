@@ -133,7 +133,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
                         title={`Avanzar a: ${STATUS_LABELS[nextStatus]}`}
                       >
                         <span className={styles.advanceButtonText}>
-                          Avanzar
+                          Cambiar a: {STATUS_LABELS[nextStatus]}
                         </span>
                         <LuChevronRight />
                       </button>

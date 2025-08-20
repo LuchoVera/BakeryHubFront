@@ -315,6 +315,8 @@ const CartPage: React.FC = () => {
       deliveryDate: new Date(finalSelectedDate + "T00:00:00Z"),
       items: orderItemsDto,
       totalAmount: cartTotal,
+      customerName: user.name,
+      customerPhoneNumber: user.phoneNumber || null,
     };
 
     try {

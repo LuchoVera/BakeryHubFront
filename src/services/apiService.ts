@@ -35,9 +35,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 
@@ -105,9 +103,85 @@ export const updateUserProfile = async (
   const url = subdomain
     ? `/api/accounts/me/update-profile?subdomain=${subdomain}`
     : "/api/accounts/me/update-profile";
-
   const response = await apiClient.put<AuthUser>(url, profileData);
   return response.data;
+};
+
+export const forgotPassword = async (
+  forgotPasswordData: ForgotPasswordDto
+): Promise<void> => {
+  await apiClient.post("/api/accounts/forgot-password", forgotPasswordData);
+};
+
+export const resetPassword = async (
+  resetPasswordData: ResetPasswordDto
+): Promise<void> => {
+  await apiClient.post("/api/accounts/reset-password", resetPasswordData);
+};
+
+export const updateAdminProfile = async (
+  profileData: UpdateAdminProfileDto
+): Promise<AuthUser> => {
+  const response = await apiClient.put<AuthUser>(
+    "/api/accounts/me/admin-profile",
+    profileData
+  );
+  return response.data;
+};
+
+export const registerTenantCustomer = async (
+  subdomain: string,
+  registrationData: CustomerRegisterDto
+): Promise<{ message: string; status: string; userId?: string }> => {
+  const response = await apiClient.post(
+    `/api/public/accounts/${subdomain}/register-customer`,
+    registrationData
+  );
+  return response.data;
+};
+
+export const linkTenantCustomer = async (
+  subdomain: string,
+  linkData: LinkCustomerDto
+): Promise<{ message: string; status: string; userId?: string }> => {
+  const response = await apiClient.post(
+    `/api/public/accounts/${subdomain}/link-customer`,
+    linkData
+  );
+  return response.data;
+};
+
+export const fetchPublicTenantInfo = async (
+  subdomain: string
+): Promise<TenantPublicInfoDto> => {
+  const response = await apiClient.get<TenantPublicInfoDto>(
+    `/api/tenants/public/${subdomain}`
+  );
+  return response.data;
+};
+
+export const fetchAdminTenantDetails = async (): Promise<TenantDto> => {
+  const response = await apiClient.get<TenantDto>("/api/tenants/mine");
+  return response.data;
+};
+
+export const getAdminTheme = async (): Promise<TenantThemeDto> => {
+  const response = await apiClient.get<TenantThemeDto>("/api/admin/theme");
+  return response.data;
+};
+
+export const updateAdminTheme = async (
+  themeData: TenantThemeDto
+): Promise<void> => {
+  await apiClient.put("/api/admin/theme", themeData);
+};
+
+export const resetPublicTheme = async (): Promise<void> => {
+  await apiClient.post("/api/admin/theme/reset-public");
+};
+
+export const resetAdminTheme = async (): Promise<void> => {
+  await apiClient.post("/api/admin/theme/reset-admin");
 };
 
 export const fetchAdminCategories = async (): Promise<CategoryDto[]> => {
@@ -239,11 +313,25 @@ export const updateAdminOrderStatus = async (
   });
 };
 
-export const fetchPublicTenantInfo = async (
-  subdomain: string
-): Promise<TenantPublicInfoDto> => {
-  const response = await apiClient.get<TenantPublicInfoDto>(
-    `/api/public/tenants/${subdomain}`
+export const createManualAdminOrder = async (
+  orderData: CreateManualOrderDto
+): Promise<OrderDto> => {
+  const response = await apiClient.post<OrderDto>(
+    "/api/admin/orders/manual",
+    orderData
+  );
+  return response.data;
+};
+
+export const fetchAdminDashboardStatistics = async (
+  params: DashboardQueryParametersDto
+): Promise<DashboardResponseDto> => {
+  const cleanParams = Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== null && v !== "")
+  );
+  const response = await apiClient.get<DashboardResponseDto>(
+    "/api/admin/dashboard/order-statistics",
+    { params: cleanParams }
   );
   return response.data;
 };
@@ -254,7 +342,7 @@ export const fetchPublicTenantProducts = async (
 ): Promise<ProductDto[]> => {
   const queryString = params ? `?${params.toString()}` : "";
   const response = await apiClient.get<ProductDto[]>(
-    `/api/public/tenants/${subdomain}/products${queryString}`
+    `/api/public/commerce/${subdomain}/products${queryString}`
   );
   return response.data;
 };
@@ -264,16 +352,16 @@ export const fetchPublicProductDetail = async (
   productId: string
 ): Promise<ProductDto> => {
   const response = await apiClient.get<ProductDto>(
-    `/api/Products/${subdomain}/products/${productId}`
+    `/api/public/commerce/${subdomain}/products/${productId}`
   );
   return response.data;
 };
 
-export const fetchPublicTenantCategoriesPreferred = async (
+export const fetchPublicTenantCategories = async (
   subdomain: string
 ): Promise<CategoryDto[]> => {
   const response = await apiClient.get<CategoryDto[]>(
-    `/api/public/tenants/${subdomain}/categories/preferred`
+    `/api/public/commerce/${subdomain}/categories`
   );
   return response.data;
 };
@@ -282,16 +370,7 @@ export const fetchPublicTenantTags = async (
   subdomain: string
 ): Promise<TagDto[]> => {
   const response = await apiClient.get<TagDto[]>(
-    `/api/public/tenants/${subdomain}/tags`
-  );
-  return response.data;
-};
-
-export const fetchPublicTenantRecommendations = async (
-  subdomain: string
-): Promise<ProductDto[]> => {
-  const response = await apiClient.get<ProductDto[]>(
-    `/api/public/tenants/${subdomain}/recommendations`
+    `/api/public/commerce/${subdomain}/tags`
   );
   return response.data;
 };
@@ -301,32 +380,8 @@ export const searchPublicTenantProducts = async (
   params: URLSearchParams
 ): Promise<ProductDto[]> => {
   const response = await apiClient.get<ProductDto[]>(
-    `/api/public/tenants/${subdomain}/search?${params.toString()}`
+    `/api/public/commerce/${subdomain}/search?${params.toString()}`
   );
-  return response.data;
-};
-
-export const registerTenantCustomer = async (
-  subdomain: string,
-  registrationData: CustomerRegisterDto
-): Promise<{ message: string; status: string; userId?: string }> => {
-  const response = await apiClient.post<{
-    message: string;
-    status: string;
-    userId?: string;
-  }>(`/api/public/tenants/${subdomain}/register-customer`, registrationData);
-  return response.data;
-};
-
-export const linkTenantCustomer = async (
-  subdomain: string,
-  linkData: LinkCustomerDto
-): Promise<{ message: string; status: string; userId?: string }> => {
-  const response = await apiClient.post<{
-    message: string;
-    status: string;
-    userId?: string;
-  }>(`/api/public/tenants/${subdomain}/link-customer`, linkData);
   return response.data;
 };
 
@@ -335,7 +390,7 @@ export const createTenantOrder = async (
   orderData: CreateOrderDto
 ): Promise<OrderDto> => {
   const response = await apiClient.post<OrderDto>(
-    `/api/public/tenants/${subdomain}/orders`,
+    `/api/public/commerce/${subdomain}/orders`,
     orderData
   );
   return response.data;
@@ -345,7 +400,7 @@ export const fetchTenantOrders = async (
   subdomain: string
 ): Promise<OrderDto[]> => {
   const response = await apiClient.get<OrderDto[]>(
-    `/api/public/tenants/${subdomain}/orders`
+    `/api/public/commerce/${subdomain}/orders`
   );
   return response.data;
 };
@@ -355,7 +410,25 @@ export const fetchTenantOrderById = async (
   orderId: string
 ): Promise<OrderDto> => {
   const response = await apiClient.get<OrderDto>(
-    `/api/public/tenants/${subdomain}/orders/${orderId}`
+    `/api/public/commerce/${subdomain}/orders/${orderId}`
+  );
+  return response.data;
+};
+
+export const fetchPublicTenantRecommendations = async (
+  subdomain: string
+): Promise<ProductDto[]> => {
+  const response = await apiClient.get<ProductDto[]>(
+    `/api/public/recommendations/${subdomain}/recommendations`
+  );
+  return response.data;
+};
+
+export const fetchPublicTenantCategoriesPreferred = async (
+  subdomain: string
+): Promise<CategoryDto[]> => {
+  const response = await apiClient.get<CategoryDto[]>(
+    `/api/public/recommendations/${subdomain}/categories/preferred`
   );
   return response.data;
 };
@@ -378,9 +451,7 @@ export const uploadImageToCloudinary = async (
     const response = await axios.post<{ secure_url: string }>(
       cloudinaryUploadUrl,
       formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      }
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data.secure_url;
   } catch (err) {
@@ -395,82 +466,4 @@ export const uploadImageToCloudinary = async (
     );
     throw err;
   }
-};
-
-export const fetchAdminDashboardStatistics = async (
-  params: DashboardQueryParametersDto
-): Promise<DashboardResponseDto> => {
-  const cleanParams = Object.fromEntries(
-    Object.entries(params).filter(([, v]) => v !== null && v !== "")
-  );
-  const response = await apiClient.get<DashboardResponseDto>(
-    "/api/admin/dashboard/order-statistics",
-    { params: cleanParams }
-  );
-  return response.data;
-};
-
-export const createManualAdminOrder = async (
-  orderData: CreateManualOrderDto
-): Promise<OrderDto> => {
-  const response = await apiClient.post<OrderDto>(
-    "/api/admin/orders/manual",
-    orderData
-  );
-  return response.data;
-};
-
-export const fetchPublicTenantCategories = async (
-  subdomain: string
-): Promise<CategoryDto[]> => {
-  const response = await apiClient.get<CategoryDto[]>(
-    `/api/public/tenants/${subdomain}/categories`
-  );
-  return response.data;
-};
-
-export const getAdminTheme = async (): Promise<TenantThemeDto> => {
-  const response = await apiClient.get<TenantThemeDto>("/api/admin/theme");
-  return response.data;
-};
-
-export const updateAdminTheme = async (
-  themeData: TenantThemeDto
-): Promise<void> => {
-  await apiClient.put("/api/admin/theme", themeData);
-};
-
-export const resetPublicTheme = async (): Promise<void> => {
-  await apiClient.post("/api/admin/theme/reset-public");
-};
-
-export const resetAdminTheme = async (): Promise<void> => {
-  await apiClient.post("/api/admin/theme/reset-admin");
-};
-
-export const forgotPassword = async (
-  forgotPasswordData: ForgotPasswordDto
-): Promise<void> => {
-  await apiClient.post("/api/accounts/forgot-password", forgotPasswordData);
-};
-
-export const resetPassword = async (
-  resetPasswordData: ResetPasswordDto
-): Promise<void> => {
-  await apiClient.post("/api/accounts/reset-password", resetPasswordData);
-};
-
-export const fetchAdminTenantDetails = async (): Promise<TenantDto> => {
-  const response = await apiClient.get<TenantDto>("/api/tenants/mine");
-  return response.data;
-};
-
-export const updateAdminProfile = async (
-  profileData: UpdateAdminProfileDto
-): Promise<AuthUser> => {
-  const response = await apiClient.put<AuthUser>(
-    "/api/accounts/me/admin-profile",
-    profileData
-  );
-  return response.data;
 };

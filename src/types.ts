@@ -194,6 +194,8 @@ export interface CreateOrderDto {
   deliveryDate: Date | string;
   items: OrderItemDto[];
   totalAmount: number;
+  customerName: string;
+  customerPhoneNumber: string | null;
 }
 
 export interface OrderDto {

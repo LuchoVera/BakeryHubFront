@@ -165,6 +165,103 @@
   color: var(--color-surface);
 }
 
+.statusTimelineSection {
+  grid-column: 1 / -1;
+  margin-bottom: var(--space-xl);
+}
+
+.timelineContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  margin: var(--space-lg) 0;
+}
+.timelineContainer::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 5%;
+  right: 5%;
+  height: 2px;
+  background-color: var(--color-border);
+  z-index: 1;
+}
+
+.timelineStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 18%;
+  position: relative;
+  z-index: 2;
+}
+
+.timelineCircle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background-color: var(--color-background);
+  transition: all 0.3s ease;
+  margin-bottom: var(--space-sm);
+}
+
+.timelineLabel {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.timelineStep.completed .timelineCircle {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+}
+.timelineStep.active .timelineCircle {
+  transform: scale(1.2);
+  border-width: 3px;
+}
+.timelineStep.active .timelineLabel {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.timelinePending {
+  border-color: var(--color-warning);
+}
+.timelineStep.completed .timelinePending {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+.timelineConfirmed {
+  border-color: var(--color-info);
+}
+.timelineStep.completed .timelineConfirmed {
+  background-color: var(--color-info);
+  border-color: var(--color-info);
+}
+.timelinePreparing {
+  border-color: var(--color-primary);
+}
+.timelineStep.completed .timelinePreparing {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.timelineReady,
+.timelineReceived {
+  border-color: var(--color-success);
+}
+.timelineStep.completed .timelineReady,
+.timelineStep.completed .timelineReceived {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+}
+.timelineCancelled {
+  border-color: var(--color-text-secondary);
+  background-color: var(--color-text-secondary);
+}
+
 .itemsSection {
   grid-column: 1 / -1;
 }
@@ -395,5 +492,22 @@
   }
   .itemsTable .totalAmount {
     font-size: 1.1em;
+  }
+  .timelineContainer {
+    justify-content: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  .timelineContainer::before {
+    display: none;
+  }
+  .timelineStep {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-sm);
+  }
+  .timelineCircle {
+    margin-bottom: 0;
   }
 }

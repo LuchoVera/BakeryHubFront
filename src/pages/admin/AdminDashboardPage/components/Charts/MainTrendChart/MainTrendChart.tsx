@@ -161,18 +161,36 @@ export const MainTrendChart: React.FC<MainTrendChartProps> = ({
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (chartRef.current) {
-      const styles = getComputedStyle(document.documentElement);
-      setThemeColors({
-        primary: styles.getPropertyValue("--color-primary").trim() || "#ff8fab",
-        primaryDark:
-          styles.getPropertyValue("--color-primary-dark").trim() || "#fb6f92",
-        text:
-          styles.getPropertyValue("--color-text-secondary").trim() || "#5a5a5a",
-        title:
-          styles.getPropertyValue("--color-text-primary").trim() || "#333333",
-      });
-    }
+    const fetchAndSetThemeColors = () => {
+      if (chartRef.current) {
+        const styles = getComputedStyle(document.documentElement);
+        const primaryColor = styles.getPropertyValue("--color-primary").trim();
+        if (primaryColor) {
+          setThemeColors({
+            primary: primaryColor,
+            primaryDark:
+              styles.getPropertyValue("--color-primary-dark").trim() ||
+              primaryColor,
+            text:
+              styles.getPropertyValue("--color-text-secondary").trim() ||
+              "#5a5a5a",
+            title:
+              styles.getPropertyValue("--color-text-primary").trim() ||
+              "#333333",
+          });
+        }
+      }
+    };
+
+    fetchAndSetThemeColors();
+
+    const observer = new MutationObserver(fetchAndSetThemeColors);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
