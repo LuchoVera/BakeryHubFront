@@ -295,10 +295,9 @@
 
   .actionButton {
     height: 32px;
-    font-size: 1rem;
-  }
-
-  .advanceButtonText {
-    display: none;
+    font-size: 0.85rem;
+    max-width: 100px;
+    display: inline-flex;
+    text-overflow: ellipsis;
   }
 }

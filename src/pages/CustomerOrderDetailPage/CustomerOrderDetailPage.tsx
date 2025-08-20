@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../AuthContext";
 import { useTenant } from "../../hooks/useTenant";
-import { OrderDto, ApiErrorResponse } from "../../types";
+import { OrderDto, ApiErrorResponse, OrderStatus } from "../../types";
 import TenantHeader from "../../components/TenantHeader/TenantHeader";
 import styles from "./CustomerOrderDetailPage.module.css";
 import {
@@ -11,6 +11,7 @@ import {
   LuListChecks,
   LuHash,
   LuCircleAlert,
+  LuCircleCheck,
 } from "react-icons/lu";
 import { fetchTenantOrderById } from "../../services/apiService";
 import { AxiosError } from "axios";
@@ -30,8 +31,38 @@ const STATUS_LABELS: Record<string, string> = {
   Unknown: "Desconocido",
 };
 
-const getStatusClass = (status: string): string => {
-  switch (status?.toLowerCase()) {
+const statusOrder: OrderStatus[] = [
+  "Pending",
+  "Confirmed",
+  "Preparing",
+  "Ready",
+  "Received",
+];
+
+const getStatusClass = (
+  status: string,
+  timelineContext: "timeline" | "badge" = "badge"
+): string => {
+  const statusLower = status?.toLowerCase();
+  if (timelineContext === "timeline") {
+    switch (statusLower) {
+      case "pending":
+        return styles.timelinePending;
+      case "confirmed":
+        return styles.timelineConfirmed;
+      case "preparing":
+        return styles.timelinePreparing;
+      case "ready":
+        return styles.timelineReady;
+      case "received":
+        return styles.timelineReceived;
+      case "cancelled":
+        return styles.timelineCancelled;
+      default:
+        return "";
+    }
+  }
+  switch (statusLower) {
     case "pending":
       return styles.statusPending;
     case "confirmed":
@@ -151,6 +182,52 @@ const CustomerOrderDetailPage: React.FC = () => {
                 #{order.orderNumber || order.id.substring(0, 8)}
               </span>
             </h1>
+
+            <section
+              className={`${styles.detailSection} ${styles.statusTimelineSection}`}
+            >
+              <h2 className={styles.sectionTitle}>
+                <LuCircleCheck /> Estado del Pedido
+              </h2>
+              <div className={styles.timelineContainer}>
+                {statusOrder.map((status, index) => {
+                  const currentStatusIndex = statusOrder.indexOf(
+                    order.status as OrderStatus
+                  );
+                  return (
+                    <div
+                      key={status}
+                      className={`${styles.timelineStep} ${
+                        index <= currentStatusIndex ? styles.completed : ""
+                      } ${index === currentStatusIndex ? styles.active : ""}`}
+                    >
+                      <div
+                        className={`${styles.timelineCircle} ${getStatusClass(
+                          status,
+                          "timeline"
+                        )}`}
+                      ></div>
+                      <div className={styles.timelineLabel}>
+                        {STATUS_LABELS[status]}
+                      </div>
+                    </div>
+                  );
+                })}
+                {order.status === "Cancelled" && (
+                  <div
+                    className={`${styles.timelineStep} ${styles.completed} ${styles.active}`}
+                  >
+                    <div
+                      className={`${styles.timelineCircle} ${getStatusClass(
+                        "Cancelled",
+                        "timeline"
+                      )}`}
+                    ></div>
+                    <div className={styles.timelineLabel}>Cancelado</div>
+                  </div>
+                )}
+              </div>
+            </section>
 
             <div className={styles.detailGrid}>
               <section className={styles.detailSection}>
